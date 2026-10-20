@@ -1,4 +1,4 @@
-import { availableRecipes, DEFAULT_CONFIG, type GameEvent, type StartItem } from '@draycol/core';
+import { availableRecipes, DEFAULT_CONFIG, ITEM_META, type GameEvent, type ItemId, type StartItem } from '@draycol/core';
 import { getScores, postScore } from './api';
 import { InputController } from './game/input';
 import { FixedLoop } from './game/loop';
@@ -6,7 +6,7 @@ import { Session } from './game/session';
 import { Renderer, snapshot, type PrevSnapshot } from './render/renderer';
 import { DeathScreen } from './ui/death-screen';
 import { Hud } from './ui/hud';
-import { loadSprites } from './render/assets';
+import { preloadItemIcons } from './ui/icons';
 import { StartScreen } from './ui/start-screen';
 
 type Screen = 'start' | 'playing' | 'dead';
@@ -33,7 +33,7 @@ export class App {
   }
 
   async start(): Promise<void> {
-    await loadSprites();
+    await preloadItemIcons(Object.keys(ITEM_META) as ItemId[]);
     await this.startScreen.show();
     this.screen = 'start';
   }

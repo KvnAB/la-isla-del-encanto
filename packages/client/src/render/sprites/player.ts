@@ -1,7 +1,7 @@
-import { Container, Graphics, Sprite, Text } from 'pixi.js';
+import { Container, Graphics, Text } from 'pixi.js';
 import { ITEM_META, type ItemId, type PlayerState } from '@draycol/core';
 import { PALETTE } from '../palette';
-import { makeToolSprite } from './entities';
+import { drawPickaxe, drawSword } from './vector-items';
 
 const OL = 0x1e1510;
 const SKIN = 0xf3c9a4;
@@ -22,7 +22,7 @@ export class PlayerView extends Container {
   private readonly handBack = new Graphics();
   private readonly handFront = new Graphics();
   private readonly toolHolder = new Container();
-  private tool: Sprite | null = null;
+  private tool: Graphics | null = null;
   private readonly nameText: Text;
   private toolItem: ItemId | null | undefined = undefined;
   private readonly r: number;
@@ -97,9 +97,13 @@ export class PlayerView extends Container {
       this.tool?.destroy();
       this.tool = null;
       if (shown) {
-        this.tool = makeToolSprite(shown, r * 2.6);
-        // apunta hacia delante (+x) con una ligera inclinación hacia fuera
-        this.tool.rotation += Math.PI / 2 + 0.15;
+        this.tool = new Graphics();
+        const s = r * 1.25;
+        if (shown === 'wood_pickaxe' || shown === 'stone_pickaxe') drawPickaxe(this.tool, s, shown === 'stone_pickaxe');
+        else drawSword(this.tool, s, shown === 'stone_sword');
+        // la mano agarra el mango: desplazar para que el puño quede sobre el mango, y apuntar hacia delante (+x)
+        this.tool.pivot.set(0, s * 0.55);
+        this.tool.rotation = Math.PI / 2 - 0.25;
         this.toolHolder.addChild(this.tool);
       }
     }

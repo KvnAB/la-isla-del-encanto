@@ -4,8 +4,7 @@ import { Camera } from './camera';
 import { Fx } from './fx';
 import { nightAmount, NightLayer } from './night';
 import { PALETTE } from './palette';
-import { animateCampfire, makeCampfire, makeCreature, makeGroundItem, makeRegenRing, makeResource, makeShadow, PlayerView, updateRegenRing, type CampfireView } from './sprites';
-import { makeResourceVector } from './sprites/vector-resources';
+import { animateCampfireVector, makeCampfireVector, makeCreatureVector, makeGroundItemVector, makeRegenRing, makeResourceVector, makeShadow, PlayerView, updateRegenRing, type CampfireVectorView } from './sprites';
 import { buildTerrain } from './terrain';
 
 /** Posiciones del paso anterior para interpolar. */
@@ -69,7 +68,7 @@ export class Renderer {
   private readonly resources = new Map<number, ResourceView>();
   private readonly creatures = new Map<number, SimpleView>();
   private readonly groundItems = new Map<number, SimpleView>();
-  private readonly campfires = new Map<number, { view: CampfireView; shadow: Graphics }>();
+  private readonly campfires = new Map<number, { view: CampfireVectorView; shadow: Graphics }>();
   private time = 0;
   private lastRenderTime = 0;
   readonly night = new NightLayer();
@@ -175,8 +174,7 @@ export class Renderer {
   }
 
   private buildResourceSprite(r: ResourceState, broken: boolean): Container {
-    if (new URLSearchParams(location.search).has('vector')) return makeResourceVector(r.kind, r.size, r.radius, broken, r.id * 7919);
-    return makeResource(r.kind, r.size, r.radius, broken);
+    return makeResourceVector(r.kind, r.size, r.radius, broken, r.id * 7919);
   }
 
   private syncResources(state: WorldState): void {
@@ -242,7 +240,7 @@ export class Renderer {
       seen.add(c.id);
       let v = this.creatures.get(c.id);
       if (!v) {
-        v = { sprite: makeCreature(c.kind, c.radius), shadow: makeShadow(c.radius * 1.3) };
+        v = { sprite: makeCreatureVector(c.kind, c.radius), shadow: makeShadow(c.radius * 1.3) };
         this.layers.entities.addChild(v.sprite);
         this.layers.shadows.addChild(v.shadow);
         this.creatures.set(c.id, v);
@@ -269,7 +267,7 @@ export class Renderer {
       seen.add(g.id);
       let v = this.groundItems.get(g.id);
       if (!v) {
-        v = { sprite: makeGroundItem(g.item), shadow: makeShadow(16) };
+        v = { sprite: makeGroundItemVector(g.item), shadow: makeShadow(16) };
         v.sprite.position.set(g.x, g.y);
         v.sprite.rotation = ((g.id * 37) % 60) / 60 - 0.5;
         v.shadow.position.set(g.x, g.y + 3);
@@ -294,7 +292,7 @@ export class Renderer {
       seen.add(c.id);
       let v = this.campfires.get(c.id);
       if (!v) {
-        v = { view: makeCampfire(), shadow: makeShadow(30) };
+        v = { view: makeCampfireVector(), shadow: makeShadow(30) };
         v.view.position.set(c.x, c.y);
         v.view.zIndex = c.y;
         v.shadow.position.set(c.x, c.y + 4);
@@ -302,7 +300,7 @@ export class Renderer {
         this.layers.shadows.addChild(v.shadow);
         this.campfires.set(c.id, v);
       }
-      animateCampfire(v.view, this.time + c.id);
+      animateCampfireVector(v.view, this.time + c.id);
     }
     for (const [id, v] of this.campfires)
       if (!seen.has(id)) {

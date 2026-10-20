@@ -2,26 +2,40 @@ import { Container, Graphics } from 'pixi.js';
 import { Rng, type ResourceKind, type Size } from '@draycol/core';
 
 /**
- * Recursos dibujados en código siguiendo la guía de estilo: contorno negro grueso,
- * tres tonos (sombra / base / luz), brillos pequeños y detalles (hojas, grietas, anillos).
- * Todo se escala con el radio de colisión `r`, así que se ve nítido a cualquier zoom.
+ * Recursos dibujados en código al estilo de la guía: contorno negro grueso, tres tonos
+ * (sombra / base / luz), brillos y detalles (hojas con nervio, facetas, grietas, anillos).
+ * Se escalan con el radio de colisión `r` y se ven nítidos a cualquier zoom.
  */
 
-const OL = 0x1a1a1a;
-const OUT = (r: number) => Math.max(3, r * 0.085);
+export const OL = 0x1b1510;
+export const outlineWidth = (r: number): number => Math.max(3, r * 0.08);
 
-const LEAF = { dark: 0x2a7a2e, base: 0x3f9a3a, light: 0x6cc24a, lighter: 0x9ddc5a, outline: 0x1b4d1d };
-const TRUNK = { dark: 0x5a3a1c, base: 0x8a5a2b, light: 0xb57a3a };
-const ROCK = { dark: 0x5d646d, base: 0x8b949e, light: 0xb8c2cb, lighter: 0xe2e8ee };
-const APPLE = { base: 0xd9332a, dark: 0x9c1f18, light: 0xff7a6a };
+const LEAF = { shadow: 0x1f6b2a, dark: 0x2e8a35, base: 0x43a83f, light: 0x74cc4c, lighter: 0xa9e86a, outline: 0x163f17 };
+const TRUNK = { dark: 0x4f3015, base: 0x8a5a2b, light: 0xb98448, ring: 0x6d4320 };
+const ROCK = { shadow: 0x4d545d, dark: 0x6b747e, base: 0x8f99a3, light: 0xb7c1ca, lighter: 0xe4eaef, outline: 0x22262b };
+const APPLE = { base: 0xdc3b2c, dark: 0x9a1c15, light: 0xff8f7a, leaf: 0x58b547 };
 
-/** Círculos de hojas distribuidos de forma estable (misma semilla → mismo árbol). */
-function leafClusters(rng: Rng, r: number, n: number, radiusK: [number, number], spread: number): [number, number, number][] {
-  const out: [number, number, number][] = [];
+/** Hoja con nervio central, orientada por `rot`. */
+export function drawLeaf(g: Graphics, x: number, y: number, len: number, rot: number, fill: number, outline: number, ow: number): void {
+  const w = len * 0.42;
+  const cos = Math.cos(rot);
+  const sin = Math.sin(rot);
+  const P = (lx: number, ly: number): [number, number] => [x + lx * cos - ly * sin, y + lx * sin + ly * cos];
+  const [ax, ay] = P(-len / 2, 0);
+  const [bx, by] = P(len / 2, 0);
+  const [c1x, c1y] = P(0, -w);
+  const [c2x, c2y] = P(0, w);
+  g.moveTo(ax, ay).quadraticCurveTo(c1x, c1y, bx, by).quadraticCurveTo(c2x, c2y, ax, ay).closePath().fill(fill).stroke({ width: ow, color: outline, join: 'round' });
+  g.moveTo(ax, ay).lineTo(bx, by).stroke({ width: Math.max(1, ow * 0.6), color: outline, alpha: 0.55 });
+}
+
+function canopyCircles(rng: Rng, r: number): [number, number, number][] {
+  const out: [number, number, number][] = [[0, 0, r * 0.72]];
+  const n = 11;
   for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2 + rng.range(-0.3, 0.3);
-    const d = r * spread * rng.range(0.55, 1);
-    out.push([Math.cos(a) * d, Math.sin(a) * d, r * rng.range(radiusK[0], radiusK[1])]);
+    const a = (i / n) * Math.PI * 2 + rng.range(-0.18, 0.18);
+    const d = r * rng.range(0.5, 0.62);
+    out.push([Math.cos(a) * d, Math.sin(a) * d, r * rng.range(0.36, 0.46)]);
   }
   return out;
 }
@@ -30,72 +44,59 @@ export function makeTree(kind: 'tree' | 'apple_tree', _size: Size, r: number, se
   const rng = new Rng(seed);
   const c = new Container();
   const g = new Graphics();
-  const ow = OUT(r);
+  const ow = outlineWidth(r);
+  const circles = canopyCircles(rng, r);
 
-  // 1) Silueta: copa = unión de círculos, contorno grueso alrededor.
-  const outer = leafClusters(rng, r, 9, [0.42, 0.55], 0.62);
-  outer.push([0, 0, r * 0.78]);
-  for (const [x, y, rr] of outer) g.circle(x, y, rr + ow).fill(LEAF.outline);
-  for (const [x, y, rr] of outer) g.circle(x, y, rr).fill(LEAF.dark);
+  for (const [x, y, rr] of circles) g.circle(x, y, rr + ow).fill(LEAF.outline);
+  for (const [x, y, rr] of circles) g.circle(x, y, rr).fill(LEAF.shadow);
+  for (const [x, y, rr] of circles) g.circle(x - r * 0.06, y - r * 0.07, rr * 0.86).fill(LEAF.dark);
+  for (const [x, y, rr] of circles) g.circle(x - r * 0.11, y - r * 0.13, rr * 0.66).fill(LEAF.base);
+  for (let i = 0; i < 9; i++) {
+    const a = rng.range(Math.PI * 0.85, Math.PI * 1.75);
+    const d = r * rng.range(0.15, 0.6);
+    g.circle(Math.cos(a) * d, Math.sin(a) * d, r * rng.range(0.14, 0.24)).fill(LEAF.light);
+  }
+  for (let i = 0; i < 4; i++) {
+    const a = rng.range(Math.PI * 1.0, Math.PI * 1.6);
+    const d = r * rng.range(0.25, 0.55);
+    g.circle(Math.cos(a) * d, Math.sin(a) * d, r * rng.range(0.07, 0.11)).fill(LEAF.lighter);
+  }
+  c.addChild(g);
 
-  // 2) Tono base: círculos un poco más pequeños, desplazados hacia arriba-izquierda (luz).
-  for (const [x, y, rr] of outer) g.circle(x - r * 0.05, y - r * 0.06, rr * 0.82).fill(LEAF.base);
-
-  // 3) Luz: racimos pequeños en la mitad superior izquierda.
-  const lit = leafClusters(rng, r, 7, [0.16, 0.26], 0.5).filter(([x, y]) => x + y < r * 0.25);
-  for (const [x, y, rr] of lit) g.circle(x - r * 0.08, y - r * 0.1, rr).fill(LEAF.light);
-  for (const [x, y, rr] of lit.slice(0, 3)) g.circle(x - r * 0.14, y - r * 0.16, rr * 0.45).fill(LEAF.lighter);
-
-  // 4) Hojas sueltas: elipses con contorno fino, orientadas al azar.
-  for (let i = 0; i < 10; i++) {
+  const leaves = new Graphics();
+  for (let i = 0; i < 22; i++) {
     const a = rng.next() * Math.PI * 2;
-    const d = r * rng.range(0.2, 0.85);
+    const d = r * rng.range(0.15, 0.95);
     const x = Math.cos(a) * d;
     const y = Math.sin(a) * d;
-    const rot = rng.next() * Math.PI;
-    const lw = r * 0.17;
-    const lh = r * 0.08;
-    const col = x + y < 0 ? LEAF.light : LEAF.base;
-    const leaf = new Graphics();
-    leaf.ellipse(0, 0, lw, lh).fill(col).stroke({ width: Math.max(1.5, ow * 0.45), color: LEAF.outline, alpha: 0.9 });
-    leaf.moveTo(-lw * 0.8, 0).lineTo(lw * 0.8, 0).stroke({ width: 1.2, color: LEAF.outline, alpha: 0.5 });
-    leaf.position.set(x, y);
-    leaf.rotation = rot;
-    c.addChild(g, leaf);
+    const lit = x + y < -r * 0.05;
+    const fill = lit ? (rng.next() < 0.4 ? LEAF.lighter : LEAF.light) : rng.next() < 0.5 ? LEAF.base : LEAF.dark;
+    drawLeaf(leaves, x, y, r * rng.range(0.2, 0.3), a + rng.range(-0.6, 0.6), fill, LEAF.outline, Math.max(1.2, ow * 0.4));
   }
-  if (c.children.length === 0) c.addChild(g);
+  c.addChild(leaves);
 
-  // 5) Centro: ramas en Y vistas desde arriba (como en la guía).
   const br = new Graphics();
-  const arm = (a: number, len: number) => {
-    br.moveTo(0, 0)
-      .lineTo(Math.cos(a) * len, Math.sin(a) * len)
-      .stroke({ width: r * 0.1 + ow * 1.4, color: OL, cap: 'round' });
-  };
-  const arms = [-2.4, -0.4, 1.6];
-  for (const a of arms) arm(a, r * 0.26);
-  br.circle(0, 0, r * 0.11 + ow * 0.6).fill(OL);
-  for (const a of arms)
-    br.moveTo(0, 0)
-      .lineTo(Math.cos(a) * r * 0.26, Math.sin(a) * r * 0.26)
-      .stroke({ width: r * 0.1, color: TRUNK.base, cap: 'round' });
-  br.circle(0, 0, r * 0.11).fill(TRUNK.light);
-  br.circle(-r * 0.02, -r * 0.02, r * 0.05).fill(TRUNK.dark);
+  const arms = [-2.3, -0.3, 1.7];
+  const len = r * 0.24;
+  for (const a of arms) br.moveTo(0, 0).lineTo(Math.cos(a) * len, Math.sin(a) * len).stroke({ width: r * 0.1 + ow * 1.3, color: OL, cap: 'round' });
+  for (const a of arms) br.moveTo(0, 0).lineTo(Math.cos(a) * len, Math.sin(a) * len).stroke({ width: r * 0.1, color: TRUNK.base, cap: 'round' });
+  br.circle(0, 0, r * 0.1).fill(TRUNK.light);
+  br.circle(-r * 0.015, -r * 0.015, r * 0.045).fill(TRUNK.dark);
   c.addChild(br);
 
-  // 6) Manzanas.
   if (kind === 'apple_tree') {
     const ap = new Graphics();
     const count = 7;
     for (let i = 0; i < count; i++) {
       const a = (i / count) * Math.PI * 2 + rng.range(-0.25, 0.25);
-      const d = r * rng.range(0.3, 0.8);
+      const d = r * rng.range(0.3, 0.78);
       const x = Math.cos(a) * d;
       const y = Math.sin(a) * d;
-      const ar = Math.max(4, r * 0.11);
-      ap.circle(x, y, ar).fill(APPLE.base).stroke({ width: Math.max(2, ow * 0.6), color: 0x4a0f0b });
-      ap.circle(x + ar * 0.15, y + ar * 0.2, ar * 0.75).fill({ color: APPLE.dark, alpha: 0.35 });
-      ap.circle(x - ar * 0.3, y - ar * 0.3, ar * 0.28).fill(APPLE.light);
+      const ar = Math.max(4.5, r * 0.11);
+      ap.circle(x, y, ar).fill(APPLE.base).stroke({ width: Math.max(2, ow * 0.65), color: 0x4a0f0b });
+      ap.arc(x, y, ar * 0.78, Math.PI * 0.1, Math.PI * 0.75).lineTo(x, y).closePath().fill({ color: APPLE.dark, alpha: 0.35 });
+      ap.circle(x - ar * 0.32, y - ar * 0.32, ar * 0.26).fill(APPLE.light);
+      drawLeaf(ap, x + ar * 0.5, y - ar * 0.75, ar * 0.8, -0.6, APPLE.leaf, 0x2f6b25, 1.2);
     }
     c.addChild(ap);
   }
@@ -107,85 +108,75 @@ export function makeStump(r: number, seed: number): Container {
   const c = new Container();
   const g = new Graphics();
   const sr = Math.max(12, r * 0.5);
-  const ow = Math.max(3, sr * 0.14);
-  // corteza: polígono dentado
+  const ow = Math.max(3, sr * 0.13);
+
+  const roots = [0.6, 2.4, 4.2];
+  const rootPath = (k: number) => {
+    for (const a of roots)
+      g.moveTo(Math.cos(a) * sr * 0.8, Math.sin(a) * sr * 0.8)
+        .lineTo(Math.cos(a - 0.12) * sr * 1.5, Math.sin(a - 0.12) * sr * 1.5)
+        .stroke({ width: sr * 0.34 * k, color: k > 1 ? OL : TRUNK.dark, cap: 'round' });
+  };
+  rootPath(1.9);
   const pts: number[] = [];
-  const n = 14;
+  const n = 16;
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2;
-    const rr = sr * (i % 2 === 0 ? 1.18 : 1.05) * rng.range(0.97, 1.03);
+    const rr = sr * (i % 2 === 0 ? 1.2 : 1.06) * rng.range(0.97, 1.03);
     pts.push(Math.cos(a) * rr, Math.sin(a) * rr);
   }
   g.poly(pts, true).fill(TRUNK.dark).stroke({ width: ow, color: OL, join: 'round' });
-  // raíces insinuadas
-  for (const a of [0.7, 2.3, 4.1]) {
-    g.moveTo(Math.cos(a) * sr * 0.9, Math.sin(a) * sr * 0.9)
-      .lineTo(Math.cos(a) * sr * 1.45, Math.sin(a) * sr * 1.45)
-      .stroke({ width: sr * 0.3 + ow * 1.5, color: OL, cap: 'round' });
-  }
-  for (const a of [0.7, 2.3, 4.1]) {
-    g.moveTo(Math.cos(a) * sr * 0.9, Math.sin(a) * sr * 0.9)
-      .lineTo(Math.cos(a) * sr * 1.45, Math.sin(a) * sr * 1.45)
-      .stroke({ width: sr * 0.3, color: TRUNK.dark, cap: 'round' });
-  }
+  rootPath(1);
   g.poly(pts, true).fill(TRUNK.dark);
-  // corte: tono claro con sombra a la derecha
-  g.circle(0, 0, sr * 0.92).fill(TRUNK.light);
-  g.circle(0, 0, sr * 0.92).stroke({ width: Math.max(2, ow * 0.6), color: TRUNK.dark });
-  // anillos
-  for (let k = 0.78; k > 0.12; k -= 0.17) g.circle(sr * 0.02, sr * 0.02, sr * k).stroke({ width: Math.max(1.5, sr * 0.06), color: TRUNK.base, alpha: 0.9 });
-  g.circle(sr * 0.05, sr * 0.04, sr * 0.1).fill(TRUNK.base);
-  // sombra del lado derecho y brillo del izquierdo
-  g.arc(0, 0, sr * 0.92, -Math.PI * 0.35, Math.PI * 0.6).lineTo(0, 0).closePath().fill({ color: TRUNK.dark, alpha: 0.22 });
-  g.arc(0, 0, sr * 0.8, Math.PI * 1.05, Math.PI * 1.4).stroke({ width: sr * 0.1, color: 0xffffff, alpha: 0.35, cap: 'round' });
+  for (let i = 0; i < n; i += 2) {
+    const a = (i / n) * Math.PI * 2 + 0.1;
+    g.moveTo(Math.cos(a) * sr * 0.96, Math.sin(a) * sr * 0.96).lineTo(Math.cos(a) * sr * 1.12, Math.sin(a) * sr * 1.12).stroke({ width: Math.max(1.2, sr * 0.05), color: OL, alpha: 0.45 });
+  }
+  g.circle(0, 0, sr * 0.9).fill(TRUNK.light).stroke({ width: Math.max(2, ow * 0.6), color: TRUNK.dark });
+  for (let k = 0.76; k > 0.1; k -= 0.15) g.circle(sr * 0.03, sr * 0.02, sr * k).stroke({ width: Math.max(1.4, sr * 0.055), color: TRUNK.ring, alpha: 0.85 });
+  g.circle(sr * 0.06, sr * 0.04, sr * 0.08).fill(TRUNK.ring);
+  g.arc(0, 0, sr * 0.9, -Math.PI * 0.3, Math.PI * 0.62).lineTo(0, 0).closePath().fill({ color: TRUNK.dark, alpha: 0.2 });
+  g.arc(0, 0, sr * 0.74, Math.PI * 1.08, Math.PI * 1.42).stroke({ width: sr * 0.09, color: 0xffffff, alpha: 0.4, cap: 'round' });
   c.addChild(g);
   return c;
 }
 
-function rockPolygon(rng: Rng, r: number, n: number, jitter: number): number[] {
-  const pts: number[] = [];
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2 + rng.range(-0.12, 0.12);
-    const rr = r * rng.range(1 - jitter, 1);
-    pts.push(Math.cos(a) * rr, Math.sin(a) * rr);
+/** Roca facetada: polígono irregular, triángulos desde el borde hacia un punto alto iluminado. */
+export function drawFacetedRock(g: Graphics, x: number, y: number, r: number, rng: Rng, ow: number, vertices = 8): void {
+  const pts: [number, number][] = [];
+  for (let i = 0; i < vertices; i++) {
+    const a = (i / vertices) * Math.PI * 2 + rng.range(-0.14, 0.14);
+    const rr = r * rng.range(0.8, 1);
+    pts.push([x + Math.cos(a) * rr, y + Math.sin(a) * rr]);
   }
-  return pts;
+  g.poly(pts.flat(), true).fill(ROCK.dark).stroke({ width: ow, color: ROCK.outline, join: 'round' });
+  const px = x - r * 0.22;
+  const py = y - r * 0.28;
+  const lx = -0.6;
+  const ly = -0.8;
+  for (let i = 0; i < vertices; i++) {
+    const [ax, ay] = pts[i];
+    const [bx, by] = pts[(i + 1) % vertices];
+    const mx = (ax + bx) / 2 - x;
+    const my = (ay + by) / 2 - y;
+    const ml = Math.hypot(mx, my) || 1;
+    const dot = (mx / ml) * lx + (my / ml) * ly;
+    const col = dot > 0.5 ? ROCK.light : dot > -0.1 ? ROCK.base : dot > -0.6 ? ROCK.dark : ROCK.shadow;
+    g.poly([ax, ay, bx, by, px, py], true).fill(col);
+    g.moveTo(ax, ay).lineTo(px, py).stroke({ width: Math.max(1, ow * 0.35), color: ROCK.outline, alpha: 0.35 });
+  }
+  g.circle(px, py, r * 0.18).fill(ROCK.light);
+  g.circle(px - r * 0.06, py - r * 0.06, r * 0.08).fill(ROCK.lighter);
+  const cx = x + r * rng.range(0.05, 0.35);
+  const cy = y + r * rng.range(0.1, 0.4);
+  g.moveTo(cx, cy).lineTo(cx + r * 0.14, cy + r * 0.2).lineTo(cx + r * 0.06, cy + r * 0.38).stroke({ width: Math.max(1.2, ow * 0.4), color: ROCK.outline, alpha: 0.55, cap: 'round', join: 'round' });
 }
 
 export function makeRock(_size: Size, r: number, seed: number): Container {
   const rng = new Rng(seed);
   const c = new Container();
   const g = new Graphics();
-  const ow = OUT(r);
-  const outer = rockPolygon(rng, r * 1.05, 8, 0.18);
-  g.poly(outer, true).fill(ROCK.dark).stroke({ width: ow, color: OL, join: 'round' });
-
-  // faceta principal (tono base) desplazada arriba-izquierda
-  const mid = outer.map((v, i) => v * 0.8 + (i % 2 === 0 ? -r * 0.08 : -r * 0.1));
-  g.poly(mid, true).fill(ROCK.base);
-  // faceta clara: franja superior izquierda pegada al borde (luz desde arriba-izquierda)
-  const top: number[] = [];
-  for (let i = 0; i < 8; i += 2) top.push(outer[i] * 0.88, outer[i + 1] * 0.88);
-  top.push(mid[6] * 0.9, mid[7] * 0.9, mid[2] * 0.75, mid[3] * 0.75);
-  g.poly(top, true).fill(ROCK.light);
-  // brillo pequeño en la esquina de la faceta
-  g.poly([outer[2] * 0.72, outer[3] * 0.72, outer[4] * 0.7, outer[5] * 0.7, outer[4] * 0.45, outer[5] * 0.45], true).fill(ROCK.lighter);
-
-  // aristas: líneas desde algunos vértices exteriores hacia la faceta clara (facetado)
-  for (let i = 0; i < outer.length; i += 2) {
-    const x0 = outer[i] * 0.95;
-    const y0 = outer[i + 1] * 0.95;
-    const x1 = top[i];
-    const y1 = top[i + 1];
-    g.moveTo(x0, y0).lineTo(x1, y1).stroke({ width: Math.max(1.5, ow * 0.4), color: ROCK.dark, alpha: 0.55 });
-  }
-  // grieta
-  const cx = r * rng.range(-0.3, 0.3);
-  const cy = r * rng.range(0.1, 0.5);
-  g.moveTo(cx, cy)
-    .lineTo(cx + r * 0.18, cy + r * 0.22)
-    .lineTo(cx + r * 0.1, cy + r * 0.42)
-    .stroke({ width: Math.max(1.5, ow * 0.45), color: OL, alpha: 0.6, cap: 'round', join: 'round' });
+  drawFacetedRock(g, 0, 0, r * 1.02, rng, outlineWidth(r));
   c.addChild(g);
   return c;
 }
@@ -195,27 +186,13 @@ export function makeRubble(r: number, seed: number): Container {
   const c = new Container();
   const g = new Graphics();
   const ow = Math.max(2.5, r * 0.07);
-  const chunk = (x: number, y: number, rr: number, rot: number) => {
-    const pts = rockPolygon(rng, rr, 6, 0.3);
-    const rotated: number[] = [];
-    for (let i = 0; i < pts.length; i += 2) {
-      const px = pts[i];
-      const py = pts[i + 1];
-      rotated.push(x + px * Math.cos(rot) - py * Math.sin(rot), y + px * Math.sin(rot) + py * Math.cos(rot));
-    }
-    g.poly(rotated, true).fill(ROCK.dark).stroke({ width: ow, color: OL, join: 'round' });
-    g.poly(rotated.map((v, i) => (i % 2 === 0 ? x + (v - x) * 0.6 - rr * 0.1 : y + (v - y) * 0.6 - rr * 0.14)), true).fill(ROCK.base);
-    g.poly(rotated.map((v, i) => (i % 2 === 0 ? x + (v - x) * 0.3 - rr * 0.2 : y + (v - y) * 0.3 - rr * 0.26)), true).fill(ROCK.light);
-  };
-  chunk(-r * 0.32, r * 0.05, r * 0.5, 0.2);
-  chunk(r * 0.36, -r * 0.1, r * 0.42, -0.4);
-  for (let i = 0; i < 5; i++) {
+  drawFacetedRock(g, -r * 0.36, r * 0.08, r * 0.5, rng, ow, 6);
+  drawFacetedRock(g, r * 0.34, -r * 0.12, r * 0.42, rng, ow, 6);
+  for (let i = 0; i < 6; i++) {
     const a = rng.next() * Math.PI * 2;
-    const d = r * rng.range(0.7, 1.05);
-    chunk(Math.cos(a) * d, Math.sin(a) * d, r * rng.range(0.1, 0.18), rng.next() * 3);
+    const d = r * rng.range(0.75, 1.1);
+    drawFacetedRock(g, Math.cos(a) * d, Math.sin(a) * d, r * rng.range(0.1, 0.17), rng, Math.max(1.5, ow * 0.6), 5);
   }
-  // grieta central entre los dos trozos
-  g.moveTo(r * 0.02, -r * 0.5).lineTo(-r * 0.06, -r * 0.1).lineTo(r * 0.08, r * 0.3).lineTo(0, r * 0.55).stroke({ width: ow * 0.9, color: OL, alpha: 0.7, join: 'round', cap: 'round' });
   c.addChild(g);
   return c;
 }
