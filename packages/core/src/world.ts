@@ -3,6 +3,7 @@ import { generateIsland } from './island.js';
 import { Rng } from './rng.js';
 import { dropSlot, useSelectedSlot } from './systems/consume.js';
 import { craft } from './systems/crafting.js';
+import { hitCreature, spawnInitialCreatures, stepCreatures, stepRespawns } from './systems/creatures.js';
 import { stepDayCycle } from './systems/daycycle.js';
 import { stepGroundItems, tryPickup } from './systems/ground.js';
 import { resolveHit } from './systems/hit.js';
@@ -38,6 +39,7 @@ export class World {
       nextEntityId: 1,
     };
     spawnResources(this.state, cfg, this.rng);
+    spawnInitialCreatures(this.state, cfg, this.rng);
   }
 
   addPlayer(name: string, startItem: StartItem): EntityId {
@@ -113,10 +115,22 @@ export class World {
       if (p.swing > 0) p.swing = Math.max(0, p.swing - dt / cfg.player.hitCooldown);
     }
 
+    stepCreatures(s, cfg, dt, this.rng, this.events);
+    stepRespawns(s, cfg, this.rng, this.events);
     stepGroundItems(s);
+    for (const p of s.players) this.checkDeath(p);
 
     s.tick++;
     s.time += dt;
+  }
+
+  private checkDeath(p: PlayerState): void {
+    if (!p.alive || p.health > 0) return;
+    p.health = 0;
+    p.alive = false;
+    p.moveDx = 0;
+    p.moveDy = 0;
+    this.events.push({ type: 'playerDied', playerId: p.id, days: this.state.day - 1, points: p.points });
   }
 
   private apply(cmd: Command): void {
@@ -135,6 +149,7 @@ export class World {
       case 'hit':
         resolveHit(this.state, p, this.cfg, this.events, {
           pickup: (pl, g) => tryPickup(this.state, pl, g, this.events),
+          creature: (pl, c) => hitCreature(this.state, pl, c, this.cfg, this.rng, this.events),
         });
         break;
       case 'selectSlot':
