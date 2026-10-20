@@ -4,6 +4,7 @@ import { Rng } from './rng.js';
 import { dropSlot, useSelectedSlot } from './systems/consume.js';
 import { craft } from './systems/crafting.js';
 import { stepDayCycle } from './systems/daycycle.js';
+import { stepGroundItems, tryPickup } from './systems/ground.js';
 import { resolveHit } from './systems/hit.js';
 import { stepPlayerMovement, type Solid } from './systems/movement.js';
 import { spawnResources } from './systems/resources.js';
@@ -112,6 +113,8 @@ export class World {
       if (p.swing > 0) p.swing = Math.max(0, p.swing - dt / cfg.player.hitCooldown);
     }
 
+    stepGroundItems(s);
+
     s.tick++;
     s.time += dt;
   }
@@ -130,7 +133,9 @@ export class World {
         p.angle = cmd.angle;
         break;
       case 'hit':
-        resolveHit(this.state, p, this.cfg, this.events);
+        resolveHit(this.state, p, this.cfg, this.events, {
+          pickup: (pl, g) => tryPickup(this.state, pl, g, this.events),
+        });
         break;
       case 'selectSlot':
         if (Number.isInteger(cmd.slot) && cmd.slot >= 0 && cmd.slot < p.inventory.length) p.selectedSlot = cmd.slot;
