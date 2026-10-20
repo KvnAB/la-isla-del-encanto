@@ -1,0 +1,17 @@
+{
+  "name": "draycol-survival",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Juego survival 2D top-down en isla para Draycol",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "pnpm --filter @draycol/core run build && pnpm --filter @draycol/client run build && pnpm --filter @draycol/server run build",
+    "test": "pnpm --filter @draycol/core run build && pnpm -r run test",
+    "typecheck": "pnpm --filter @draycol/core run build && pnpm -r run typecheck",
+    "dev": "pnpm --parallel -r run dev",
+    "start": "node packages/server/dist/index.js"
+  }
+}
