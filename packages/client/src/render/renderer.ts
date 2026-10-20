@@ -4,6 +4,20 @@ import { Camera } from './camera';
 import { PALETTE } from './palette';
 import { buildTerrain } from './terrain';
 
+/** Posiciones del paso anterior para interpolar. */
+export interface PrevSnapshot {
+  players: Map<number, { x: number; y: number; angle: number }>;
+  creatures: Map<number, { x: number; y: number; angle: number }>;
+}
+
+export function snapshot(state: WorldState): PrevSnapshot {
+  const players = new Map<number, { x: number; y: number; angle: number }>();
+  for (const p of state.players) players.set(p.id, { x: p.x, y: p.y, angle: p.angle });
+  const creatures = new Map<number, { x: number; y: number; angle: number }>();
+  for (const c of state.creatures) creatures.set(c.id, { x: c.x, y: c.y, angle: c.angle });
+  return { players, creatures };
+}
+
 /** Capas del mundo en orden de dibujo. */
 export interface WorldLayers {
   terrain: Container;
@@ -66,11 +80,11 @@ export class Renderer {
   }
 
   /** Dibuja el estado. `prev` permite interpolar posiciones con `alpha`. */
-  render(state: WorldState, alpha: number, prev: WorldState | null, _events: GameEvent[] = []): void {
+  render(state: WorldState, alpha: number, prev: PrevSnapshot | null, _events: GameEvent[] = []): void {
     if (!this.initialized) return;
     const p = state.players[0];
     if (p) {
-      const pp = prev?.players[0];
+      const pp = prev?.players.get(p.id);
       const x = pp ? pp.x + (p.x - pp.x) * alpha : p.x;
       const y = pp ? pp.y + (p.y - pp.y) * alpha : p.y;
       this.camera.follow(x, y);

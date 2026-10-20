@@ -1,9 +1,9 @@
 import './styles.css';
-import { DEFAULT_CONFIG, type WorldState } from '@draycol/core';
+import { DEFAULT_CONFIG } from '@draycol/core';
 import { InputController } from './game/input';
 import { FixedLoop } from './game/loop';
 import { Session } from './game/session';
-import { Renderer } from './render/renderer';
+import { Renderer, snapshot, type PrevSnapshot } from './render/renderer';
 
 // Arranque temporal (Tarea 14): partida directa para verificar terreno y cámara.
 async function main(): Promise<void> {
@@ -22,11 +22,11 @@ async function main(): Promise<void> {
   });
   input.attach();
 
-  let prev: WorldState | null = null;
+  let prev: PrevSnapshot | null = null;
   const loop = new FixedLoop(
     DEFAULT_CONFIG.stepSeconds,
     () => {
-      prev = JSON.parse(JSON.stringify(session.world.getState())) as WorldState;
+      prev = snapshot(session.world.getState());
       const cmds = input.drain();
       if (input.primaryDown) cmds.push(session.primaryAction());
       session.step(cmds);
@@ -34,6 +34,7 @@ async function main(): Promise<void> {
     (alpha) => renderer.render(session.world.getState(), alpha, prev),
   );
   loop.start();
+  if (import.meta.env.DEV) (window as unknown as { __dbg: unknown }).__dbg = { session, renderer, loop };
 }
 
 void main();
