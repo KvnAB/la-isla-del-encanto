@@ -34,6 +34,10 @@ export async function loadSprites(): Promise<void> {
   for (const k of missing) {
     const t = loaded[k];
     if (!t) throw new Error(`Sprite no cargado: ${k}`);
+    // Los PNG son grandes y se dibujan reducidos: sin mipmaps el escalado produce bordes dentados.
+    t.source.autoGenerateMipmaps = true;
+    t.source.scaleMode = 'linear';
+    t.source.update();
     textures.set(k, t);
   }
 }

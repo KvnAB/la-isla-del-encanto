@@ -5,6 +5,7 @@ import { Fx } from './fx';
 import { nightAmount, NightLayer } from './night';
 import { PALETTE } from './palette';
 import { animateCampfire, makeCampfire, makeCreature, makeGroundItem, makeRegenRing, makeResource, makeShadow, PlayerView, updateRegenRing, type CampfireView } from './sprites';
+import { makeResourceVector } from './sprites/vector-resources';
 import { buildTerrain } from './terrain';
 
 /** Posiciones del paso anterior para interpolar. */
@@ -174,6 +175,7 @@ export class Renderer {
   }
 
   private buildResourceSprite(r: ResourceState, broken: boolean): Container {
+    if (new URLSearchParams(location.search).has('vector')) return makeResourceVector(r.kind, r.size, r.radius, broken, r.id * 7919);
     return makeResource(r.kind, r.size, r.radius, broken);
   }
 
