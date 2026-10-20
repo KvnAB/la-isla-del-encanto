@@ -1,6 +1,8 @@
 import { DEFAULT_CONFIG, type GameConfig } from './config.js';
 import { generateIsland } from './island.js';
 import { Rng } from './rng.js';
+import { dropSlot, useSelectedSlot } from './systems/consume.js';
+import { craft } from './systems/crafting.js';
 import { stepDayCycle } from './systems/daycycle.js';
 import { resolveHit } from './systems/hit.js';
 import { stepPlayerMovement, type Solid } from './systems/movement.js';
@@ -129,6 +131,18 @@ export class World {
         break;
       case 'hit':
         resolveHit(this.state, p, this.cfg, this.events);
+        break;
+      case 'selectSlot':
+        if (Number.isInteger(cmd.slot) && cmd.slot >= 0 && cmd.slot < p.inventory.length) p.selectedSlot = cmd.slot;
+        break;
+      case 'useSlot':
+        useSelectedSlot(this.state, p, this.cfg, this.events);
+        break;
+      case 'dropSlot':
+        if (Number.isInteger(cmd.slot) && cmd.slot >= 0 && cmd.slot < p.inventory.length) dropSlot(this.state, p, cmd.slot, this.cfg, this.events);
+        break;
+      case 'craft':
+        craft(p, cmd.recipeId, this.cfg, this.events);
         break;
       default:
         break;
