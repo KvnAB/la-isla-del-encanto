@@ -12,6 +12,6 @@
     "test": "pnpm --filter @draycol/core run build && pnpm -r run test",
     "typecheck": "pnpm --filter @draycol/core run build && pnpm -r run typecheck",
     "dev": "pnpm --parallel -r run dev",
-    "start": "node packages/server/dist/index.js"
+    "start": "node --no-warnings=ExperimentalWarning packages/server/dist/index.js"
   }
 }
