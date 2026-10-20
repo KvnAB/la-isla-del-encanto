@@ -89,6 +89,8 @@ docker compose up -d --build
 
 Expone el puerto 3000 y guarda la base de datos en el volumen `scores-data`. Sin Docker, basta un proceso Node con `pnpm build && pnpm start` (o `node packages/server/dist/index.js`) detrás de cualquier proxy.
 
+> Estado: el `Dockerfile` se escribió siguiendo el flujo `pnpm deploy`; en la máquina de desarrollo el daemon de Docker no estaba disponible el 2026-10-20, así que la imagen aún no se ha construido. El arranque con Node (`pnpm build && pnpm start`) sí está verificado.
+
 ## Riesgos conocidos
 
 - **Récords sin validación anti-trampa.** En fase 1 la simulación corre en el navegador y el cliente envía el puntaje; el servidor solo valida formato y rangos. Desaparece en fase 2 al mover el núcleo al servidor.
