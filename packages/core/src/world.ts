@@ -2,7 +2,9 @@ import { DEFAULT_CONFIG, type GameConfig } from './config.js';
 import { generateIsland } from './island.js';
 import { Rng } from './rng.js';
 import { stepDayCycle } from './systems/daycycle.js';
+import { resolveHit } from './systems/hit.js';
 import { stepPlayerMovement, type Solid } from './systems/movement.js';
+import { spawnResources } from './systems/resources.js';
 import type { Command, EntityId, GameEvent, PlayerState, StartItem, WorldState } from './types.js';
 import { norm } from './vec.js';
 
@@ -32,6 +34,7 @@ export class World {
       respawnQueue: [],
       nextEntityId: 1,
     };
+    spawnResources(this.state, cfg, this.rng);
   }
 
   addPlayer(name: string, startItem: StartItem): EntityId {
@@ -123,6 +126,9 @@ export class World {
       }
       case 'aim':
         p.angle = cmd.angle;
+        break;
+      case 'hit':
+        resolveHit(this.state, p, this.cfg, this.events);
         break;
       default:
         break;
