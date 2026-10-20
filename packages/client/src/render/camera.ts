@@ -4,7 +4,7 @@ import type { Container } from 'pixi.js';
 export class Camera {
   x = 0;
   y = 0;
-  zoom = 1.25;
+  zoom = 1;
 
   follow(px: number, py: number): void {
     this.x = px;
