@@ -100,4 +100,16 @@ describe('API de récords', () => {
     expect((await a.inject({ method: 'GET', url: '/cualquier-ruta' })).body).toContain('cliente');
     expect((await a.inject({ method: 'GET', url: '/api/nada' })).statusCode).toBe(404);
   });
+
+  it('sirve archivos creados después de arrancar y da 404 a assets inexistentes', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'draycol-static-'));
+    writeFileSync(join(dir, 'index.html'), '<h1>cliente</h1>');
+    const a = app(dir);
+    await a.ready();
+    writeFileSync(join(dir, 'nuevo.js'), 'console.log(2)');
+    const res = await a.inject({ method: 'GET', url: '/nuevo.js' });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('javascript');
+    expect((await a.inject({ method: 'GET', url: '/assets/no-existe.js' })).statusCode).toBe(404);
+  });
 });

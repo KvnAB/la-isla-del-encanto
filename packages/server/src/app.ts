@@ -24,9 +24,12 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   if (opts.staticDir && existsSync(opts.staticDir)) {
     const indexPath = join(opts.staticDir, 'index.html');
-    app.register(fastifyStatic, { root: opts.staticDir, wildcard: false, index: ['index.html'] });
+    // wildcard: true sirve cualquier archivo que exista en el momento de la petición (no solo los que había al arrancar).
+    app.register(fastifyStatic, { root: opts.staticDir, wildcard: true, index: ['index.html'] });
     app.setNotFoundHandler((req, reply) => {
-      if (req.url.startsWith('/api/') || req.method !== 'GET' || !existsSync(indexPath)) return reply.code(404).send({ error: 'No encontrado' });
+      const path = req.url.split('?')[0];
+      const looksLikeFile = /\.[a-z0-9]+$/i.test(path);
+      if (path.startsWith('/api/') || req.method !== 'GET' || looksLikeFile || !existsSync(indexPath)) return reply.code(404).send({ error: 'No encontrado' });
       return reply.sendFile('index.html');
     });
   } else {
