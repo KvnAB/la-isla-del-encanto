@@ -1,0 +1,37 @@
+import type { ItemId } from '@draycol/core';
+
+export const ITEM_NAMES: Record<ItemId, string> = {
+  wood: 'Madera',
+  stone: 'Piedra',
+  apple: 'Manzana',
+  raw_steak: 'Filete crudo',
+  cooked_steak: 'Filete cocinado',
+  wool: 'Lana',
+  tiger_pelt: 'Piel de tigre',
+  needle: 'Aguja',
+  wood_pickaxe: 'Pico de madera',
+  wood_sword: 'Espada de madera',
+  stone_pickaxe: 'Pico de piedra',
+  stone_sword: 'Espada de piedra',
+  campfire: 'Fogata',
+  coat1: 'Abrigo nivel 1',
+};
+
+/** Nombre en minúsculas para listas de materiales ("15 madera"). */
+export const ITEM_NAMES_LOWER: Record<ItemId, string> = Object.fromEntries(
+  Object.entries(ITEM_NAMES).map(([k, v]) => [k, v.toLowerCase()]),
+) as Record<ItemId, string>;
+
+/** Separador de miles con espacio: 1240 → "1 240". */
+export function formatPoints(n: number): string {
+  return Math.round(n)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
+export function formatClock(seconds: number): string {
+  const s = Math.max(0, Math.ceil(seconds));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, '0')}`;
+}
