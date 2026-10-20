@@ -4,21 +4,7 @@ import { Camera } from './camera';
 import { Fx } from './fx';
 import { nightAmount, NightLayer } from './night';
 import { PALETTE } from './palette';
-import {
-  animateCampfire,
-  makeCampfire,
-  makeCreature,
-  makeGroundItem,
-  makeRegenRing,
-  makeRock,
-  makeRubble,
-  makeShadow,
-  makeStump,
-  makeTree,
-  PlayerView,
-  updateRegenRing,
-  type CampfireView,
-} from './sprites';
+import { animateCampfire, makeCampfire, makeCreature, makeGroundItem, makeRegenRing, makeResource, makeShadow, PlayerView, updateRegenRing, type CampfireView } from './sprites';
 import { buildTerrain } from './terrain';
 
 /** Posiciones del paso anterior para interpolar. */
@@ -77,7 +63,6 @@ export class Renderer {
   /** Capa en espacio de pantalla, encima del mundo (noche, destellos). */
   readonly screen = new Container();
   private initialized = false;
-  private readonly spriteRng = new Rng(77);
 
   private readonly players = new Map<number, { view: PlayerView; shadow: Graphics }>();
   private readonly resources = new Map<number, ResourceView>();
@@ -189,9 +174,7 @@ export class Renderer {
   }
 
   private buildResourceSprite(r: ResourceState, broken: boolean): Container {
-    if (broken) return r.kind === 'rock' ? makeRubble(r.radius, this.spriteRng) : makeStump(r.radius);
-    if (r.kind === 'rock') return makeRock(r.size, r.radius, this.spriteRng);
-    return makeTree(r.size, r.kind, r.radius);
+    return makeResource(r.kind, r.size, r.radius, broken);
   }
 
   private syncResources(state: WorldState): void {
@@ -284,7 +267,7 @@ export class Renderer {
       seen.add(g.id);
       let v = this.groundItems.get(g.id);
       if (!v) {
-        v = { sprite: makeGroundItem(g.item), shadow: makeShadow(14) };
+        v = { sprite: makeGroundItem(g.item), shadow: makeShadow(16) };
         v.sprite.position.set(g.x, g.y);
         v.sprite.rotation = ((g.id * 37) % 60) / 60 - 0.5;
         v.shadow.position.set(g.x, g.y + 3);
@@ -309,7 +292,7 @@ export class Renderer {
       seen.add(c.id);
       let v = this.campfires.get(c.id);
       if (!v) {
-        v = { view: makeCampfire(), shadow: makeShadow(20) };
+        v = { view: makeCampfire(), shadow: makeShadow(30) };
         v.view.position.set(c.x, c.y);
         v.view.zIndex = c.y;
         v.shadow.position.set(c.x, c.y + 4);

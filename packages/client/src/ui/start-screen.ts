@@ -1,6 +1,5 @@
 import type { StartItem } from '@draycol/core';
 import type { ScoreEntry } from '../api';
-import { AnimatedBackground } from './background';
 import { itemIconDataUrl } from './icons';
 import { formatPoints, ITEM_NAMES } from './names';
 import './screens.css';
@@ -41,7 +40,6 @@ export function renderScoresTable(target: HTMLElement, scores: ScoreEntry[], hig
 
 export class StartScreen {
   private root: HTMLElement | null = null;
-  private background: AnimatedBackground | null = null;
   private name = '';
   private startItem: StartItem | null = null;
   private playBtn: HTMLButtonElement | null = null;
@@ -56,16 +54,12 @@ export class StartScreen {
     this.hide();
     const root = el('div', 'start-screen screen');
     this.root = root;
-    this.background = new AnimatedBackground(root);
-    void this.background.start();
 
     const layout = el('div', 'screen-layout');
 
     // Panel principal
     const panel = el('div', 'panel panel-main');
-    panel.appendChild(el('div', 'eyebrow', 'Draycol presenta'));
-    panel.appendChild(el('h1', 'title', 'DRAYCOL SURVIVAL'));
-    panel.appendChild(el('p', 'subtitle', 'Sobrevive en la isla. Recolecta, fabrica, caza y aguanta la noche.'));
+    panel.appendChild(el('h1', 'title sr-only', 'La Isla del Encanto'));
 
     const field = el('label', 'field');
     field.appendChild(el('span', 'field-label', 'Tu nombre'));
@@ -149,8 +143,6 @@ export class StartScreen {
   }
 
   hide(): void {
-    this.background?.destroy();
-    this.background = null;
     this.root?.remove();
     this.root = null;
     this.playBtn = null;

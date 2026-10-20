@@ -1,10 +1,10 @@
-# Draycol Survival
+# La Isla del Encanto
 
-Juego survival 2D top-down en una isla, jugable en navegador de escritorio. Fase 1: un jugador, tabla de récords compartida entre todos los jugadores.
+Juego survival 2D top-down en una isla (nombre interno del proyecto: Draycol Survival), jugable en navegador de escritorio. Fase 1: un jugador, tabla de récords compartida entre todos los jugadores.
 
 - Reglas del juego: [`docs/plan_juego_survival_2d.md`](docs/plan_juego_survival_2d.md)
 - Diseño técnico: [`docs/superpowers/specs/2026-10-20-draycol-survival-design.md`](docs/superpowers/specs/2026-10-20-draycol-survival-design.md)
-- Dirección visual aprobada: [`docs/design/maqueta-estilo-visual-aprobada.html`](docs/design/maqueta-estilo-visual-aprobada.html)
+- Guía de estilo visual (hojas de referencia y portada): `docs/design/reference/`. Los sprites del juego se recortan de ahí con `python tools/extract-sprites.py` (requiere Pillow y numpy) y se guardan en `packages/client/public/sprites/`.
 
 ## Requisitos
 
@@ -70,7 +70,7 @@ Todos los números del juego están en **`packages/core/src/config.ts`** (`DEFAU
 1. Añadir el id a `ItemId` en `packages/core/src/types.ts`.
 2. Añadir su entrada en `ITEM_META` (`packages/core/src/config.ts`): apilable, si es herramienta/arma/comida/colocable.
 3. Nombre en español en `packages/client/src/ui/names.ts` (`ITEM_NAMES`).
-4. Icono vectorial en `packages/client/src/render/sprites/items.ts` (`makeGroundItem`).
+4. Su PNG con transparencia en `packages/client/public/sprites/<id>.png` y el id en `SPRITE_KEYS` (`packages/client/src/render/assets.ts`).
 5. Si es comida, su efecto en `config.food`.
 
 **Una receta nueva**: añadir una entrada en `config.recipes` (coste, `consumes`/`replaces` si sustituye a otra herramienta, `unique` si solo se puede tener una, puntos). El botón de fabricar aparece solo.
@@ -78,7 +78,7 @@ Todos los números del juego están en **`packages/core/src/config.ts`** (`DEFAU
 **Una criatura nueva**
 1. Añadir el id a `CreatureKind` en `types.ts`.
 2. Su definición en `config.creatures.defs` (vida, velocidad, radio, daño, radios de detección/huida, botín, puntos, agresiva o no, cantidad inicial).
-3. Su dibujo en `packages/client/src/render/sprites/creatures.ts` (`makeCreature`).
+3. Su PNG en `packages/client/public/sprites/<id>.png` (mirando hacia abajo, como las de la hoja) y el id en `SPRITE_KEYS`.
 Si necesita un comportamiento que no sea deambular/perseguir/atacar/huir, ampliar la máquina de estados de `packages/core/src/systems/creatures.ts`.
 
 ## Despliegue con Docker

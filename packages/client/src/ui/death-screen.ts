@@ -1,5 +1,4 @@
 import type { ScoreEntry } from '../api';
-import { AnimatedBackground } from './background';
 import { formatPoints } from './names';
 import './screens.css';
 
@@ -18,7 +17,6 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, t
 
 export class DeathScreen {
   private root: HTMLElement | null = null;
-  private background: AnimatedBackground | null = null;
 
   constructor(
     private readonly parent: HTMLElement,
@@ -30,8 +28,6 @@ export class DeathScreen {
     this.hide();
     const root = el('div', 'death-screen screen');
     this.root = root;
-    this.background = new AnimatedBackground(root);
-    void this.background.start();
 
     const layout = el('div', 'screen-layout');
     const panel = el('div', 'panel panel-death');
@@ -74,8 +70,6 @@ export class DeathScreen {
   }
 
   hide(): void {
-    this.background?.destroy();
-    this.background = null;
     this.root?.remove();
     this.root = null;
   }

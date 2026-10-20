@@ -4,13 +4,6 @@ import type { ScoreEntry } from '../src/api';
 vi.mock('../src/ui/icons', () => ({
   itemIconDataUrl: (item: string) => `data:icon/${item}`,
 }));
-vi.mock('../src/ui/background', () => ({
-  AnimatedBackground: class {
-    constructor(_el: HTMLElement) {}
-    start() {}
-    destroy() {}
-  },
-}));
 
 import { renderScoresTable, StartScreen } from '../src/ui/start-screen';
 

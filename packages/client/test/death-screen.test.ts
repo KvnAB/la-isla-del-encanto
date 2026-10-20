@@ -1,12 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../src/ui/background', () => ({
-  AnimatedBackground: class {
-    constructor(_el: HTMLElement) {}
-    start() {}
-    destroy() {}
-  },
-}));
 
 import { DeathScreen } from '../src/ui/death-screen';
 
