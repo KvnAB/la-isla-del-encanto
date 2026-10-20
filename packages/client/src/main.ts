@@ -9,8 +9,14 @@ import { Renderer, snapshot, type PrevSnapshot } from './render/renderer';
 async function main(): Promise<void> {
   const root = document.getElementById('app')!;
   const session = new Session({ name: 'Prueba', startItem: 'wood_pickaxe', seed: 1 });
-  const renderer = new Renderer(root);
+  const renderer = new Renderer(root, DEFAULT_CONFIG);
   await renderer.init(session.world.getState().map);
+  if (import.meta.env.DEV) {
+    const p = session.world.player(session.playerId);
+    p.inventory[1] = { item: 'campfire', count: 3 };
+    p.inventory[2] = { item: 'wood_sword', count: 1 };
+    p.inventory[3] = { item: 'apple', count: 4 };
+  }
 
   const input = new InputController(renderer.app.canvas, {
     getPlayerId: () => session.playerId,

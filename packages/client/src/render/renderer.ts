@@ -1,7 +1,22 @@
 import { Application, Container, Graphics } from 'pixi.js';
-import { Rng, type GameEvent, type IslandMap, type WorldState } from '@draycol/core';
+import { resourceAvailable, resourceCapacity, Rng, type GameConfig, type GameEvent, type IslandMap, type ResourceState, type WorldState } from '@draycol/core';
 import { Camera } from './camera';
 import { PALETTE } from './palette';
+import {
+  animateCampfire,
+  makeCampfire,
+  makeCreature,
+  makeGroundItem,
+  makeRegenRing,
+  makeRock,
+  makeRubble,
+  makeShadow,
+  makeStump,
+  makeTree,
+  PlayerView,
+  updateRegenRing,
+  type CampfireView,
+} from './sprites';
 import { buildTerrain } from './terrain';
 
 /** Posiciones del paso anterior para interpolar. */
@@ -27,6 +42,25 @@ export interface WorldLayers {
   fx: Container;
 }
 
+interface ResourceView {
+  sprite: Container;
+  shadow: Graphics;
+  ring: Graphics;
+  broken: boolean;
+}
+
+interface SimpleView {
+  sprite: Container;
+  shadow: Graphics;
+}
+
+function lerpAngle(a: number, b: number, t: number): number {
+  let d = b - a;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return a + d * t;
+}
+
 export class Renderer {
   readonly camera = new Camera();
   readonly app = new Application();
@@ -41,9 +75,19 @@ export class Renderer {
   /** Capa en espacio de pantalla, encima del mundo (noche, destellos). */
   readonly screen = new Container();
   private initialized = false;
-  private tempPlayer: Graphics | null = null;
+  private readonly spriteRng = new Rng(77);
 
-  constructor(private readonly parent: HTMLElement) {}
+  private readonly players = new Map<number, { view: PlayerView; shadow: Graphics }>();
+  private readonly resources = new Map<number, ResourceView>();
+  private readonly creatures = new Map<number, SimpleView>();
+  private readonly groundItems = new Map<number, SimpleView>();
+  private readonly campfires = new Map<number, { view: CampfireView; shadow: Graphics }>();
+  private time = 0;
+
+  constructor(
+    private readonly parent: HTMLElement,
+    private readonly cfg: GameConfig,
+  ) {}
 
   get viewW(): number {
     return this.app.renderer.width / this.app.renderer.resolution;
@@ -82,20 +126,165 @@ export class Renderer {
   /** Dibuja el estado. `prev` permite interpolar posiciones con `alpha`. */
   render(state: WorldState, alpha: number, prev: PrevSnapshot | null, _events: GameEvent[] = []): void {
     if (!this.initialized) return;
-    const p = state.players[0];
-    if (p) {
+    this.time = state.time + alpha * this.cfg.stepSeconds;
+    this.syncPlayers(state, alpha, prev);
+    this.syncResources(state);
+    this.syncCreatures(state, alpha, prev);
+    this.syncGroundItems(state);
+    this.syncCampfires(state);
+    this.camera.apply(this.world, this.viewW, this.viewH);
+  }
+
+  private syncPlayers(state: WorldState, alpha: number, prev: PrevSnapshot | null): void {
+    const seen = new Set<number>();
+    for (const p of state.players) {
+      seen.add(p.id);
+      let v = this.players.get(p.id);
+      if (!v) {
+        v = { view: new PlayerView(p.radius, p.name), shadow: makeShadow(p.radius) };
+        this.layers.entities.addChild(v.view);
+        this.layers.shadows.addChild(v.shadow);
+        this.players.set(p.id, v);
+      }
       const pp = prev?.players.get(p.id);
       const x = pp ? pp.x + (p.x - pp.x) * alpha : p.x;
       const y = pp ? pp.y + (p.y - pp.y) * alpha : p.y;
-      this.camera.follow(x, y);
-      if (!this.tempPlayer) {
-        this.tempPlayer = new Graphics().circle(0, 0, p.radius).fill(PALETTE.skin).stroke({ width: 5, color: PALETTE.skinOutline });
-        this.layers.entities.addChild(this.tempPlayer);
-      }
-      this.tempPlayer.position.set(x, y);
-      this.tempPlayer.rotation = p.angle;
+      v.view.update(p, x, y);
+      v.view.zIndex = y;
+      v.view.visible = p.alive;
+      v.shadow.position.set(x, y + 4);
+      v.shadow.visible = p.alive;
+      if (p === state.players[0]) this.camera.follow(x, y);
     }
-    this.camera.apply(this.world, this.viewW, this.viewH);
+    for (const [id, v] of this.players)
+      if (!seen.has(id)) {
+        v.view.destroy();
+        v.shadow.destroy();
+        this.players.delete(id);
+      }
+  }
+
+  private buildResourceSprite(r: ResourceState, broken: boolean): Container {
+    if (broken) return r.kind === 'rock' ? makeRubble(r.radius, this.spriteRng) : makeStump(r.radius);
+    if (r.kind === 'rock') return makeRock(r.size, r.radius, this.spriteRng);
+    return makeTree(r.size, r.kind, r.radius);
+  }
+
+  private syncResources(state: WorldState): void {
+    const seen = new Set<number>();
+    for (const r of state.resources) {
+      seen.add(r.id);
+      const broken = r.brokenAt !== null;
+      let v = this.resources.get(r.id);
+      if (!v) {
+        v = { sprite: this.buildResourceSprite(r, broken), shadow: makeShadow(r.radius), ring: makeRegenRing(), broken };
+        v.sprite.position.set(r.x, r.y);
+        v.sprite.zIndex = r.y;
+        v.shadow.position.set(r.x, r.y + 6);
+        v.ring.position.set(r.x, r.y);
+        this.layers.entities.addChild(v.sprite);
+        this.layers.shadows.addChild(v.shadow);
+        this.layers.ground.addChild(v.ring);
+        this.resources.set(r.id, v);
+      }
+      if (v.broken !== broken) {
+        v.sprite.destroy();
+        v.sprite = this.buildResourceSprite(r, broken);
+        v.sprite.position.set(r.x, r.y);
+        v.sprite.zIndex = r.y;
+        this.layers.entities.addChild(v.sprite);
+        v.broken = broken;
+        v.shadow.visible = !broken;
+        if (!broken) v.ring.clear();
+      }
+      if (broken) {
+        const progress = resourceAvailable(r, this.cfg, state.time) / resourceCapacity(r.kind, r.size, this.cfg);
+        updateRegenRing(v.ring, progress, Math.max(12, r.radius * 0.42));
+      }
+    }
+    for (const [id, v] of this.resources)
+      if (!seen.has(id)) {
+        v.sprite.destroy();
+        v.shadow.destroy();
+        v.ring.destroy();
+        this.resources.delete(id);
+      }
+  }
+
+  private syncCreatures(state: WorldState, alpha: number, prev: PrevSnapshot | null): void {
+    const seen = new Set<number>();
+    for (const c of state.creatures) {
+      seen.add(c.id);
+      let v = this.creatures.get(c.id);
+      if (!v) {
+        v = { sprite: makeCreature(c.kind, c.radius), shadow: makeShadow(c.radius * 1.3) };
+        this.layers.entities.addChild(v.sprite);
+        this.layers.shadows.addChild(v.shadow);
+        this.creatures.set(c.id, v);
+      }
+      const pc = prev?.creatures.get(c.id);
+      const x = pc ? pc.x + (c.x - pc.x) * alpha : c.x;
+      const y = pc ? pc.y + (c.y - pc.y) * alpha : c.y;
+      v.sprite.position.set(x, y);
+      v.sprite.rotation = pc ? lerpAngle(pc.angle, c.angle, alpha) : c.angle;
+      v.sprite.zIndex = y;
+      v.shadow.position.set(x, y + 4);
+    }
+    for (const [id, v] of this.creatures)
+      if (!seen.has(id)) {
+        v.sprite.destroy();
+        v.shadow.destroy();
+        this.creatures.delete(id);
+      }
+  }
+
+  private syncGroundItems(state: WorldState): void {
+    const seen = new Set<number>();
+    for (const g of state.groundItems) {
+      seen.add(g.id);
+      let v = this.groundItems.get(g.id);
+      if (!v) {
+        v = { sprite: makeGroundItem(g.item), shadow: makeShadow(14) };
+        v.sprite.position.set(g.x, g.y);
+        v.sprite.rotation = ((g.id * 37) % 60) / 60 - 0.5;
+        v.shadow.position.set(g.x, g.y + 3);
+        this.layers.ground.addChild(v.shadow, v.sprite);
+        this.groundItems.set(g.id, v);
+      }
+      const left = g.expiresAt - this.time;
+      v.sprite.alpha = left < 10 ? (Math.sin(this.time * Math.PI * 8) > 0 ? 1 : 0.3) : 1;
+      v.shadow.alpha = v.sprite.alpha;
+    }
+    for (const [id, v] of this.groundItems)
+      if (!seen.has(id)) {
+        v.sprite.destroy();
+        v.shadow.destroy();
+        this.groundItems.delete(id);
+      }
+  }
+
+  private syncCampfires(state: WorldState): void {
+    const seen = new Set<number>();
+    for (const c of state.campfires) {
+      seen.add(c.id);
+      let v = this.campfires.get(c.id);
+      if (!v) {
+        v = { view: makeCampfire(), shadow: makeShadow(20) };
+        v.view.position.set(c.x, c.y);
+        v.view.zIndex = c.y;
+        v.shadow.position.set(c.x, c.y + 4);
+        this.layers.entities.addChild(v.view);
+        this.layers.shadows.addChild(v.shadow);
+        this.campfires.set(c.id, v);
+      }
+      animateCampfire(v.view, this.time + c.id);
+    }
+    for (const [id, v] of this.campfires)
+      if (!seen.has(id)) {
+        v.view.destroy();
+        v.shadow.destroy();
+        this.campfires.delete(id);
+      }
   }
 
   destroy(): void {
