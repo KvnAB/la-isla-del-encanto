@@ -1,0 +1,15 @@
+services:
+  draycol-survival:
+    build: .
+    image: draycol-survival:latest
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      DB_PATH: /data/scores.db
+    volumes:
+      - scores-data:/data
+    restart: unless-stopped
+
+volumes:
+  scores-data:

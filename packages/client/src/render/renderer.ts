@@ -156,7 +156,7 @@ export class Renderer {
       this.world.position.x += Math.round(this.fx.shakeX);
       this.world.position.y += Math.round(this.fx.shakeY);
     }
-    this.night.update(nightAmount(state.isNight, state.phaseRemaining, this.cfg.daySeconds), state.campfires, this.camera, this.viewW, this.viewH);
+    this.night.update(nightAmount(state.isNight, state.phaseRemaining, this.cfg.daySeconds, state.day), state.campfires, this.camera, this.viewW, this.viewH);
   }
 
   private syncPlayers(state: WorldState, alpha: number, prev: PrevSnapshot | null): void {

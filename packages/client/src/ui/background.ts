@@ -1,4 +1,4 @@
-import { Application, BlurFilter, Container } from 'pixi.js';
+import { Application, Container } from 'pixi.js';
 import { DEFAULT_CONFIG, generateIsland, Rng } from '@draycol/core';
 import { PALETTE } from '../render/palette';
 import { buildTerrain } from '../render/terrain';
@@ -26,7 +26,8 @@ export class AnimatedBackground {
     const rng = new Rng(2024);
     const map = generateIsland(rng, DEFAULT_CONFIG);
     this.world = buildTerrain(map, new Rng(99));
-    this.world.filters = [new BlurFilter({ strength: 6, quality: 3 })];
+    // El desenfoque se hace con CSS sobre el canvas (.menu-canvas): un BlurFilter de PixiJS sobre la textura
+    // completa de la isla (4600 px) no se renderiza.
     this.app.stage.addChild(this.world);
     this.app.ticker.add((ticker) => {
       this.t += ticker.deltaMS / 1000;

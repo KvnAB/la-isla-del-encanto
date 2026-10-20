@@ -7,11 +7,11 @@ const NIGHT_ALPHA = 0.62;
 const FADE_SECONDS = 20;
 const FIRE_RADIUS = 200;
 
-/** Fracción de oscuridad 0..1 según la fase del ciclo. */
-export function nightAmount(isNight: boolean, phaseRemaining: number, daySeconds: number): number {
+/** Fracción de oscuridad 0..1 según la fase del ciclo. El día 1 empieza sin amanecer (no viene de una noche). */
+export function nightAmount(isNight: boolean, phaseRemaining: number, daySeconds: number, day: number): number {
   if (isNight) return 1;
   const elapsed = daySeconds - phaseRemaining;
-  if (elapsed < FADE_SECONDS) return 1 - elapsed / FADE_SECONDS;
+  if (day > 1 && elapsed < FADE_SECONDS) return 1 - elapsed / FADE_SECONDS;
   if (phaseRemaining < FADE_SECONDS) return 1 - phaseRemaining / FADE_SECONDS;
   return 0;
 }
