@@ -196,8 +196,24 @@ export class Renderer {
 
   private syncResources(state: WorldState): void {
     const seen = new Set<number>();
+    const b = this.camera.visibleBounds(this.viewW, this.viewH, 220);
     for (const r of state.resources) {
       seen.add(r.id);
+      const onScreen = r.x > b.left && r.x < b.right && r.y > b.top && r.y < b.bottom;
+      const existing = this.resources.get(r.id);
+      if (!onScreen) {
+        if (existing) {
+          existing.sprite.visible = false;
+          existing.shadow.visible = false;
+          existing.ring.visible = false;
+        }
+        continue;
+      }
+      if (existing) {
+        existing.sprite.visible = true;
+        existing.shadow.visible = !existing.broken;
+        existing.ring.visible = true;
+      }
       const broken = r.brokenAt !== null;
       let v = this.resources.get(r.id);
       if (!v) {

@@ -117,7 +117,7 @@ function moveToward(state: WorldState, c: CreatureState, tx: number, ty: number,
 }
 
 export function stepCreatures(state: WorldState, cfg: GameConfig, dt: number, rng: Rng, events: GameEvent[]): void {
-  const solids: Solid[] = state.resources;
+  const solids: Solid[] = [...state.resources, ...state.players.filter((p) => p.alive)];
   for (const c of state.creatures) {
     const def = cfg.creatures.defs[c.kind];
     if (c.attackCooldown > 0) c.attackCooldown = Math.max(0, c.attackCooldown - dt);

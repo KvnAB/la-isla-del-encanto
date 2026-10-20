@@ -111,10 +111,10 @@ export class World {
     stepDayCycle(s, cfg, dt, this.events);
     if (s.day > dayBefore) for (const p of s.players) if (p.alive) p.points += cfg.points.dayPassed;
 
-    const solids: Solid[] = s.resources;
+    const playerSolids: Solid[] = [...s.resources, ...s.creatures];
     for (const p of s.players) {
       if (!p.alive) continue;
-      stepPlayerMovement(s, p, cfg, dt, solids);
+      stepPlayerMovement(s, p, cfg, dt, playerSolids);
       if (p.hitCooldown > 0) p.hitCooldown = Math.max(0, p.hitCooldown - dt);
       if (p.swing > 0) p.swing = Math.max(0, p.swing - dt / cfg.player.hitCooldown);
     }

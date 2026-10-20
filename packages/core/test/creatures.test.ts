@@ -154,6 +154,30 @@ describe('IA de criaturas', () => {
   });
 });
 
+describe('colisiones entre criaturas y jugador', () => {
+  it('el tigre que persigue nunca se superpone al jugador', () => {
+    const { world, c, p } = setup(null, 'tiger', 300);
+    for (let i = 0; i < 90; i++) {
+      world.step();
+      expect(Math.hypot(c.x - p.x, c.y - p.y)).toBeGreaterThanOrEqual(c.radius + p.radius - 1);
+    }
+    expect(c.mode).toBe('attack');
+  });
+
+  it('el jugador no atraviesa una oveja quieta', () => {
+    const { world, id, c, p } = setup(null, 'sheep', 120);
+    c.mode = 'wander';
+    c.wanderTimer = 99;
+    c.targetX = c.x;
+    c.targetY = c.y;
+    world.enqueue({ playerId: id, type: 'move', dx: 1, dy: 0 });
+    for (let i = 0; i < 30; i++) {
+      world.step();
+      expect(Math.hypot(c.x - p.x, c.y - p.y)).toBeGreaterThanOrEqual(c.radius + p.radius - 1);
+    }
+  });
+});
+
 describe('aparición y reaparición', () => {
   it('spawnInitialCreatures crea 3 tigres, 4 ovejas y 3 duendes en tierra lejos del spawn', () => {
     const world = new World(1);

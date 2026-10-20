@@ -22,6 +22,7 @@ export function nightAmount(isNight: boolean, phaseRemaining: number, daySeconds
  */
 export class NightLayer extends Container {
   private readonly outer = new Graphics();
+  private readonly mid = new Graphics();
   private readonly inner = new Graphics();
   private readonly glow = new Graphics();
   private readonly glowGradient: FillGradient;
@@ -41,7 +42,7 @@ export class NightLayer extends Container {
       ],
       textureSpace: 'local',
     });
-    this.addChild(this.outer, this.inner, this.glow);
+    this.addChild(this.outer, this.mid, this.inner, this.glow);
     this.eventMode = 'none';
   }
 
@@ -56,13 +57,17 @@ export class NightLayer extends Container {
     });
 
     // En PixiJS 8, cut() recorta la última forma de la forma rellenada anterior.
-    this.outer.clear();
-    this.outer.rect(0, 0, viewW, viewH).fill({ color: PALETTE.night, alpha: alpha * 0.55 });
-    for (const f of fires) this.outer.circle(f.sx, f.sy, f.r).cut();
-
-    this.inner.clear();
-    this.inner.rect(0, 0, viewW, viewH).fill({ color: PALETTE.night, alpha: alpha * 0.45 });
-    for (const f of fires) this.inner.circle(f.sx, f.sy, f.r * 0.62).cut();
+    // Tres capas con huecos de radio decreciente: caída de luz escalonada alrededor de cada fogata.
+    const layers: [Graphics, number, number][] = [
+      [this.outer, 0.4, 1],
+      [this.mid, 0.33, 0.78],
+      [this.inner, 0.27, 0.55],
+    ];
+    for (const [g, k, rk] of layers) {
+      g.clear();
+      g.rect(0, 0, viewW, viewH).fill({ color: PALETTE.night, alpha: alpha * k });
+      for (const f of fires) g.circle(f.sx, f.sy, f.r * rk).cut();
+    }
 
     this.glow.clear();
     for (const f of fires) {
