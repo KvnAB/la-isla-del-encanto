@@ -76,7 +76,7 @@ export class App {
         if (died) return;
         prev = snapshot(session.world.getState());
         const cmds = input.drain();
-        if (input.primaryDown) cmds.push(session.primaryAction());
+        if (input.takeClick() || input.primaryDown) cmds.push(session.primaryAction());
         const events = session.step(cmds);
         renderer.onEvents(events, session.playerId);
         const p = session.world.player(session.playerId);

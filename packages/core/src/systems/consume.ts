@@ -13,6 +13,10 @@ export function useSelectedSlot(state: WorldState, p: PlayerState, cfg: GameConf
   const slot = p.inventory[p.selectedSlot];
   if (!slot) return;
   const meta = ITEM_META[slot.item];
+  if (!meta.food && !meta.placeable) return;
+  // Mismo cooldown que el golpe: un clic mantenido no consume varias unidades por paso.
+  if (p.hitCooldown > 0) return;
+  p.hitCooldown = cfg.player.hitCooldown;
   if (meta.food) {
     const f = cfg.food[slot.item as keyof GameConfig['food']];
     if (!f) return;
@@ -22,7 +26,7 @@ export function useSelectedSlot(state: WorldState, p: PlayerState, cfg: GameConf
     events.push({ type: 'ate', playerId: p.id, item: slot.item });
     return;
   }
-  if (meta.placeable && hooks.placeCampfire) hooks.placeCampfire(state, p);
+  if (hooks.placeCampfire) hooks.placeCampfire(state, p);
 }
 
 /** Tira todo el slot al suelo, delante del jugador. */

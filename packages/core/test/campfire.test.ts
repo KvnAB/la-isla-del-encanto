@@ -30,6 +30,15 @@ describe('fogata', () => {
     expect(world.drainEvents()).toContainEqual({ type: 'campfirePlaced', playerId: id, entityId: s.campfires[0].id });
   });
 
+  it('dos useSlot en pasos consecutivos colocan una sola fogata', () => {
+    const { world, id, p } = setup([{ item: 'campfire', count: 3 }]);
+    placeFire(world, id);
+    placeFire(world, id);
+    placeFire(world, id);
+    expect(world.getState().campfires).toHaveLength(1);
+    expect(p.inventory[0]).toEqual({ item: 'campfire', count: 2 });
+  });
+
   it('desaparece a los 90 s', () => {
     const { world, id } = setup([{ item: 'campfire', count: 1 }]);
     placeFire(world, id);

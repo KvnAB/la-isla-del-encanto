@@ -28,6 +28,7 @@ export class InputController {
   private lastAim: number | null = null;
   private attached = false;
   private _primaryDown = false;
+  private clicked = false;
 
   constructor(
     private readonly target: HTMLElement,
@@ -36,6 +37,13 @@ export class InputController {
 
   get primaryDown(): boolean {
     return this._primaryDown;
+  }
+
+  /** True una sola vez por clic (mousedown) desde la última llamada: registra clics más cortos que un paso. */
+  takeClick(): boolean {
+    const c = this.clicked;
+    this.clicked = false;
+    return c;
   }
 
   private readonly onKeyDown = (e: KeyboardEvent): void => {
@@ -84,6 +92,7 @@ export class InputController {
   private readonly onMouseDown = (e: MouseEvent): void => {
     if (e.button === 0) {
       this._primaryDown = true;
+      this.clicked = true;
       e.preventDefault();
     }
   };
@@ -120,6 +129,7 @@ export class InputController {
     this.target.removeEventListener('contextmenu', this.onContextMenu);
     this.down.clear();
     this._primaryDown = false;
+    this.clicked = false;
     this.pending = [];
   }
 

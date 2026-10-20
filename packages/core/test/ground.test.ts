@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clearWorld, makeWorld, placePlayerAt, putGroundItem, putResource, setInventory } from './helpers.js';
+import { clearWorld, makeWorld, placePlayerAt, putCreature, putGroundItem, putResource, setInventory } from './helpers.js';
 import type { Slot } from '../src/types.js';
 
 function setup(slots: (Slot | null)[] = []) {
@@ -89,6 +89,46 @@ describe('objetos en el suelo', () => {
     hit(world, id);
     expect(p.inventory[0]).toEqual({ item: 'wood', count: 12 });
     expect(world.getState().groundItems).toHaveLength(0);
+  });
+
+  it('con el inventario lleno, un objeto no recogible no bloquea el golpe a una criatura', () => {
+    const full: Slot[] = [
+      { item: 'wood', count: 1 },
+      { item: 'stone', count: 1 },
+      { item: 'apple', count: 1 },
+      { item: 'wool', count: 1 },
+      { item: 'needle', count: 1 },
+      { item: 'tiger_pelt', count: 1 },
+      { item: 'raw_steak', count: 1 },
+      { item: 'cooked_steak', count: 1 },
+    ];
+    const { world, id, p } = setup(full);
+    putGroundItem(world, 'campfire', 1, p.x + 40, p.y + 20);
+    const c = putCreature(world, 'sheep', p.x + 70, p.y);
+    c.wanderTimer = 99;
+    hit(world, id);
+    const events = world.drainEvents();
+    expect(events).toContainEqual({ type: 'creatureHit', playerId: id, entityId: c.id });
+    expect(world.getState().groundItems).toHaveLength(1);
+  });
+
+  it('con el inventario lleno, un objeto no recogible no bloquea el golpe a un recurso', () => {
+    const full: Slot[] = [
+      { item: 'wood', count: 1 },
+      { item: 'stone', count: 1 },
+      { item: 'apple', count: 1 },
+      { item: 'wool', count: 1 },
+      { item: 'needle', count: 1 },
+      { item: 'tiger_pelt', count: 1 },
+      { item: 'raw_steak', count: 1 },
+      { item: 'cooked_steak', count: 1 },
+    ];
+    const { world, id, p } = setup(full);
+    putGroundItem(world, 'campfire', 1, p.x + 40, p.y + 20);
+    const r = putResource(world, 'tree', 'small', p.x + 100, p.y);
+    hit(world, id);
+    expect(r.remaining).toBe(19);
+    expect(p.inventory.find((s) => s?.item === 'wood')?.count).toBe(2);
   });
 
   it('recoger un objeto no da puntos', () => {

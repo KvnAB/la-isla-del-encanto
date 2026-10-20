@@ -42,6 +42,19 @@ describe('comer', () => {
     expect(p.hunger).toBeCloseTo(100, 0);
   });
 
+  it('dos useSlot en pasos consecutivos solo comen una manzana (cooldown)', () => {
+    const { world, id, p } = playerWith([{ item: 'apple', count: 4 }]);
+    p.hunger = 10;
+    use(world, id);
+    use(world, id);
+    use(world, id);
+    expect(p.inventory[0]).toEqual({ item: 'apple', count: 3 });
+    expect(p.hunger).toBeCloseTo(30, 0);
+    world.stepSeconds(0.4);
+    use(world, id);
+    expect(p.inventory[0]).toEqual({ item: 'apple', count: 2 });
+  });
+
   it('usar un pico no hace nada', () => {
     const { world, id, p } = playerWith([{ item: 'wood_pickaxe', count: 1 }]);
     p.hunger = 50;

@@ -11,7 +11,8 @@ export function buildTerrain(map: IslandMap, rng: Rng): Container {
   const cs = map.cellSize;
   const at = (c: number, r: number): Terrain => map.cells[r * map.cols + c];
   const center = (c: number, r: number): [number, number] => [(c + 0.5) * cs, (r + 0.5) * cs];
-  const margin = cs * 20;
+  // Margen de mar: los bounds totales quedan en ≤ 4000 px para que la textura cacheada sea 4096² (64 MB), no 8192²/16384².
+  const margin = Math.floor((4000 - Math.max(map.width, map.height)) / 2);
 
   // Mar de fondo con una banda más clara cerca de la costa.
   const sea = new Graphics();
@@ -86,7 +87,8 @@ export function buildTerrain(map: IslandMap, rng: Rng): Container {
   }
   root.addChild(water);
 
-  root.cacheAsTexture(true);
+  // Resolución 1 fija: con DPR 2 la caché doblaría a 8192² y superaría el máximo de muchas GPU integradas.
+  root.cacheAsTexture({ resolution: 1, antialias: true });
   return root;
 }
 

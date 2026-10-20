@@ -89,6 +89,15 @@ describe('InputController', () => {
     expect(input.primaryDown).toBe(false);
   });
 
+  it('un clic corto entre dos drains se registra una vez con takeClick', () => {
+    expect(input.takeClick()).toBe(false);
+    el.dispatchEvent(new MouseEvent('mousedown', { button: 0, bubbles: true }));
+    window.dispatchEvent(new MouseEvent('mouseup', { button: 0, bubbles: true }));
+    expect(input.primaryDown).toBe(false);
+    expect(input.takeClick()).toBe(true);
+    expect(input.takeClick()).toBe(false);
+  });
+
   it('tras detach no escucha nada', () => {
     input.detach();
     key('keydown', 'KeyW');

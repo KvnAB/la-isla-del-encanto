@@ -32,7 +32,8 @@ function nearest<T extends HitTarget>(p: PlayerState, list: T[], pred: (t: T) =>
 }
 
 export interface HitHooks {
-  pickup?: (p: PlayerState, g: WorldState['groundItems'][number]) => void;
+  /** Devuelve true si recogió algo; si no, el golpe continúa con criaturas y recursos. */
+  pickup?: (p: PlayerState, g: WorldState['groundItems'][number]) => boolean;
   creature?: (p: PlayerState, c: WorldState['creatures'][number]) => void;
 }
 
@@ -47,10 +48,7 @@ export function resolveHit(state: WorldState, p: PlayerState, cfg: GameConfig, e
 
   const groundTargets = state.groundItems.map((g) => ({ ...g, radius: cfg.groundItemRadius, ref: g }));
   const g = nearest(p, groundTargets, (t) => inReach(p, t, cfg));
-  if (g && hooks.pickup) {
-    hooks.pickup(p, g.ref);
-    return;
-  }
+  if (g && hooks.pickup && hooks.pickup(p, g.ref)) return;
 
   const c = nearest(p, state.creatures, (t) => inReach(p, t, cfg) && inArc(p, t, cfg));
   if (c && hooks.creature) {

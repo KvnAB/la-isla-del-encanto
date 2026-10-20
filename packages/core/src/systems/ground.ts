@@ -15,13 +15,13 @@ export function stepGroundItems(state: WorldState): void {
   for (let i = state.groundItems.length - 1; i >= 0; i--) if (state.groundItems[i].expiresAt <= now) state.groundItems.splice(i, 1);
 }
 
-/** Intenta recoger. Lo que no cabe se queda en el suelo. */
-export function tryPickup(state: WorldState, p: PlayerState, g: GroundItemState, events: GameEvent[]): void {
+/** Intenta recoger. Lo que no cabe se queda en el suelo. Devuelve true si recogió algo. */
+export function tryPickup(state: WorldState, p: PlayerState, g: GroundItemState, events: GameEvent[]): boolean {
   const notAdded = addItem(p.inventory, g.item, g.count);
   const picked = g.count - notAdded;
   if (picked <= 0) {
     events.push({ type: 'inventoryFull', playerId: p.id });
-    return;
+    return false;
   }
   events.push({ type: 'itemPicked', playerId: p.id, item: g.item, amount: picked });
   g.count = notAdded;
@@ -29,4 +29,5 @@ export function tryPickup(state: WorldState, p: PlayerState, g: GroundItemState,
     const i = state.groundItems.indexOf(g);
     if (i !== -1) state.groundItems.splice(i, 1);
   }
+  return true;
 }

@@ -16,19 +16,37 @@ export function nightAmount(isNight: boolean, phaseRemaining: number, daySeconds
   return 0;
 }
 
+interface DarkLayer {
+  root: Container;
+  rect: Graphics;
+  holes: Graphics;
+  alphaK: number;
+  radiusK: number;
+}
+
 /**
- * Capa de noche en espacio de pantalla: dos capas oscuras con huecos de distinto radio
- * alrededor de las fogatas (caída escalonada) más un resplandor cálido encima.
+ * Capa de noche en espacio de pantalla: tres capas oscuras, cada una con huecos de distinto radio
+ * alrededor de las fogatas (máscara inversa → admite varias fogatas), más un resplandor cálido encima.
  */
 export class NightLayer extends Container {
-  private readonly outer = new Graphics();
-  private readonly mid = new Graphics();
-  private readonly inner = new Graphics();
+  private readonly layers: DarkLayer[];
   private readonly glow = new Graphics();
   private readonly glowGradient: FillGradient;
 
   constructor() {
     super();
+    this.layers = [
+      [0.4, 1],
+      [0.33, 0.78],
+      [0.27, 0.55],
+    ].map(([alphaK, radiusK]) => {
+      const root = new Container();
+      const rect = new Graphics();
+      const holes = new Graphics();
+      root.addChild(rect, holes);
+      this.addChild(root);
+      return { root, rect, holes, alphaK, radiusK };
+    });
     this.glowGradient = new FillGradient({
       type: 'radial',
       center: { x: 0.5, y: 0.5 },
@@ -42,7 +60,7 @@ export class NightLayer extends Container {
       ],
       textureSpace: 'local',
     });
-    this.addChild(this.outer, this.mid, this.inner, this.glow);
+    this.addChild(this.glow);
     this.eventMode = 'none';
   }
 
@@ -50,28 +68,25 @@ export class NightLayer extends Container {
     this.visible = amount > 0.001;
     if (!this.visible) return;
     const alpha = NIGHT_ALPHA * amount;
-    const fires = campfires.map((c) => {
-      const sx = (c.x - camera.x) * camera.zoom + viewW / 2;
-      const sy = (c.y - camera.y) * camera.zoom + viewH / 2;
-      return { sx, sy, r: FIRE_RADIUS * camera.zoom };
-    });
+    const fires = campfires.map((c) => ({
+      sx: (c.x - camera.x) * camera.zoom + viewW / 2,
+      sy: (c.y - camera.y) * camera.zoom + viewH / 2,
+      r: FIRE_RADIUS * camera.zoom,
+    }));
 
-    // En PixiJS 8, cut() recorta la última forma de la forma rellenada anterior.
-    // Tres capas con huecos de radio decreciente: caída de luz escalonada alrededor de cada fogata.
-    const layers: [Graphics, number, number][] = [
-      [this.outer, 0.4, 1],
-      [this.mid, 0.33, 0.78],
-      [this.inner, 0.27, 0.55],
-    ];
-    for (const [g, k, rk] of layers) {
-      g.clear();
-      g.rect(0, 0, viewW, viewH).fill({ color: PALETTE.night, alpha: alpha * k });
-      for (const f of fires) g.circle(f.sx, f.sy, f.r * rk).cut();
+    for (const l of this.layers) {
+      l.rect.clear();
+      l.rect.rect(0, 0, viewW, viewH).fill({ color: PALETTE.night, alpha: alpha * l.alphaK });
+      l.holes.clear();
+      if (fires.length === 0) {
+        l.rect.setMask({ mask: null });
+        continue;
+      }
+      for (const f of fires) l.holes.circle(f.sx, f.sy, f.r * l.radiusK).fill(0xffffff);
+      l.rect.setMask({ mask: l.holes, inverse: true });
     }
 
     this.glow.clear();
-    for (const f of fires) {
-      this.glow.circle(f.sx, f.sy, f.r * 1.05).fill({ fill: this.glowGradient, alpha: amount });
-    }
+    for (const f of fires) this.glow.circle(f.sx, f.sy, f.r * 1.05).fill({ fill: this.glowGradient, alpha: amount });
   }
 }
