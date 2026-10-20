@@ -1,6 +1,8 @@
 import { Application, Container, Graphics } from 'pixi.js';
 import { resourceAvailable, resourceCapacity, Rng, type GameConfig, type GameEvent, type IslandMap, type ResourceState, type WorldState } from '@draycol/core';
 import { Camera } from './camera';
+import { Fx } from './fx';
+import { nightAmount, NightLayer } from './night';
 import { PALETTE } from './palette';
 import {
   animateCampfire,
@@ -83,6 +85,9 @@ export class Renderer {
   private readonly groundItems = new Map<number, SimpleView>();
   private readonly campfires = new Map<number, { view: CampfireView; shadow: Graphics }>();
   private time = 0;
+  private lastRenderTime = 0;
+  readonly night = new NightLayer();
+  fx: Fx | null = null;
 
   constructor(
     private readonly parent: HTMLElement,
@@ -113,7 +118,9 @@ export class Renderer {
     this.layers.terrain.addChild(buildTerrain(map, new Rng(1234)));
     for (const layer of [this.layers.terrain, this.layers.shadows, this.layers.ground, this.layers.entities, this.layers.fx]) this.world.addChild(layer);
     this.app.stage.addChild(this.world);
+    this.screen.addChild(this.night);
     this.app.stage.addChild(this.screen);
+    this.fx = new Fx(this.parent);
     this.initialized = true;
   }
 
@@ -124,15 +131,32 @@ export class Renderer {
   }
 
   /** Dibuja el estado. `prev` permite interpolar posiciones con `alpha`. */
+  /** Consume eventos del núcleo para disparar efectos. Llamar tras cada step. */
+  onEvents(events: GameEvent[], localPlayerId: number): void {
+    if (!this.fx) return;
+    for (const e of events) {
+      if (e.type === 'playerDamaged' && e.playerId === localPlayerId) this.fx.damageFlash();
+      else if ((e.type === 'resourceHit' || e.type === 'creatureHit') && e.playerId === localPlayerId) this.fx.hitShake();
+    }
+  }
+
   render(state: WorldState, alpha: number, prev: PrevSnapshot | null, _events: GameEvent[] = []): void {
     if (!this.initialized) return;
     this.time = state.time + alpha * this.cfg.stepSeconds;
+    const dt = Math.max(0, this.time - this.lastRenderTime);
+    this.lastRenderTime = this.time;
+    this.fx?.update(dt);
     this.syncPlayers(state, alpha, prev);
     this.syncResources(state);
     this.syncCreatures(state, alpha, prev);
     this.syncGroundItems(state);
     this.syncCampfires(state);
     this.camera.apply(this.world, this.viewW, this.viewH);
+    if (this.fx) {
+      this.world.position.x += Math.round(this.fx.shakeX);
+      this.world.position.y += Math.round(this.fx.shakeY);
+    }
+    this.night.update(nightAmount(state.isNight, state.phaseRemaining, this.cfg.daySeconds), state.campfires, this.camera, this.viewW, this.viewH);
   }
 
   private syncPlayers(state: WorldState, alpha: number, prev: PrevSnapshot | null): void {
@@ -288,6 +312,7 @@ export class Renderer {
   }
 
   destroy(): void {
+    this.fx?.destroy();
     this.app.destroy(true, { children: true });
     this.initialized = false;
   }

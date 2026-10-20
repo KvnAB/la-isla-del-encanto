@@ -35,7 +35,8 @@ async function main(): Promise<void> {
       prev = snapshot(session.world.getState());
       const cmds = input.drain();
       if (input.primaryDown) cmds.push(session.primaryAction());
-      session.step(cmds);
+      const events = session.step(cmds);
+      renderer.onEvents(events, session.playerId);
     },
     (alpha) => renderer.render(session.world.getState(), alpha, prev),
   );
