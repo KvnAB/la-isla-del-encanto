@@ -1,6 +1,7 @@
 import { DEFAULT_CONFIG, type GameConfig } from './config.js';
 import { generateIsland } from './island.js';
 import { Rng } from './rng.js';
+import { placeCampfire, stepCampfires } from './systems/campfire.js';
 import { dropSlot, useSelectedSlot } from './systems/consume.js';
 import { craft } from './systems/crafting.js';
 import { hitCreature, spawnInitialCreatures, stepCreatures, stepRespawns } from './systems/creatures.js';
@@ -9,6 +10,7 @@ import { stepGroundItems, tryPickup } from './systems/ground.js';
 import { resolveHit } from './systems/hit.js';
 import { stepPlayerMovement, type Solid } from './systems/movement.js';
 import { spawnResources } from './systems/resources.js';
+import { stepVitals } from './systems/vitals.js';
 import type { Command, EntityId, GameEvent, PlayerState, StartItem, WorldState } from './types.js';
 import { norm } from './vec.js';
 
@@ -105,7 +107,9 @@ export class World {
     for (const cmd of this.queue) this.apply(cmd);
     this.queue.length = 0;
 
+    const dayBefore = s.day;
     stepDayCycle(s, cfg, dt, this.events);
+    if (s.day > dayBefore) for (const p of s.players) if (p.alive) p.points += cfg.points.dayPassed;
 
     const solids: Solid[] = s.resources;
     for (const p of s.players) {
@@ -117,8 +121,12 @@ export class World {
 
     stepCreatures(s, cfg, dt, this.rng, this.events);
     stepRespawns(s, cfg, this.rng, this.events);
+    stepCampfires(s, cfg, dt, this.events);
     stepGroundItems(s);
-    for (const p of s.players) this.checkDeath(p);
+    for (const p of s.players) {
+      stepVitals(s, p, cfg, dt, this.events);
+      this.checkDeath(p);
+    }
 
     s.tick++;
     s.time += dt;
@@ -156,7 +164,9 @@ export class World {
         if (Number.isInteger(cmd.slot) && cmd.slot >= 0 && cmd.slot < p.inventory.length) p.selectedSlot = cmd.slot;
         break;
       case 'useSlot':
-        useSelectedSlot(this.state, p, this.cfg, this.events);
+        useSelectedSlot(this.state, p, this.cfg, this.events, {
+          placeCampfire: (st, pl) => placeCampfire(st, pl, this.cfg, this.events),
+        });
         break;
       case 'dropSlot':
         if (Number.isInteger(cmd.slot) && cmd.slot >= 0 && cmd.slot < p.inventory.length) dropSlot(this.state, p, cmd.slot, this.cfg, this.events);
