@@ -1,0 +1,68 @@
+/** Paleta visual aprobada (docs/design/maqueta-estilo-visual-aprobada.html). */
+export const PALETTE = {
+  grass: 0x6f9a45,
+  grassLight: 0x749f49,
+  grassDark: 0x6a9442,
+  dirt: 0x8a8a5a,
+  sand: 0xcfc48f,
+  water: 0x3f86c7,
+  waterInner: 0x4f98d8,
+  waterEdge: 0x1f4f7a,
+  waterRipple: 0xbfe3ff,
+  sea: 0x2b5f94,
+  seaDeep: 0x224d7a,
+  seaEdge: 0x1a3f66,
+
+  outlineTree: 0x1f3f1d,
+  treeDark: 0x2f5e2a,
+  treeMid: 0x3b7a34,
+  treeLight: 0x4a9140,
+  apple: 0xd7382b,
+  appleOutline: 0x6b1a13,
+  stump: 0x7a4e26,
+  stumpDark: 0x4e3016,
+
+  rock: 0x6f7378,
+  rockMid: 0x8f949a,
+  rockLight: 0xaeb3b9,
+  rockOutline: 0x2c2f33,
+
+  skin: 0xf1c8a2,
+  skinOutline: 0x2b1d12,
+  hair: 0x5a3a22,
+  woodHandle: 0x9a6a3a,
+  woodHead: 0xb8824a,
+  stoneHead: 0x8f949a,
+
+  tiger: 0xe88a2e,
+  tigerStripe: 0x2a1708,
+  tigerOutline: 0x3a2210,
+  tigerNose: 0xfff4e6,
+  sheepWool: 0xf3efe6,
+  sheepOutline: 0x2f2a24,
+  sheepFace: 0x3b3330,
+  sheepEye: 0xff3b3b,
+  goblin: 0x79b24a,
+  goblinOutline: 0x28401a,
+
+  fireLog: 0x7a4e26,
+  fireOuter: 0xff8a1f,
+  fireInner: 0xffd34d,
+  fireOutline: 0x7a2a00,
+  fireGlow: 0xffb347,
+
+  night: 0x0b1630,
+  hudPanel: 0x0e1520,
+  hudSlot: 0x1a2434,
+  hudAccent: 0x5bbf6a,
+  hudGold: 0xffd34d,
+  hudText: 0xffffff,
+  hudMuted: 0xa9b4c4,
+
+  barHealth: 0xe5443b,
+  barHunger: 0xf0a23a,
+  barThirst: 0x3fa0e0,
+  barWarmth: 0x7fe3ea,
+} as const;
+
+export const OUTLINE_WIDTH = 4;

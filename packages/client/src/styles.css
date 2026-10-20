@@ -1,0 +1,62 @@
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterVariable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --hud-panel: rgba(14, 21, 32, 0.84);
+  --hud-slot: #1a2434;
+  --hud-accent: #5bbf6a;
+  --hud-gold: #ffd34d;
+  --hud-text: #ffffff;
+  --hud-muted: #a9b4c4;
+  --bar-health: #e5443b;
+  --bar-hunger: #f0a23a;
+  --bar-thirst: #3fa0e0;
+  --bar-warmth: #7fe3ea;
+  --radius-panel: 18px;
+  --radius-slot: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #224d7a;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--hud-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.game-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  cursor: crosshair;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.layer > * {
+  pointer-events: auto;
+}
