@@ -13,19 +13,11 @@
   position: absolute;
   inset: -24px;
   background: inherit;
-  filter: blur(14px) brightness(0.55);
+  filter: blur(10px) brightness(0.6);
   z-index: 0;
 }
 
-/* La portada nítida: nunca por encima de su tamaño real (1376 px), centrada. */
-.screen::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url('/portada.png') center / min(100%, 1376px) auto no-repeat;
-  z-index: 0;
-  pointer-events: none;
-}
+
 
 .sr-only {
   position: absolute;
@@ -311,10 +303,7 @@
   color: #e5a0a0;
 }
 
-/* Pantalla de muerte: solo la versión desenfocada y oscurecida */
-.death-screen::after {
-  display: none;
-}
+
 
 .death-screen .screen-layout {
   position: relative;
