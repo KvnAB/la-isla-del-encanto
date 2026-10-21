@@ -81,6 +81,18 @@ export class GameAudio {
         case 'coatToggled':
           if (e.playerId === localPlayerId) this.play('coat', () => this.rustle());
           break;
+        case 'drank':
+          if (e.playerId === localPlayerId) this.play('drink', () => this.gulp());
+          break;
+        case 'canteenFilled':
+          if (e.playerId === localPlayerId) this.play('fill', () => this.splash());
+          break;
+        case 'fishingStarted':
+          if (e.playerId === localPlayerId) this.play('cast', () => this.splash(0.5));
+          break;
+        case 'fished':
+          if (e.playerId === localPlayerId) this.play('fish', () => this.blip([440, 660, 880], 0.07));
+          break;
         case 'crafted':
           if (e.playerId === localPlayerId) this.play('craft', () => this.blip([523, 659, 784], 0.08));
           break;
@@ -160,6 +172,42 @@ export class GameAudio {
     o.connect(og).connect(this.master!);
     o.start(t);
     o.stop(t + 0.1);
+  }
+
+  /** Trago: dos glups graves. */
+  private gulp(): void {
+    const ctx = this.ctx!;
+    for (const delay of [0, 0.14]) {
+      const t = ctx.currentTime + delay;
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(180, t);
+      o.frequency.exponentialRampToValueAtTime(320, t + 0.08);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.35, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+      o.connect(g).connect(this.master!);
+      o.start(t);
+      o.stop(t + 0.12);
+    }
+  }
+
+  /** Chapoteo: ruido filtrado corto con el filtro subiendo. */
+  private splash(level = 0.35): void {
+    const ctx = this.ctx!;
+    const t = ctx.currentTime;
+    const n = this.noise(0.22);
+    const f = ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.setValueAtTime(600, t);
+    f.frequency.exponentialRampToValueAtTime(2600, t + 0.18);
+    f.Q.value = 0.7;
+    const g = ctx.createGain();
+    this.env(g, level, 0.01, 0.2);
+    n.connect(f).connect(g).connect(this.master!);
+    n.start(t);
+    n.stop(t + 0.23);
   }
 
   /** Aviso de barra baja: dos notas descendentes. */

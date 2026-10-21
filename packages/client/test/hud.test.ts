@@ -122,3 +122,16 @@ describe('Hud: carteles y avisos', () => {
     expect(root.querySelector('[data-bar="thirst"]')!.classList.contains('low')).toBe(false);
   });
 });
+
+describe('Hud: cantimplora', () => {
+  it('el slot de la cantimplora llena muestra los tragos que quedan', () => {
+    p.inventory[2] = { item: 'canteen_full', count: 2 };
+    hud.update(p, state, []);
+    const slot = root.querySelectorAll('.slot')[2];
+    expect(slot.querySelector<HTMLImageElement>('img')?.title).toBe('Cantimplora · 2 tragos');
+    expect(slot.querySelector('.slot-count')?.textContent).toBe('2');
+    p.inventory[2] = { item: 'canteen_full', count: 1 };
+    hud.update(p, state, []);
+    expect(slot.querySelector<HTMLImageElement>('img')?.title).toBe('Cantimplora · 1 trago');
+  });
+});

@@ -136,16 +136,16 @@ export class Hud {
         s.lastItem = item;
         if (item) {
           s.img.src = itemIconDataUrl(item);
-          s.img.title = ITEM_META[item].equippable ? `${ITEM_NAMES[item]} · clic para poner o quitar` : ITEM_NAMES[item];
           s.img.hidden = false;
         } else {
           s.img.hidden = true;
           s.img.removeAttribute('src');
         }
       }
-      if (s.lastCount !== count) {
+      if (s.lastCount !== count || s.lastItem !== item) {
         s.lastCount = count;
         s.count.textContent = item && count > 1 ? String(count) : '';
+        if (item) s.img.title = slotTitle(item, count);
       }
       if (s.lastSelected !== selected) {
         s.lastSelected = selected;
@@ -225,6 +225,13 @@ export class Hud {
     if (this.bannerTimer) clearTimeout(this.bannerTimer);
     this.root.remove();
   }
+}
+
+/** Tooltip de un slot: el abrigo explica el clic y la cantimplora llena dice cuántos tragos quedan. */
+function slotTitle(item: ItemId, count: number): string {
+  if (ITEM_META[item].equippable) return `${ITEM_NAMES[item]} · clic para poner o quitar`;
+  if (item === 'canteen_full') return `${ITEM_NAMES[item]} · ${count} ${count === 1 ? 'trago' : 'tragos'}`;
+  return ITEM_NAMES[item];
 }
 
 function costText(cost: Partial<Record<ItemId, number>>, consumes?: ItemId): string {

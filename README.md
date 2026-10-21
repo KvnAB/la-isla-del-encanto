@@ -12,12 +12,14 @@ Juego survival 2D top-down en una isla (nombre interno del proyecto: Draycol Sur
 |---|---|
 | `WASD` / flechas | moverse |
 | ratón | apuntar |
-| clic izquierdo | golpear, o usar el objeto seleccionado (comer, colocar fogata, ponerse/quitarse el abrigo) |
+| clic izquierdo | golpear, o usar el objeto seleccionado (comer, colocar fogata, ponerse/quitarse el abrigo, llenar/beber la cantimplora, lanzar la caña al agua) |
 | `1`–`9`, `0`, `-`, `=` o rueda | elegir uno de los 12 slots |
 | `Q` | tirar el slot seleccionado |
 | `M` | silenciar o activar el sonido |
 
-La isla es siempre la misma (semilla fija `island.seed` en la configuración), así todos los jugadores aprenden el mismo mapa y en fase 2 compartirán la misma isla. El minimapa de arriba a la derecha muestra la silueta de la isla, los árboles, rocas y rocas de oro, y dónde estás; no muestra animales.
+La isla es siempre la misma (semilla fija `island.seed` en la configuración), así todos los jugadores aprenden el mismo mapa y en fase 2 compartirán la misma isla. El tercio norte es **nieve**: allí el frío baja el doble de día y el triple de noche, viven osos polares, pingüinos y lobos, y están las rocas de diamante (solo se pican con pico de oro o mejor). El minimapa de arriba a la derecha muestra la silueta de la isla, la nieve, los árboles, arbustos, rocas, oro y diamante, y dónde estás; no muestra animales.
+
+De noche la isla se oscurece de verdad: ves un círculo pequeño alrededor de ti, más grande y cálido si llevas una antorcha en el inventario, y las fogatas iluminan a su alrededor. A partir de la segunda noche aparece una manada de lobos cerca de ti que desaparece al amanecer.
 
 ## Requisitos
 
@@ -42,7 +44,7 @@ pnpm dev
 
 Levanta el cliente con recarga en caliente en <http://localhost:5173> (con proxy de `/api` al puerto 3000), el servidor con `tsx watch` en el 3000 y el núcleo en modo `tsc --watch`.
 
-En desarrollo la tecla `H` muestra los círculos de colisión (rojo recursos, naranja criaturas, azul jugador; el anillo tenue es el radio dibujado) y `window.__dbg` da acceso a la partida. Los factores de colisión están en `resources.collision` y `resources.brokenCollision` de la configuración.
+En desarrollo la tecla `H` muestra los círculos de colisión (rojo recursos, naranja criaturas, azul jugador; el anillo tenue es el radio dibujado) y `window.__dbg` da acceso a la partida. Los factores de colisión están en `resources.collision` y `resources.brokenCollision` de la configuración; los radios de luz nocturna en `lights`; los empujones de combate en `combat`.
 
 Otros comandos:
 
@@ -86,16 +88,16 @@ Todos los números del juego están en **`packages/core/src/config.ts`** (`DEFAU
 2. Añadir su entrada en `ITEM_META` (`packages/core/src/config.ts`): apilable, si es herramienta/arma/comida/colocable.
 3. Nombre en español en `packages/client/src/ui/names.ts` (`ITEM_NAMES`).
 4. Su dibujo en `drawItem` (`packages/client/src/render/sprites/vector-items.ts`); el icono del HUD y el objeto en el suelo salen de ahí.
-5. Si es comida, su efecto en `config.food`. Si es una herramienta, su rendimiento en `woodPerHit` / `stonePerHit` / `goldPerHit` (`ToolClass` en `types.ts`). Si es un arma, su daño en `weaponDamage` (`WeaponClass` en `types.ts`); el jugador la muestra en la mano automáticamente.
+5. Si es comida, su efecto en `config.food`. Si es una herramienta, su rendimiento en `woodPerHit` / `stonePerHit` / `goldPerHit` / `diamondPerHit` (`ToolClass` en `types.ts`). Si es un arma, su daño en `weaponDamage` (`WeaponClass` en `types.ts`); el jugador la muestra en la mano automáticamente. Si se lleva en la mano sin ser herramienta ni arma (antorcha, caña), `held: true`; si el clic lo usa en vez de golpear (cantimplora, caña), `usable: true` y su rama en `useSelectedSlot` (`systems/consume.ts`). Si se cocina en la fogata, su par crudo → cocinado en `campfire.cooks`.
 
-**Un recurso nuevo** (como la roca de oro): id en `ResourceKind`, radio y cantidad en `config.resources`, qué da y con qué herramienta en `yieldFor` (`systems/resources.ts`) y su dibujo en `makeResourceVector` (`vector-resources.ts`).
+**Un recurso nuevo** (como la roca de oro): id en `ResourceKind`, radio, cantidad y colisión en `config.resources` (y, si solo sale en un bioma o siempre del mismo tamaño, `resources.biome` / `resources.fixedSize`), qué da y con qué herramienta en `yieldFor` (`systems/resources.ts`) y su dibujo en `makeResourceVector` (`vector-resources.ts`, que recibe `snowy` si está sobre nieve) más su marcador en `ui/minimap.ts`.
 
 **Una receta nueva**: añadir una entrada en `config.recipes` (coste, `consumes`/`replaces` si sustituye a otra herramienta, `unique` si solo se puede tener una, puntos). El botón de fabricar aparece solo.
 
 **Una criatura nueva**
 1. Añadir el id a `CreatureKind` en `types.ts`.
-2. Su definición en `config.creatures.defs` (vida, velocidad, radio, daño, radios de detección/huida, botín, puntos, agresiva o no, cantidad inicial).
-3. Su dibujo en `packages/client/src/render/sprites/vector-creatures.ts` y el caso en `makeCreatureVector`.
+2. Su definición en `config.creatures.defs` (vida, velocidad, radio, daño, radios de detección/huida, botín, puntos, agresiva o no, cantidad inicial; opcionalmente `biome` para que solo aparezca en hierba o nieve, `packSize` para que aparezca en grupo y `nightRaid` para que una manada aparezca junto al jugador al caer la noche).
+3. Su dibujo en `packages/client/src/render/sprites/vector-creatures.ts` y el caso en `makeCreatureVector`; su nombre en `CREATURE_NAMES` (`ui/names.ts`) para la pantalla de muerte.
 Si necesita un comportamiento que no sea deambular/perseguir/atacar/huir, ampliar la máquina de estados de `packages/core/src/systems/creatures.ts`.
 
 ## Despliegue con Docker

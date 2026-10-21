@@ -112,6 +112,50 @@ export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
       g.circle(0, -s * 0.72, s * 0.06).fill(OL);
       break;
     }
+    case 'cooked_fish': {
+      // pescado asado: marrón, con marcas de parrilla
+      g.moveTo(-s * 0.95, 0).quadraticCurveTo(-s * 0.3, -s * 0.75, s * 0.55, -s * 0.1).quadraticCurveTo(-s * 0.3, s * 0.75, -s * 0.95, 0).closePath().fill(MEAT.cooked).stroke({ width: o, color: OL, join: 'round' });
+      g.poly([s * 0.45, 0, s * 0.95, -s * 0.5, s * 0.95, s * 0.5], true).fill(MEAT.cookedDark).stroke({ width: o, color: OL, join: 'round' });
+      for (const k of [-0.5, -0.15, 0.2]) g.moveTo(s * k, -s * 0.42).lineTo(s * k + s * 0.12, s * 0.42).stroke({ width: Math.max(1.5, o * 0.6), color: MEAT.cookedDark });
+      g.circle(-s * 0.6, -s * 0.18, s * 0.1).fill(MEAT.bone).stroke({ width: 1, color: OL });
+      break;
+    }
+    case 'berry': {
+      // racimo de bayas moradas con dos hojas
+      g.ellipse(s * 0.3, -s * 0.62, s * 0.35, s * 0.16).fill(PALETTE.treeLight).stroke({ width: Math.max(1.5, o * 0.6), color: PALETTE.treeOutline });
+      g.ellipse(-s * 0.3, -s * 0.62, s * 0.35, s * 0.16).fill(PALETTE.treeLight).stroke({ width: Math.max(1.5, o * 0.6), color: PALETTE.treeOutline });
+      const br = s * 0.3;
+      for (const [x, y] of [[-0.4, -0.15], [0.4, -0.15], [0, 0.0], [-0.25, 0.45], [0.25, 0.45], [0, 0.85]] as const) {
+        g.circle(x * s, y * s, br).fill(PALETTE.berry).stroke({ width: o * 0.8, color: PALETTE.berryOutline });
+        g.circle(x * s - br * 0.3, y * s - br * 0.3, br * 0.28).fill(0xffffff, 0.75);
+      }
+      break;
+    }
+    case 'canteen':
+    case 'canteen_full': {
+      // petaca de cuero con tapón; llena: ventana azul con agua
+      g.roundRect(-s * 0.7, -s * 0.35, s * 1.4, s * 1.2, s * 0.45).fill(WOOD.base).stroke({ width: o, color: OL });
+      g.roundRect(-s * 0.22, -s * 0.95, s * 0.44, s * 0.7, s * 0.1).fill(WOOD.dark).stroke({ width: o, color: OL });
+      g.roundRect(-s * 0.3, -s * 1.0, s * 0.6, s * 0.25, s * 0.08).fill(ROPE).stroke({ width: o * 0.8, color: OL });
+      g.moveTo(-s * 0.7, s * 0.15).lineTo(s * 0.7, s * 0.15).stroke({ width: s * 0.1, color: ROPE });
+      if (item === 'canteen_full') {
+        g.circle(0, s * 0.3, s * 0.3).fill(PALETTE.water).stroke({ width: o * 0.8, color: OL });
+        g.moveTo(-s * 0.2, s * 0.32).quadraticCurveTo(0, s * 0.18, s * 0.2, s * 0.32).stroke({ width: Math.max(1.5, o * 0.5), color: 0xffffff, alpha: 0.8 });
+      } else {
+        g.circle(0, s * 0.3, s * 0.3).fill(WOOD.dark, 0.5).stroke({ width: o * 0.8, color: OL });
+      }
+      break;
+    }
+    case 'fishing_rod': {
+      // caña inclinada con sedal y anzuelo
+      g.moveTo(-s * 0.85, s * 0.95).lineTo(s * 0.55, -s * 0.95).stroke({ width: s * 0.16 + o * 1.6, color: OL, cap: 'round' });
+      g.moveTo(-s * 0.85, s * 0.95).lineTo(s * 0.55, -s * 0.95).stroke({ width: s * 0.16, color: WOOD.base, cap: 'round' });
+      g.moveTo(-s * 0.85, s * 0.95).lineTo(-s * 0.5, s * 0.45).stroke({ width: s * 0.16, color: WOOD.dark, cap: 'round' });
+      g.moveTo(s * 0.55, -s * 0.95).quadraticCurveTo(s * 0.95, -s * 0.4, s * 0.8, s * 0.35).stroke({ width: Math.max(1.5, o * 0.5), color: 0xffffff });
+      g.moveTo(s * 0.8, s * 0.35).quadraticCurveTo(s * 0.95, s * 0.6, s * 0.65, s * 0.6).stroke({ width: Math.max(2, o * 0.7), color: METAL.base, cap: 'round' });
+      g.circle(-s * 0.2, s * 0.1, s * 0.13).fill(METAL.dark).stroke({ width: o * 0.7, color: OL });
+      break;
+    }
     case 'raw_fish': {
       // pez de perfil: cuerpo, cola, ojo y branquia
       g.moveTo(-s * 0.95, 0).quadraticCurveTo(-s * 0.3, -s * 0.75, s * 0.55, -s * 0.1).quadraticCurveTo(-s * 0.3, s * 0.75, -s * 0.95, 0).closePath().fill(PALETTE.fish).stroke({ width: o, color: OL, join: 'round' });
