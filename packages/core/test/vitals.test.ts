@@ -121,3 +121,26 @@ describe('día completo', () => {
     expect(world.getState().day).toBe(2);
   });
 });
+
+describe('aviso de barra baja', () => {
+  it('emite vitalLow una vez al cruzar el 20 % hacia abajo', () => {
+    const { world, id, p } = fresh();
+    p.hunger = 21;
+    world.stepSeconds(5);
+    const ev = world.drainEvents().filter((e) => e.type === 'vitalLow');
+    expect(ev).toEqual([{ type: 'vitalLow', playerId: id, bar: 'hunger' }]);
+    world.stepSeconds(5);
+    expect(world.drainEvents().filter((e) => e.type === 'vitalLow')).toHaveLength(0);
+  });
+
+  it('si la barra vuelve a subir y baja de nuevo, avisa otra vez', () => {
+    const { world, id, p } = fresh();
+    p.thirst = 15;
+    world.stepSeconds(1);
+    expect(world.drainEvents().filter((e) => e.type === 'vitalLow')).toHaveLength(0);
+    p.thirst = 60;
+    world.stepSeconds(100);
+    const ev = world.drainEvents().filter((e) => e.type === 'vitalLow' && e.bar === 'thirst');
+    expect(ev).toEqual([{ type: 'vitalLow', playerId: id, bar: 'thirst' }]);
+  });
+});

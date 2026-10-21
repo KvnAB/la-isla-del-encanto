@@ -36,3 +36,26 @@ describe('ciclo día/noche', () => {
     expect(world.drainEvents()).toEqual([]);
   });
 });
+
+describe('nightFell', () => {
+  it('emite nightFell una sola vez al pasar de día a noche', () => {
+    const { world } = makeWorld();
+    world.stepSeconds(239);
+    world.drainEvents();
+    world.stepSeconds(2);
+    const ev = world.drainEvents().filter((e) => e.type === 'nightFell');
+    expect(ev).toEqual([{ type: 'nightFell', day: 1 }]);
+    world.stepSeconds(200);
+    expect(world.drainEvents().filter((e) => e.type === 'nightFell')).toHaveLength(0);
+  });
+
+  it('cada noche emite el suyo con el día en curso', () => {
+    const { world } = makeWorld();
+    world.stepSeconds(721);
+    const ev = world.drainEvents().filter((e) => e.type === 'nightFell');
+    expect(ev).toEqual([
+      { type: 'nightFell', day: 1 },
+      { type: 'nightFell', day: 2 },
+    ]);
+  });
+});
