@@ -3,7 +3,7 @@
  * Los valores vienen del plan de reglas (docs/plan_juego_survival_2d.md);
  * los marcados con (*) son decisiones del constructor dentro de lo que el plan permite.
  */
-import type { CreatureKind, ItemId, ResourceKind, Size, ToolClass, WeaponClass } from './types.js';
+import type { Biome, CreatureKind, ItemId, ResourceKind, Size, ToolClass, WeaponClass } from './types.js';
 
 export interface RecipeDef {
   id: ItemId;
@@ -28,6 +28,12 @@ export interface CreatureDef {
   points: number;
   aggressive: boolean;
   initialCount: number;
+  /** Dónde aparece (por defecto en cualquier terreno firme). */
+  biome?: Biome;
+  /** Aparecen juntos de `packSize` en `packSize`. */
+  packSize?: number;
+  /** Cuántos aparecen cerca del jugador al caer la noche (manada nocturna). */
+  nightRaid?: number;
 }
 
 export interface GameConfig {
@@ -49,7 +55,15 @@ export interface GameConfig {
     goodThreshold: number;
     healthLossPerEmptyBar: number;
     regenDelayAfterDamage: number;
+    /** Por debajo de este valor una barra avisa (evento `vitalLow`). */
+    lowThreshold: number;
+    /** Por debajo de esta vida el cliente muestra la viñeta y el latido. */
+    lowHealth: number;
   };
+  /** Empujones al golpear y al ser golpeado, y ventana para atribuir la muerte a una criatura. */
+  combat: { creatureKnockback: number; playerKnockback: number; lastHitWindow: number };
+  /** Radios de luz de noche (en px de mundo). */
+  lights: { player: number; torch: number; campfire: number };
   player: {
     speed: number;
     waterSpeedMult: number;
@@ -83,6 +97,9 @@ export interface GameConfig {
     maxActive: number;
     respawnSeconds: number;
     minSpawnDistFromPlayer: number;
+    /** La manada nocturna aparece a esta distancia del jugador, a partir de esta noche. */
+    nightRaidDist: { min: number; max: number };
+    nightRaidFromDay: number;
     defs: Record<CreatureKind, CreatureDef>;
   };
   weaponDamage: Record<WeaponClass, number>;
@@ -110,7 +127,11 @@ export const DEFAULT_CONFIG: GameConfig = {
     goodThreshold: 60, // (*)
     healthLossPerEmptyBar: 2, // (*)
     regenDelayAfterDamage: 5, // (*) sin regen 5 s tras daño: así 7 ataques seguidos de tigre matan
+    lowThreshold: 20, // (*)
+    lowHealth: 25, // (*)
   },
+  combat: { creatureKnockback: 26, playerKnockback: 18, lastHitWindow: 3 }, // (*)
+  lights: { player: 150, torch: 380, campfire: 220 }, // (*)
   player: {
     speed: 220, // (*)
     waterSpeedMult: 0.5, // (*)
@@ -152,6 +173,8 @@ export const DEFAULT_CONFIG: GameConfig = {
     maxActive: 12, // (*)
     respawnSeconds: 45,
     minSpawnDistFromPlayer: 600, // (*)
+    nightRaidDist: { min: 500, max: 800 }, // (*)
+    nightRaidFromDay: 2, // (*) la noche 1 se deja para aprender
     defs: {
       tiger: {
         hp: 30,
@@ -168,6 +191,7 @@ export const DEFAULT_CONFIG: GameConfig = {
         points: 80,
         aggressive: true,
         initialCount: 3, // (*)
+        biome: 'grass',
       },
       sheep: {
         hp: 20,
@@ -181,6 +205,7 @@ export const DEFAULT_CONFIG: GameConfig = {
         points: 40,
         aggressive: true,
         initialCount: 4, // (*)
+        biome: 'grass',
       },
       goblin: {
         hp: 8,
@@ -194,6 +219,23 @@ export const DEFAULT_CONFIG: GameConfig = {
         points: 60,
         aggressive: false,
         initialCount: 3, // (*)
+        biome: 'grass',
+      },
+      wolf: {
+        hp: 25,
+        damage: 10, // (*) mata en 10; dos lobos juntos quitan 20/s
+        speed: 200, // (*) más rápido que el tigre, más lento que el jugador
+        radius: 26, // (*)
+        aggroRadius: 420, // (*)
+        fleeRadius: 0,
+        attackCooldown: 1, // (*)
+        loot: [{ item: 'raw_steak', count: 1 }],
+        points: 100,
+        aggressive: true,
+        initialCount: 2, // (*) nativos de la nieve
+        biome: 'snow',
+        packSize: 2,
+        nightRaid: 2,
       },
     },
   },
@@ -207,6 +249,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     { id: 'gold_sword', cost: { gold: 20, stone: 30, wood: 60 }, consumes: 'stone_sword', replaces: 'stone_sword', points: 200 },
     { id: 'campfire', cost: { wood: 15, stone: 5 }, points: 25 },
     { id: 'coat1', cost: { wool: 5, tiger_pelt: 5, needle: 1 }, unique: true, points: 100 },
+    { id: 'torch', cost: { wood: 5, stone: 1 }, points: 25 },
   ],
   points: { gatherPerUnit: 1, cook: 10, dayPassed: 250 },
 };
@@ -219,6 +262,8 @@ export interface ItemMeta {
   placeable?: boolean;
   /** Se pone y se quita usando el slot (clic). */
   equippable?: boolean;
+  /** Se dibuja en la mano al seleccionarlo aunque no sea herramienta ni arma. */
+  held?: boolean;
 }
 
 export const ITEM_META: Record<ItemId, ItemMeta> = {
@@ -239,4 +284,5 @@ export const ITEM_META: Record<ItemId, ItemMeta> = {
   gold_sword: { stackable: false, weapon: 'gold_sword' },
   campfire: { stackable: true, placeable: true },
   coat1: { stackable: false, equippable: true },
+  torch: { stackable: false, held: true },
 };

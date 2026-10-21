@@ -65,7 +65,7 @@ describe('combate contra criaturas', () => {
   it('golpear emite creatureHit', () => {
     const { world, id, c } = setup({ item: 'wood_sword', count: 1 }, 'tiger', 60);
     const ev = hitTimes(world, id, c, 1);
-    expect(ev).toContainEqual({ type: 'creatureHit', playerId: id, entityId: c.id });
+    expect(ev).toContainEqual({ type: 'creatureHit', playerId: id, entityId: c.id, amount: 2 });
   });
 
   it('el tigre suelta piel y filete crudo, da 80 puntos y entra en cola de reaparición', () => {
@@ -180,16 +180,16 @@ describe('colisiones entre criaturas y jugador', () => {
 });
 
 describe('aparición y reaparición', () => {
-  it('spawnInitialCreatures crea 3 tigres, 4 ovejas y 3 duendes en tierra lejos del spawn', () => {
+  it('spawnInitialCreatures crea 3 tigres, 4 ovejas, 3 duendes y 2 lobos en tierra lejos del spawn', () => {
     const world = new World(1);
     const s = world.getState();
-    const counts = { tiger: 0, sheep: 0, goblin: 0 };
+    const counts = { tiger: 0, sheep: 0, goblin: 0, wolf: 0 };
     for (const c of s.creatures) {
       counts[c.kind]++;
-      expect(['land', 'sand']).toContain(terrainAt(s.map, c.x, c.y));
+      expect(['land', 'sand', 'snow']).toContain(terrainAt(s.map, c.x, c.y));
       expect(Math.hypot(c.x - s.map.spawnX, c.y - s.map.spawnY)).toBeGreaterThanOrEqual(600);
     }
-    expect(counts).toEqual({ tiger: 3, sheep: 4, goblin: 3 });
+    expect(counts).toEqual({ tiger: 3, sheep: 4, goblin: 3, wolf: 2 });
   });
 
   it('un tigre muerto reaparece a los 45 s lejos del jugador', () => {

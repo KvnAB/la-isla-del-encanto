@@ -8,11 +8,9 @@ import { dropToGround } from './ground.js';
 import { moveCircle, resourceSolids, type Solid } from './movement.js';
 import { weaponClassOf } from './resources.js';
 
-const KINDS: CreatureKind[] = ['tiger', 'sheep', 'goblin'];
-
 function makeCreature(state: WorldState, kind: CreatureKind, x: number, y: number, cfg: GameConfig): CreatureState {
   const def = cfg.creatures.defs[kind];
-  return { id: nextId(state), kind, x, y, angle: 0, radius: def.radius, hp: def.hp, mode: 'wander', targetX: x, targetY: y, attackCooldown: 0, wanderTimer: 0 };
+  return { id: nextId(state), kind, x, y, angle: 0, radius: def.radius, hp: def.hp, mode: 'wander', targetX: x, targetY: y, attackCooldown: 0, wanderTimer: 0, raid: false };
 }
 
 function fitsOnLand(state: WorldState, x: number, y: number, r: number): boolean {
@@ -45,7 +43,7 @@ export function spawnCreature(state: WorldState, kind: CreatureKind, cfg: GameCo
 }
 
 export function spawnInitialCreatures(state: WorldState, cfg: GameConfig, rng: Rng, events: GameEvent[] = []): void {
-  for (const kind of KINDS) {
+  for (const kind of Object.keys(cfg.creatures.defs) as CreatureKind[]) {
     for (let i = 0; i < cfg.creatures.defs[kind].initialCount; i++) {
       const c = spawnCreature(state, kind, cfg, rng);
       if (c) events.push({ type: 'creatureSpawned', entityId: c.id, kind });
@@ -55,8 +53,9 @@ export function spawnInitialCreatures(state: WorldState, cfg: GameConfig, rng: R
 
 export function hitCreature(state: WorldState, p: PlayerState, c: CreatureState, cfg: GameConfig, rng: Rng, events: GameEvent[]): void {
   const weapon = weaponClassOf(p.inventory[p.selectedSlot]);
-  c.hp -= cfg.weaponDamage[weapon];
-  events.push({ type: 'creatureHit', playerId: p.id, entityId: c.id });
+  const amount = cfg.weaponDamage[weapon];
+  c.hp -= amount;
+  events.push({ type: 'creatureHit', playerId: p.id, entityId: c.id, amount });
   if (c.hp > 0) return;
 
   const def = cfg.creatures.defs[c.kind];

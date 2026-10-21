@@ -15,18 +15,24 @@ export type ItemId =
   | 'gold_pickaxe'
   | 'gold_sword'
   | 'campfire'
-  | 'coat1';
+  | 'coat1'
+  | 'torch';
 
 export type Size = 'small' | 'medium' | 'large';
 /** `gold_rock` solo da oro con pico de piedra o mejor. */
 export type ResourceKind = 'tree' | 'apple_tree' | 'rock' | 'gold_rock';
-export type CreatureKind = 'tiger' | 'sheep' | 'goblin';
+export type CreatureKind = 'tiger' | 'sheep' | 'goblin' | 'wolf';
 /** `water` son ríos y lagos (caminable, nadando). `sea` es el borde infranqueable. */
-export type Terrain = 'sea' | 'land' | 'sand' | 'water';
+export type Terrain = 'sea' | 'land' | 'sand' | 'water' | 'snow';
+/** Bioma de una celda firme: nieve o hierba (todo lo demás). */
+export type Biome = 'grass' | 'snow';
 export type WeaponClass = 'fist' | 'wood_sword' | 'stone_sword' | 'gold_sword';
 export type ToolClass = 'hand' | 'wood_pickaxe' | 'stone_pickaxe' | 'gold_pickaxe';
 export type EntityId = number;
 export type StartItem = 'wood_pickaxe' | 'wood_sword';
+
+/** Por qué murió el jugador: la criatura que lo golpeó hace poco, o la primera barra vacía. */
+export type DeathCause = { kind: 'creature'; creature: CreatureKind } | { kind: 'hunger' | 'thirst' | 'cold' };
 
 export type Command = { playerId: EntityId } & (
   | { type: 'move'; dx: number; dy: number }
@@ -44,9 +50,10 @@ export type GameEvent =
   | { type: 'itemPicked'; playerId: EntityId; item: ItemId; amount: number }
   | { type: 'inventoryFull'; playerId: EntityId }
   | { type: 'itemDropped'; playerId: EntityId; item: ItemId; amount: number }
-  | { type: 'creatureHit'; playerId: EntityId; entityId: EntityId }
+  | { type: 'creatureHit'; playerId: EntityId; entityId: EntityId; amount: number }
   | { type: 'creatureDied'; playerId: EntityId; entityId: EntityId; kind: CreatureKind }
   | { type: 'creatureSpawned'; entityId: EntityId; kind: CreatureKind }
+  | { type: 'creatureDespawned'; entityId: EntityId; kind: CreatureKind }
   | { type: 'crafted'; playerId: EntityId; recipeId: ItemId }
   | { type: 'campfirePlaced'; playerId: EntityId; entityId: EntityId }
   | { type: 'cooked'; playerId: EntityId }
@@ -54,7 +61,9 @@ export type GameEvent =
   | { type: 'coatToggled'; playerId: EntityId; on: boolean }
   | { type: 'playerDamaged'; playerId: EntityId; amount: number; byEntityId: EntityId }
   | { type: 'dayPassed'; day: number }
-  | { type: 'playerDied'; playerId: EntityId; days: number; points: number };
+  | { type: 'nightFell'; day: number }
+  | { type: 'vitalLow'; playerId: EntityId; bar: 'hunger' | 'thirst' | 'warmth' }
+  | { type: 'playerDied'; playerId: EntityId; days: number; points: number; cause: DeathCause };
 
 export interface Slot {
   item: ItemId;
@@ -86,6 +95,9 @@ export interface PlayerState {
   moveDy: number;
   cookTimer: number;
   noRegenUntil: number;
+  /** Última criatura que lo golpeó y cuándo (para la causa de muerte). */
+  lastHitBy: CreatureKind | null;
+  lastHitAt: number;
 }
 
 export interface ResourceState {
@@ -114,6 +126,8 @@ export interface CreatureState {
   targetY: number;
   attackCooldown: number;
   wanderTimer: number;
+  /** Miembro de una manada nocturna: desaparece al amanecer y no reaparece. */
+  raid: boolean;
 }
 
 export interface GroundItemState {

@@ -86,3 +86,32 @@ describe('DEFAULT_CONFIG reproduce los valores del plan', () => {
     expect(ITEM_META.wood_sword.stackable).toBe(false);
   });
 });
+
+describe('bloque 1: noche, combate y lobo', () => {
+  const c = DEFAULT_CONFIG;
+  const byId = Object.fromEntries(c.recipes.map((r) => [r.id, r]));
+
+  it('antorcha: 5 madera + 1 piedra, 25 puntos, se lleva en la mano', () => {
+    expect(byId.torch.cost).toEqual({ wood: 5, stone: 1 });
+    expect(byId.torch.points).toBe(25);
+    expect(ITEM_META.torch).toEqual({ stackable: false, held: true });
+  });
+
+  it('lobo: más rápido que el tigre, más lento que el jugador, manada nocturna desde la noche 2', () => {
+    expect(c.creatures.defs.wolf).toEqual(
+      expect.objectContaining({ hp: 25, speed: 200, damage: 10, aggroRadius: 420, attackCooldown: 1, points: 100, nightRaid: 2, packSize: 2, biome: 'snow' }),
+    );
+    expect(c.creatures.defs.wolf.speed).toBeGreaterThan(c.creatures.defs.tiger.speed);
+    expect(c.creatures.defs.wolf.speed).toBeLessThan(c.player.speed);
+    expect(c.creatures.nightRaidFromDay).toBe(2);
+    expect(c.creatures.nightRaidDist).toEqual({ min: 500, max: 800 });
+    expect(c.creatures.defs.tiger.biome).toBe('grass');
+  });
+
+  it('empujón, luces y umbrales de aviso', () => {
+    expect(c.combat).toEqual({ creatureKnockback: 26, playerKnockback: 18, lastHitWindow: 3 });
+    expect(c.lights).toEqual({ player: 150, torch: 380, campfire: 220 });
+    expect(c.vitals.lowThreshold).toBe(20);
+    expect(c.vitals.lowHealth).toBe(25);
+  });
+});

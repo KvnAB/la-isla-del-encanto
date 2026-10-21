@@ -120,7 +120,7 @@ describe('objetos en el suelo', () => {
     c.wanderTimer = 99;
     hit(world, id);
     const events = world.drainEvents();
-    expect(events).toContainEqual({ type: 'creatureHit', playerId: id, entityId: c.id });
+    expect(events).toContainEqual({ type: 'creatureHit', playerId: id, entityId: c.id, amount: 1 });
     expect(world.getState().groundItems).toHaveLength(1);
   });
 

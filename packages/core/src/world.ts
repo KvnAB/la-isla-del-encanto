@@ -72,6 +72,8 @@ export class World {
       moveDy: 0,
       cookTimer: 0,
       noRegenUntil: 0,
+      lastHitBy: null,
+      lastHitAt: -1000,
     });
     return id;
   }
@@ -141,7 +143,7 @@ export class World {
     p.alive = false;
     p.moveDx = 0;
     p.moveDy = 0;
-    this.events.push({ type: 'playerDied', playerId: p.id, days: this.state.day - 1, points: p.points });
+    this.events.push({ type: 'playerDied', playerId: p.id, days: this.state.day - 1, points: p.points, cause: { kind: 'hunger' } });
   }
 
   private apply(cmd: Command): void {
