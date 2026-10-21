@@ -1,11 +1,11 @@
 import { Container, FillGradient, Graphics } from 'pixi.js';
-import type { CampfireState } from '@draycol/core';
 import type { Camera } from './camera';
+import type { Light } from './lights';
 import { PALETTE } from './palette';
 
-const NIGHT_ALPHA = 0.62;
+/** Oscuridad máxima: noche de verdad, pero nunca negro total. */
+export const NIGHT_ALPHA = 0.86;
 const FADE_SECONDS = 20;
-const FIRE_RADIUS = 200;
 
 /** Fracción de oscuridad 0..1 según la fase del ciclo. El día 1 empieza sin amanecer (no viene de una noche). */
 export function nightAmount(isNight: boolean, phaseRemaining: number, daySeconds: number, day: number): number {
@@ -26,7 +26,7 @@ interface DarkLayer {
 
 /**
  * Capa de noche en espacio de pantalla: tres capas oscuras, cada una con huecos de distinto radio
- * alrededor de las fogatas (máscara inversa → admite varias fogatas), más un resplandor cálido encima.
+ * alrededor de cada luz (máscara inversa → admite varias luces), más un resplandor cálido sobre las luces `warm`.
  */
 export class NightLayer extends Container {
   private readonly layers: DarkLayer[];
@@ -64,14 +64,15 @@ export class NightLayer extends Container {
     this.eventMode = 'none';
   }
 
-  update(amount: number, campfires: CampfireState[], camera: Camera, viewW: number, viewH: number): void {
+  update(amount: number, lights: Light[], camera: Camera, viewW: number, viewH: number): void {
     this.visible = amount > 0.001;
     if (!this.visible) return;
     const alpha = NIGHT_ALPHA * amount;
-    const fires = campfires.map((c) => ({
-      sx: (c.x - camera.x) * camera.zoom + viewW / 2,
-      sy: (c.y - camera.y) * camera.zoom + viewH / 2,
-      r: FIRE_RADIUS * camera.zoom,
+    const fires = lights.map((l) => ({
+      sx: (l.x - camera.x) * camera.zoom + viewW / 2,
+      sy: (l.y - camera.y) * camera.zoom + viewH / 2,
+      r: l.r * camera.zoom,
+      warm: l.warm,
     }));
 
     for (const l of this.layers) {
@@ -87,6 +88,6 @@ export class NightLayer extends Container {
     }
 
     this.glow.clear();
-    for (const f of fires) this.glow.circle(f.sx, f.sy, f.r * 1.05).fill({ fill: this.glowGradient, alpha: amount });
+    for (const f of fires) if (f.warm) this.glow.circle(f.sx, f.sy, f.r * 1.05).fill({ fill: this.glowGradient, alpha: amount });
   }
 }

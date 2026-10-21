@@ -2,6 +2,7 @@ import { Application, Container, Graphics } from 'pixi.js';
 import { resourceAvailable, resourceCapacity, Rng, type GameConfig, type GameEvent, type IslandMap, type ResourceState, type WorldState } from '@draycol/core';
 import { Camera } from './camera';
 import { Fx } from './fx';
+import { lightsFor } from './lights';
 import { nightAmount, NightLayer } from './night';
 import { drawHitboxes, hitboxCircles } from './debug';
 import { PALETTE } from './palette';
@@ -80,6 +81,8 @@ export class Renderer {
   fx: Fx | null = null;
   /** Overlay de círculos de colisión (tecla H en desarrollo). */
   showHitboxes = false;
+  /** Jugador cuya luz y cámara se usan; por defecto el primero del estado. */
+  localPlayerId: number | null = null;
   private readonly hitboxGfx = new Graphics();
 
   constructor(
@@ -207,7 +210,8 @@ export class Renderer {
       this.world.position.x += Math.round(this.fx.shakeX);
       this.world.position.y += Math.round(this.fx.shakeY);
     }
-    this.night.update(nightAmount(state.isNight, state.phaseRemaining, this.cfg.daySeconds, state.day), state.campfires, this.camera, this.viewW, this.viewH);
+    const localId = this.localPlayerId ?? state.players[0]?.id ?? -1;
+    this.night.update(nightAmount(state.isNight, state.phaseRemaining, this.cfg.daySeconds, state.day), lightsFor(state, this.cfg, localId), this.camera, this.viewW, this.viewH);
   }
 
   private syncPlayers(state: WorldState, alpha: number, prev: PrevSnapshot | null): void {

@@ -60,6 +60,7 @@ export class App {
 
     const session = new Session({ name, startItem });
     const renderer = new Renderer(gameLayer, DEFAULT_CONFIG);
+    renderer.localPlayerId = session.playerId;
     await renderer.init(session.world.getState().map);
 
     const hud = new Hud(
