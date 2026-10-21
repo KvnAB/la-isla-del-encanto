@@ -41,12 +41,14 @@ describe('Hud', () => {
     expect(text('[data-bar="warmth"]')).toContain('FRÍO 100');
   });
 
-  it('muestra 8 slots con icono, cantidad y selección', () => {
+  it('muestra 12 slots con icono, cantidad y selección', () => {
     p.inventory[1] = { item: 'wood', count: 47 };
     p.selectedSlot = 1;
     hud.update(p, state, []);
     const slots = root.querySelectorAll('.slot');
-    expect(slots).toHaveLength(8);
+    expect(slots).toHaveLength(12);
+    expect(slots[9].querySelector('.slot-index')?.textContent).toBe('0');
+    expect(slots[11].querySelector('.slot-index')?.textContent).toBe('=');
     expect(slots[1].classList.contains('selected')).toBe(true);
     expect(slots[0].classList.contains('selected')).toBe(false);
     expect(slots[1].querySelector('.slot-count')?.textContent).toBe('47');

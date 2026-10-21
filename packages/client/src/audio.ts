@@ -50,7 +50,7 @@ export class GameAudio {
     for (const e of events) {
       switch (e.type) {
         case 'resourceHit':
-          if (e.playerId === localPlayerId) this.play('hit', () => this.knock(e.item === 'stone' ? 900 : 420));
+          if (e.playerId === localPlayerId) this.play('hit', () => this.knock(e.item === 'gold' ? 1300 : e.item === 'stone' ? 900 : 420));
           break;
         case 'creatureHit':
           if (e.playerId === localPlayerId) this.play('thud', () => this.thud(140, 0.12));
@@ -63,6 +63,9 @@ export class GameAudio {
           break;
         case 'ate':
           if (e.playerId === localPlayerId) this.play('eat', () => this.crunch());
+          break;
+        case 'coatToggled':
+          if (e.playerId === localPlayerId) this.play('coat', () => this.rustle());
           break;
         case 'crafted':
           if (e.playerId === localPlayerId) this.play('craft', () => this.blip([523, 659, 784], 0.08));
@@ -198,6 +201,23 @@ export class GameAudio {
       o.start(t);
       o.stop(t + step);
     });
+  }
+
+  /** Roce de tela al ponerse o quitarse el abrigo. */
+  private rustle(): void {
+    const ctx = this.ctx!;
+    const t = ctx.currentTime;
+    const n = this.noise(0.18);
+    const f = ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.setValueAtTime(900, t);
+    f.frequency.exponentialRampToValueAtTime(2200, t + 0.15);
+    f.Q.value = 0.9;
+    const g = ctx.createGain();
+    this.env(g, 0.28, 0.02, 0.15);
+    n.connect(f).connect(g).connect(this.master!);
+    n.start(t);
+    n.stop(t + 0.19);
   }
 
   private crunch(): void {

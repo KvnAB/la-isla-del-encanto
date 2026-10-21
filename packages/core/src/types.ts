@@ -1,6 +1,7 @@
 export type ItemId =
   | 'wood'
   | 'stone'
+  | 'gold'
   | 'apple'
   | 'raw_steak'
   | 'cooked_steak'
@@ -11,16 +12,18 @@ export type ItemId =
   | 'wood_sword'
   | 'stone_pickaxe'
   | 'stone_sword'
+  | 'gold_pickaxe'
   | 'campfire'
   | 'coat1';
 
 export type Size = 'small' | 'medium' | 'large';
-export type ResourceKind = 'tree' | 'apple_tree' | 'rock';
+/** `gold_rock` solo da oro con pico de piedra o mejor. */
+export type ResourceKind = 'tree' | 'apple_tree' | 'rock' | 'gold_rock';
 export type CreatureKind = 'tiger' | 'sheep' | 'goblin';
 /** `water` son ríos y lagos (caminable, nadando). `sea` es el borde infranqueable. */
 export type Terrain = 'sea' | 'land' | 'sand' | 'water';
 export type WeaponClass = 'fist' | 'wood_sword' | 'stone_sword';
-export type ToolClass = 'hand' | 'wood_pickaxe' | 'stone_pickaxe';
+export type ToolClass = 'hand' | 'wood_pickaxe' | 'stone_pickaxe' | 'gold_pickaxe';
 export type EntityId = number;
 export type StartItem = 'wood_pickaxe' | 'wood_sword';
 
@@ -47,6 +50,7 @@ export type GameEvent =
   | { type: 'campfirePlaced'; playerId: EntityId; entityId: EntityId }
   | { type: 'cooked'; playerId: EntityId }
   | { type: 'ate'; playerId: EntityId; item: ItemId }
+  | { type: 'coatToggled'; playerId: EntityId; on: boolean }
   | { type: 'playerDamaged'; playerId: EntityId; amount: number; byEntityId: EntityId }
   | { type: 'dayPassed'; day: number }
   | { type: 'playerDied'; playerId: EntityId; days: number; points: number };
@@ -69,6 +73,8 @@ export interface PlayerState {
   warmth: number;
   inventory: (Slot | null)[];
   selectedSlot: number;
+  /** El abrigo solo abriga si está puesto; se pone/quita usando su slot. */
+  coatOn: boolean;
   points: number;
   inWater: boolean;
   alive: boolean;

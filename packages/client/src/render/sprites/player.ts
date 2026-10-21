@@ -1,5 +1,5 @@
 import { Container, Graphics, Text } from 'pixi.js';
-import { findSlot, ITEM_META, type ItemId, type PlayerState } from '@draycol/core';
+import { coatWorn, ITEM_META, type ItemId, type PlayerState } from '@draycol/core';
 import { OUTLINE_WIDTH, PALETTE } from '../palette';
 import { drawPickaxe, drawSword } from './vector-items';
 
@@ -83,7 +83,7 @@ export class PlayerView extends Container {
     L.handFront.position.set(r * 0.78 + push, -r * 0.95);
     L.tool.position.set(r * 0.78 + push, -r * 0.95);
 
-    const coatOn = findSlot(p.inventory, 'coat1') !== -1;
+    const coatOn = coatWorn(p);
     if (coatOn !== this.coatOn) {
       this.coatOn = coatOn;
       L.coat.visible = coatOn;
@@ -100,7 +100,7 @@ export class PlayerView extends Container {
       if (shown) {
         const g = new Graphics();
         const s = r * 1.2;
-        if (shown === 'wood_pickaxe' || shown === 'stone_pickaxe') drawPickaxe(g, s, shown === 'stone_pickaxe');
+        if (shown === 'wood_pickaxe' || shown === 'stone_pickaxe' || shown === 'gold_pickaxe') drawPickaxe(g, s, shown === 'wood_pickaxe' ? 'wood' : shown === 'stone_pickaxe' ? 'stone' : 'gold');
         else drawSword(g, s, shown === 'stone_sword');
         g.pivot.set(0, s * 0.55);
         g.rotation = Math.PI / 2 - 0.25;

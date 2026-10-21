@@ -9,7 +9,7 @@ beforeEach(() => {
   el = document.createElement('div');
   document.body.appendChild(el);
   selected = 2;
-  input = new InputController(el, { getPlayerId: () => 1, getSelectedSlot: () => selected, aimAngle: (mx, my) => Math.atan2(my, mx) });
+  input = new InputController(el, { getPlayerId: () => 1, getSelectedSlot: () => selected, slotCount: 12, aimAngle: (mx, my) => Math.atan2(my, mx) });
   input.attach();
 });
 afterEach(() => {
@@ -52,13 +52,25 @@ describe('InputController', () => {
     expect(input.drain()).toContainEqual({ playerId: 1, type: 'selectSlot', slot: 2 });
   });
 
+  it('Digit0, Minus y Equal seleccionan los slots 10, 11 y 12', () => {
+    key('keydown', 'Digit0');
+    key('keydown', 'Minus');
+    key('keydown', 'Equal');
+    const slots = input.drain().filter((c) => c.type === 'selectSlot');
+    expect(slots).toEqual([
+      { playerId: 1, type: 'selectSlot', slot: 9 },
+      { playerId: 1, type: 'selectSlot', slot: 10 },
+      { playerId: 1, type: 'selectSlot', slot: 11 },
+    ]);
+  });
+
   it('la rueda pasa al siguiente slot de forma cíclica', () => {
-    selected = 7;
+    selected = 11;
     el.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true }));
     expect(input.drain()).toContainEqual({ playerId: 1, type: 'selectSlot', slot: 0 });
     selected = 0;
     el.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, bubbles: true }));
-    expect(input.drain()).toContainEqual({ playerId: 1, type: 'selectSlot', slot: 7 });
+    expect(input.drain()).toContainEqual({ playerId: 1, type: 'selectSlot', slot: 11 });
   });
 
   it('Q tira el slot seleccionado', () => {

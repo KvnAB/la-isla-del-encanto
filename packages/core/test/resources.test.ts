@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from '../src/config.js';
 import { terrainAt } from '../src/island.js';
-import { resourceAvailable, spawnResources } from '../src/systems/resources.js';
+import { resourceAvailable, resourceCapacity, spawnResources } from '../src/systems/resources.js';
 import { Rng } from '../src/rng.js';
 import { World } from '../src/world.js';
 import { clearWorld, makeWorld, placePlayerAt, putResource, setInventory } from './helpers.js';
@@ -162,18 +162,18 @@ describe('golpear recursos', () => {
 });
 
 describe('spawnResources', () => {
-  it('coloca 118 recursos en tierra, lejos del spawn y sin solapar', () => {
+  it('coloca 132 recursos en tierra, lejos del spawn y sin solapar', () => {
     const world = new World(1);
     const s = world.getState();
-    expect(s.resources.length).toBe(118);
-    const kinds = { tree: 0, apple_tree: 0, rock: 0 };
+    expect(s.resources.length).toBe(132);
+    const kinds = { tree: 0, apple_tree: 0, rock: 0, gold_rock: 0 };
     for (const r of s.resources) {
       kinds[r.kind]++;
       expect(['land', 'sand']).toContain(terrainAt(s.map, r.x, r.y));
       expect(Math.hypot(r.x - s.map.spawnX, r.y - s.map.spawnY)).toBeGreaterThanOrEqual(200);
-      expect(r.remaining).toBe(r.kind === 'apple_tree' ? DEFAULT_CONFIG.resources.appleYield[r.size] : DEFAULT_CONFIG.resources.capacity[r.size]);
+      expect(r.remaining).toBe(resourceCapacity(r.kind, r.size, DEFAULT_CONFIG));
     }
-    expect(kinds).toEqual({ tree: 60, apple_tree: 18, rock: 40 });
+    expect(kinds).toEqual({ tree: 60, apple_tree: 18, rock: 40, gold_rock: 14 });
     for (let i = 0; i < s.resources.length; i++)
       for (let j = i + 1; j < s.resources.length; j++) {
         const a = s.resources[i];
@@ -198,6 +198,6 @@ describe('spawnResources', () => {
     const w = new World(3);
     w.getState().resources.length = 0;
     spawnResources(w.getState(), w.cfg, new Rng(1));
-    expect(w.getState().resources.length).toBe(118);
+    expect(w.getState().resources.length).toBe(132);
   });
 });

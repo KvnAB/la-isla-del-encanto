@@ -3,6 +3,7 @@ import type { ItemId } from '@draycol/core';
 export const ITEM_NAMES: Record<ItemId, string> = {
   wood: 'Madera',
   stone: 'Piedra',
+  gold: 'Oro',
   apple: 'Manzana',
   raw_steak: 'Filete crudo',
   cooked_steak: 'Filete cocinado',
@@ -13,6 +14,7 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   wood_sword: 'Espada de madera',
   stone_pickaxe: 'Pico de piedra',
   stone_sword: 'Espada de piedra',
+  gold_pickaxe: 'Pico de oro',
   campfire: 'Fogata',
   coat1: 'Abrigo nivel 1',
 };

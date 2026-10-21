@@ -32,7 +32,8 @@ export interface CreatureDef {
 
 export interface GameConfig {
   stepSeconds: number;
-  island: { width: number; height: number; cellSize: number };
+  /** `seed` fija la isla: todas las partidas (y todos los jugadores) comparten el mismo mapa. */
+  island: { width: number; height: number; cellSize: number; seed: number };
   dayCycleSeconds: number;
   daySeconds: number;
   vitals: {
@@ -56,14 +57,17 @@ export interface GameConfig {
     reach: number;
     hitCooldown: number;
     hitArc: number;
+    inventorySlots: number;
   };
   resources: {
     capacity: Record<Size, number>;
+    goldCapacity: Record<Size, number>;
     regenSeconds: Record<Size, number>;
     appleYield: Record<Size, number>;
     radius: Record<ResourceKind, Record<Size, number>>;
     woodPerHit: Record<ToolClass, number>;
     stonePerHit: Record<ToolClass, number>;
+    goldPerHit: Record<ToolClass, number>;
     counts: Record<ResourceKind, number>;
     minDistFromSpawn: number;
   };
@@ -86,7 +90,7 @@ const treeRadius: Record<Size, number> = { small: 36, medium: 50, large: 70 };
 
 export const DEFAULT_CONFIG: GameConfig = {
   stepSeconds: 1 / 30,
-  island: { width: 3000, height: 3000, cellSize: 40 }, // (*)
+  island: { width: 3000, height: 3000, cellSize: 40, seed: 20261042 }, // (*)
   dayCycleSeconds: 480,
   daySeconds: 240,
   vitals: {
@@ -110,19 +114,24 @@ export const DEFAULT_CONFIG: GameConfig = {
     reach: 70, // (*)
     hitCooldown: 0.4, // (*)
     hitArc: Math.PI / 2, // (*)
+    inventorySlots: 12,
   },
   resources: {
     capacity: { small: 20, medium: 50, large: 100 },
+    goldCapacity: { small: 6, medium: 12, large: 20 }, // (*)
     regenSeconds: { small: 60, medium: 120, large: 210 },
     appleYield: { small: 3, medium: 4, large: 6 },
     radius: {
       tree: treeRadius,
       apple_tree: treeRadius,
       rock: { small: 28, medium: 40, large: 56 },
+      gold_rock: { small: 28, medium: 40, large: 56 },
     }, // (*)
-    woodPerHit: { hand: 1, wood_pickaxe: 2, stone_pickaxe: 3 },
-    stonePerHit: { hand: 0, wood_pickaxe: 1, stone_pickaxe: 2 },
-    counts: { tree: 60, apple_tree: 18, rock: 40 }, // (*)
+    woodPerHit: { hand: 1, wood_pickaxe: 2, stone_pickaxe: 3, gold_pickaxe: 4 },
+    stonePerHit: { hand: 0, wood_pickaxe: 1, stone_pickaxe: 2, gold_pickaxe: 3 },
+    // El oro solo sale con pico de piedra (1 por golpe); el de oro saca 2.
+    goldPerHit: { hand: 0, wood_pickaxe: 0, stone_pickaxe: 1, gold_pickaxe: 2 },
+    counts: { tree: 60, apple_tree: 18, rock: 40, gold_rock: 14 }, // (*)
     minDistFromSpawn: 200, // (*)
   },
   food: {
@@ -188,6 +197,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     { id: 'wood_sword', cost: { wood: 30 }, points: 25 },
     { id: 'stone_pickaxe', cost: { wood: 20, stone: 20 }, consumes: 'wood_pickaxe', replaces: 'wood_pickaxe', points: 100 },
     { id: 'stone_sword', cost: { wood: 60, stone: 30 }, consumes: 'wood_sword', replaces: 'wood_sword', points: 100 },
+    { id: 'gold_pickaxe', cost: { gold: 20, stone: 10, wood: 30 }, consumes: 'stone_pickaxe', replaces: 'stone_pickaxe', points: 200 },
     { id: 'campfire', cost: { wood: 15, stone: 5 }, points: 25 },
     { id: 'coat1', cost: { wool: 5, tiger_pelt: 5, needle: 1 }, unique: true, points: 100 },
   ],
@@ -200,11 +210,14 @@ export interface ItemMeta {
   tool?: ToolClass;
   food?: boolean;
   placeable?: boolean;
+  /** Se pone y se quita usando el slot (clic). */
+  equippable?: boolean;
 }
 
 export const ITEM_META: Record<ItemId, ItemMeta> = {
   wood: { stackable: true },
   stone: { stackable: true },
+  gold: { stackable: true },
   apple: { stackable: true, food: true },
   raw_steak: { stackable: true, food: true },
   cooked_steak: { stackable: true, food: true },
@@ -215,6 +228,7 @@ export const ITEM_META: Record<ItemId, ItemMeta> = {
   wood_sword: { stackable: false, weapon: 'wood_sword' },
   stone_pickaxe: { stackable: false, tool: 'stone_pickaxe' },
   stone_sword: { stackable: false, weapon: 'stone_sword' },
+  gold_pickaxe: { stackable: false, tool: 'gold_pickaxe' },
   campfire: { stackable: true, placeable: true },
-  coat1: { stackable: false },
+  coat1: { stackable: false, equippable: true },
 };

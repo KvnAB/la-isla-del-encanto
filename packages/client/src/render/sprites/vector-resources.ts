@@ -117,6 +117,53 @@ export function drawFlatRock(g: Graphics, x: number, y: number, r: number, rng: 
   if (dark.length >= 6) g.poly(dark, true).fill(PALETTE.rockDark);
 }
 
+/** Pepita de oro: polígono facetado dorado con un brillo. */
+export function drawGoldNugget(g: Graphics, x: number, y: number, r: number, rng: Rng, ow: number, vertices = 7): void {
+  const pts: number[] = [];
+  for (let i = 0; i < vertices; i++) {
+    const a = (i / vertices) * Math.PI * 2 + rng.range(-0.2, 0.2);
+    const rr = r * rng.range(0.78, 1);
+    pts.push(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  g.poly(pts, true).fill(PALETTE.gold).stroke({ width: ow, color: PALETTE.goldOutline, join: 'round' });
+  const dark: number[] = [];
+  for (let i = 0; i < vertices; i++) {
+    const dx = pts[i * 2] - x;
+    const dy = pts[i * 2 + 1] - y;
+    if (dx + dy > r * 0.4) dark.push(x + dx * 0.85, y + dy * 0.85);
+  }
+  if (dark.length >= 6) g.poly(dark, true).fill(PALETTE.goldDark);
+  g.circle(x - r * 0.3, y - r * 0.3, r * 0.22).fill(PALETTE.goldLight);
+  g.circle(x - r * 0.38, y - r * 0.38, r * 0.08).fill(0xffffff, 0.9);
+}
+
+/** Roca de oro: roca gris con vetas y pepitas doradas incrustadas. */
+export function makeGoldRock(r: number, seed: number): Container {
+  const rng = new Rng(seed);
+  const c = new Container();
+  const g = new Graphics();
+  const ow = outlineWidth(r);
+  drawFlatRock(g, 0, 0, r, rng, ow);
+  // vetas
+  for (let i = 0; i < 2; i++) {
+    const a = rng.range(0, Math.PI * 2);
+    const x0 = Math.cos(a) * r * 0.55;
+    const y0 = Math.sin(a) * r * 0.55;
+    g.moveTo(x0, y0)
+      .quadraticCurveTo(rng.range(-r * 0.3, r * 0.3), rng.range(-r * 0.3, r * 0.3), -x0 * 0.7, -y0 * 0.7)
+      .stroke({ width: Math.max(2, r * 0.07), color: PALETTE.goldDark, cap: 'round', alpha: 0.85 });
+  }
+  // pepitas
+  const n = 3 + rng.int(0, 2);
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + rng.range(-0.4, 0.4);
+    const d = r * rng.range(0.25, 0.6);
+    drawGoldNugget(g, Math.cos(a) * d, Math.sin(a) * d, r * rng.range(0.16, 0.26), rng, Math.max(1.5, ow * 0.6), 6);
+  }
+  c.addChild(g);
+  return c;
+}
+
 export function makeRock(_size: Size, r: number, seed: number): Container {
   const rng = new Rng(seed);
   const c = new Container();
@@ -143,7 +190,8 @@ export function makeRubble(r: number, seed: number): Container {
 }
 
 export function makeResourceVector(kind: ResourceKind, size: Size, r: number, broken: boolean, seed: number): Container {
-  if (broken) return kind === 'rock' ? makeRubble(r, seed) : makeStump(r, seed);
+  if (broken) return kind === 'rock' || kind === 'gold_rock' ? makeRubble(r, seed) : makeStump(r, seed);
   if (kind === 'rock') return makeRock(size, r, seed);
+  if (kind === 'gold_rock') return makeGoldRock(r, seed);
   return makeTree(kind, size, r, seed);
 }

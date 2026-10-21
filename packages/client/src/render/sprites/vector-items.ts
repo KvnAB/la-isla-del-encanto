@@ -1,7 +1,7 @@
 import { Container, Graphics } from 'pixi.js';
 import { Rng, type ItemId } from '@draycol/core';
 import { OUTLINE_WIDTH, PALETTE } from '../palette';
-import { drawFlatRock } from './vector-resources';
+import { drawFlatRock, drawGoldNugget } from './vector-resources';
 
 /**
  * Objetos y fogata en estilo plano. `drawItem` dibuja dentro de un cuadrado de lado 2*s centrado en (0,0).
@@ -14,16 +14,21 @@ const STONE = { base: PALETTE.rock, light: PALETTE.rockLight };
 const MEAT = { raw: 0xd94a3c, rawLight: 0xf2a59a, fat: 0xf8ebe4, cooked: 0xa5552a, cookedDark: 0x6e3417, bone: 0xf3ead8 };
 const FUR = { orange: PALETTE.tiger, stripe: PALETTE.tigerStripe, wool: PALETTE.sheepWool, woolShade: 0xd9d5cc };
 const METAL = { base: 0xcfd6dc, light: 0xf2f5f7, dark: 0x8c969e };
+const GOLD = { base: PALETTE.gold, light: PALETTE.goldLight, dark: PALETTE.goldDark };
+
+export type PickaxeMaterial = 'wood' | 'stone' | 'gold';
 const ow = (s: number): number => Math.max(OUTLINE_WIDTH, s * 0.12);
 
 /** Pico apuntando hacia arriba (-y). */
-export function drawPickaxe(g: Graphics, s: number, stone: boolean): void {
+export function drawPickaxe(g: Graphics, s: number, material: PickaxeMaterial): void {
   const o = ow(s) * 0.8;
+  const head = material === 'gold' ? GOLD : STONE;
   g.moveTo(-s * 0.1, s * 0.95).lineTo(s * 0.1, -s * 0.55).stroke({ width: s * 0.2 + o * 2, color: OL, cap: 'round' });
   g.moveTo(-s * 0.1, s * 0.95).lineTo(s * 0.1, -s * 0.55).stroke({ width: s * 0.2, color: WOOD.base, cap: 'round' });
-  if (stone) {
-    g.moveTo(-s * 0.9, -s * 0.3).quadraticCurveTo(0, -s * 1.0, s * 0.95, -s * 0.35).lineTo(s * 0.7, -s * 0.55).quadraticCurveTo(0, -s * 0.75, -s * 0.65, -s * 0.5).closePath().fill(STONE.base).stroke({ width: o * 1.4, color: OL, join: 'round' });
-    g.moveTo(-s * 0.5, -s * 0.5).quadraticCurveTo(0, -s * 0.88, s * 0.6, -s * 0.5).quadraticCurveTo(0, -s * 0.7, -s * 0.5, -s * 0.5).fill(STONE.light);
+  if (material !== 'wood') {
+    g.moveTo(-s * 0.9, -s * 0.3).quadraticCurveTo(0, -s * 1.0, s * 0.95, -s * 0.35).lineTo(s * 0.7, -s * 0.55).quadraticCurveTo(0, -s * 0.75, -s * 0.65, -s * 0.5).closePath().fill(head.base).stroke({ width: o * 1.4, color: OL, join: 'round' });
+    g.moveTo(-s * 0.5, -s * 0.5).quadraticCurveTo(0, -s * 0.88, s * 0.6, -s * 0.5).quadraticCurveTo(0, -s * 0.7, -s * 0.5, -s * 0.5).fill(head.light);
+    if (material === 'gold') g.circle(s * 0.55, -s * 0.42, s * 0.07).fill(0xffffff, 0.85);
   } else {
     g.moveTo(-s * 0.9, -s * 0.3).quadraticCurveTo(0, -s * 1.05, s * 0.95, -s * 0.35).stroke({ width: s * 0.22 + o * 2, color: OL, cap: 'round' });
     g.moveTo(-s * 0.9, -s * 0.3).quadraticCurveTo(0, -s * 1.05, s * 0.95, -s * 0.35).stroke({ width: s * 0.22, color: WOOD.base, cap: 'round' });
@@ -62,6 +67,9 @@ export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
     }
     case 'stone':
       drawFlatRock(g, 0, s * 0.05, s * 0.85, rng, o, 7);
+      break;
+    case 'gold':
+      drawGoldNugget(g, 0, s * 0.05, s * 0.85, rng, o);
       break;
     case 'apple': {
       g.circle(-s * 0.3, s * 0.15, s * 0.58).fill(PALETTE.apple).stroke({ width: o, color: PALETTE.appleOutline });
@@ -109,10 +117,13 @@ export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
       break;
     }
     case 'wood_pickaxe':
-      drawPickaxe(g, s, false);
+      drawPickaxe(g, s, 'wood');
       break;
     case 'stone_pickaxe':
-      drawPickaxe(g, s, true);
+      drawPickaxe(g, s, 'stone');
+      break;
+    case 'gold_pickaxe':
+      drawPickaxe(g, s, 'gold');
       break;
     case 'wood_sword':
       drawSword(g, s, false);

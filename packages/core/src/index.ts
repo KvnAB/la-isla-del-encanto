@@ -10,4 +10,5 @@ export { availableRecipes, craft } from './systems/crafting.js';
 export { resourceAvailable, resourceCapacity, toolClassOf, weaponClassOf } from './systems/resources.js';
 export { addItem, removeItem, countItem, findSlot } from './systems/inventory.js';
 export { nearCampfire } from './systems/campfire.js';
+export { coatWorn } from './systems/vitals.js';
 export { inReach, inArc } from './systems/hit.js';

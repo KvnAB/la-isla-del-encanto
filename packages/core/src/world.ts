@@ -21,7 +21,8 @@ export class World {
   private readonly queue: Command[] = [];
   private events: GameEvent[] = [];
 
-  constructor(seed: number, cfg: GameConfig = DEFAULT_CONFIG) {
+  /** `seed` por defecto es la isla fija de la configuración; otra semilla genera otra isla (tests). */
+  constructor(seed: number = DEFAULT_CONFIG.island.seed, cfg: GameConfig = DEFAULT_CONFIG) {
     this.cfg = cfg;
     this.rng = new Rng(seed);
     const map = generateIsland(this.rng, cfg);
@@ -46,7 +47,7 @@ export class World {
 
   addPlayer(name: string, startItem: StartItem): EntityId {
     const id = this.state.nextEntityId++;
-    const inventory = Array.from({ length: 8 }, () => null) as PlayerState['inventory'];
+    const inventory = Array.from({ length: this.cfg.player.inventorySlots }, () => null) as PlayerState['inventory'];
     inventory[0] = { item: startItem, count: 1 };
     this.state.players.push({
       id,
@@ -61,6 +62,7 @@ export class World {
       warmth: 100,
       inventory,
       selectedSlot: 0,
+      coatOn: true,
       points: 0,
       inWater: false,
       alive: true,

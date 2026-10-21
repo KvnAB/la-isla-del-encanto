@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_CONFIG } from '../src/config.js';
 import { World } from '../src/world.js';
 
 describe('World', () => {
@@ -6,7 +7,7 @@ describe('World', () => {
     const w = new World(7);
     const id = w.addPlayer('Ana', 'wood_pickaxe');
     const p = w.player(id);
-    expect(p.inventory).toHaveLength(8);
+    expect(p.inventory).toHaveLength(12);
     expect(p.inventory[0]).toEqual({ item: 'wood_pickaxe', count: 1 });
     expect(p.inventory.slice(1).every((s) => s === null)).toBe(true);
     expect(p.selectedSlot).toBe(0);
@@ -41,5 +42,16 @@ describe('World', () => {
     w.step();
     expect(w.getState().tick).toBe(2);
     expect(w.getState().time).toBeCloseTo(2 / 30, 6);
+  });
+});
+
+describe('isla fija', () => {
+  it('sin semilla el mundo usa la isla de la configuración, igual en cada partida', () => {
+    const a = new World();
+    const b = new World();
+    const c = new World(DEFAULT_CONFIG.island.seed);
+    expect(a.getState().map).toEqual(b.getState().map);
+    expect(a.getState().map).toEqual(c.getState().map);
+    expect(a.getState().resources).toEqual(b.getState().resources);
   });
 });

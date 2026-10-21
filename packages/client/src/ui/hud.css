@@ -156,13 +156,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Abajo centro: barras con icono + 8 slots cuadrados */
+/* Abajo centro: barras con icono + slots cuadrados (12) */
 .hud-bottom {
   position: absolute;
   left: 50%;
   bottom: 14px;
   transform: translateX(-50%);
-  width: 640px;
+  width: 760px;
   max-width: calc(100vw - 32px);
   display: flex;
   flex-direction: column;
@@ -252,15 +252,16 @@
 }
 
 .hud-slots {
+  --slot-size: 58px;
   display: grid;
-  grid-template-columns: repeat(8, 64px);
-  gap: 8px;
+  grid-template-columns: repeat(12, var(--slot-size));
+  gap: 6px;
 }
 
 .slot {
   position: relative;
-  width: 64px;
-  height: 64px;
+  width: var(--slot-size);
+  height: var(--slot-size);
   border-radius: 10px;
   background: rgba(10, 16, 24, 0.55);
   border: 2px solid rgba(255, 255, 255, 0.3);

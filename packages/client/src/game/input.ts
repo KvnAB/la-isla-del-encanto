@@ -5,6 +5,8 @@ type CommandBody = Command extends infer C ? (C extends { playerId: number } ? O
 export interface InputOptions {
   getPlayerId: () => number;
   getSelectedSlot: () => number;
+  /** Número de slots del inventario (para la rueda). */
+  slotCount: number;
   /** Ángulo de apuntado a partir de la posición del ratón relativa al elemento. */
   aimAngle: (mouseX: number, mouseY: number) => number;
 }
@@ -19,6 +21,25 @@ const MOVE_KEYS: Record<string, [number, number]> = {
   KeyD: [1, 0],
   ArrowRight: [1, 0],
 };
+
+/** Teclas de la fila numérica → índice de slot: 1..9, 0, -, = (12 slots). */
+export const SLOT_KEYS: Record<string, number> = {
+  Digit1: 0,
+  Digit2: 1,
+  Digit3: 2,
+  Digit4: 3,
+  Digit5: 4,
+  Digit6: 5,
+  Digit7: 6,
+  Digit8: 7,
+  Digit9: 8,
+  Digit0: 9,
+  Minus: 10,
+  Equal: 11,
+};
+
+/** Etiqueta de la tecla que selecciona cada slot. */
+export const SLOT_KEY_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
 
 /** Convierte teclado y ratón en comandos del núcleo. No toca el mundo. */
 export class InputController {
@@ -54,9 +75,9 @@ export class InputController {
       e.preventDefault();
       return;
     }
-    const digit = /^Digit([1-8])$/.exec(e.code);
-    if (digit) {
-      this.push({ type: 'selectSlot', slot: Number(digit[1]) - 1 });
+    const slot = SLOT_KEYS[e.code];
+    if (slot !== undefined && slot < this.opts.slotCount) {
+      this.push({ type: 'selectSlot', slot });
       return;
     }
     if (e.code === 'KeyQ') this.push({ type: 'dropSlot', slot: this.opts.getSelectedSlot() });
@@ -77,7 +98,8 @@ export class InputController {
 
   private readonly onWheel = (e: WheelEvent): void => {
     const dir = e.deltaY > 0 ? 1 : -1;
-    this.push({ type: 'selectSlot', slot: (this.opts.getSelectedSlot() + dir + 8) % 8 });
+    const n = this.opts.slotCount;
+    this.push({ type: 'selectSlot', slot: (this.opts.getSelectedSlot() + dir + n) % n });
     e.preventDefault();
   };
 

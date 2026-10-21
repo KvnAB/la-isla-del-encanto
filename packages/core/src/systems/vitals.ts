@@ -4,6 +4,11 @@ import { clamp } from '../vec.js';
 import { nearCampfire } from './campfire.js';
 import { findSlot } from './inventory.js';
 
+/** El abrigo abriga solo si se tiene y está puesto. */
+export function coatWorn(p: PlayerState): boolean {
+  return p.coatOn && findSlot(p.inventory, 'coat1') !== -1;
+}
+
 export function stepVitals(state: WorldState, p: PlayerState, cfg: GameConfig, dt: number, _events: GameEvent[]): void {
   if (!p.alive) return;
   const v = cfg.vitals;
@@ -17,7 +22,7 @@ export function stepVitals(state: WorldState, p: PlayerState, cfg: GameConfig, d
     let mult = 1;
     if (state.isNight) mult *= v.nightColdMult;
     if (p.inWater) mult *= v.waterColdMult;
-    if (findSlot(p.inventory, 'coat1') !== -1) mult *= v.coatColdMult;
+    if (coatWorn(p)) mult *= v.coatColdMult;
     p.warmth -= rate * mult * dt;
   }
 

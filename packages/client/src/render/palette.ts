@@ -25,6 +25,10 @@ export const PALETTE = {
   rockLight: 0xb5babf,
   rockDark: 0x6d7378,
   rockOutline: 0x2b2e31,
+  gold: 0xf5c531,
+  goldLight: 0xffe98a,
+  goldDark: 0xc48f12,
+  goldOutline: 0x5a3e08,
 
   skin: 0xf4c9a3,
   skinOutline: 0x2b1d12,

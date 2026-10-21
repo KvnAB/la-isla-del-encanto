@@ -71,14 +71,14 @@ describe('comer', () => {
 });
 
 describe('seleccionar y tirar', () => {
-  it('selectSlot 7 selecciona, 9 se ignora', () => {
+  it('selectSlot 11 selecciona, 12 se ignora', () => {
     const { world, id, p } = playerWith([null]);
-    world.enqueue({ playerId: id, type: 'selectSlot', slot: 7 });
+    world.enqueue({ playerId: id, type: 'selectSlot', slot: 11 });
     world.step();
-    expect(p.selectedSlot).toBe(7);
-    world.enqueue({ playerId: id, type: 'selectSlot', slot: 9 });
+    expect(p.selectedSlot).toBe(11);
+    world.enqueue({ playerId: id, type: 'selectSlot', slot: 12 });
     world.step();
-    expect(p.selectedSlot).toBe(7);
+    expect(p.selectedSlot).toBe(11);
   });
 
   it('dropSlot tira todo el slot al suelo delante del jugador durante 60 s', () => {

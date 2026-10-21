@@ -4,7 +4,20 @@ Juego survival 2D top-down en una isla (nombre interno del proyecto: Draycol Sur
 
 - Reglas del juego: [`docs/plan_juego_survival_2d.md`](docs/plan_juego_survival_2d.md)
 - Diseño técnico: [`docs/superpowers/specs/2026-10-20-draycol-survival-design.md`](docs/superpowers/specs/2026-10-20-draycol-survival-design.md)
-- Guía de estilo visual (hojas de referencia y portada): `docs/design/reference/`. Los sprites del juego se recortan de ahí con `python tools/extract-sprites.py` (requiere Pillow y numpy) y se guardan en `packages/client/public/sprites/`.
+- Referencias visuales (estilo plano tipo starve.io y portada): `docs/design/reference/`. Todo el arte del juego se dibuja en código (vectores PixiJS) en `packages/client/src/render/sprites/`; no hay PNG de sprites. `tools/extract-sprites.py` es un resto de una iteración anterior y el juego no lo usa.
+
+## Controles
+
+| Tecla | Acción |
+|---|---|
+| `WASD` / flechas | moverse |
+| ratón | apuntar |
+| clic izquierdo | golpear, o usar el objeto seleccionado (comer, colocar fogata, ponerse/quitarse el abrigo) |
+| `1`–`9`, `0`, `-`, `=` o rueda | elegir uno de los 12 slots |
+| `Q` | tirar el slot seleccionado |
+| `M` | silenciar o activar el sonido |
+
+La isla es siempre la misma (semilla fija `island.seed` en la configuración), así todos los jugadores aprenden el mismo mapa y en fase 2 compartirán la misma isla.
 
 ## Requisitos
 
@@ -70,15 +83,17 @@ Todos los números del juego están en **`packages/core/src/config.ts`** (`DEFAU
 1. Añadir el id a `ItemId` en `packages/core/src/types.ts`.
 2. Añadir su entrada en `ITEM_META` (`packages/core/src/config.ts`): apilable, si es herramienta/arma/comida/colocable.
 3. Nombre en español en `packages/client/src/ui/names.ts` (`ITEM_NAMES`).
-4. Su PNG con transparencia en `packages/client/public/sprites/<id>.png` y el id en `SPRITE_KEYS` (`packages/client/src/render/assets.ts`).
-5. Si es comida, su efecto en `config.food`.
+4. Su dibujo en `drawItem` (`packages/client/src/render/sprites/vector-items.ts`); el icono del HUD y el objeto en el suelo salen de ahí.
+5. Si es comida, su efecto en `config.food`. Si es una herramienta, su rendimiento en `woodPerHit` / `stonePerHit` / `goldPerHit` (`ToolClass` en `types.ts`).
+
+**Un recurso nuevo** (como la roca de oro): id en `ResourceKind`, radio y cantidad en `config.resources`, qué da y con qué herramienta en `yieldFor` (`systems/resources.ts`) y su dibujo en `makeResourceVector` (`vector-resources.ts`).
 
 **Una receta nueva**: añadir una entrada en `config.recipes` (coste, `consumes`/`replaces` si sustituye a otra herramienta, `unique` si solo se puede tener una, puntos). El botón de fabricar aparece solo.
 
 **Una criatura nueva**
 1. Añadir el id a `CreatureKind` en `types.ts`.
 2. Su definición en `config.creatures.defs` (vida, velocidad, radio, daño, radios de detección/huida, botín, puntos, agresiva o no, cantidad inicial).
-3. Su PNG en `packages/client/public/sprites/<id>.png` (mirando hacia abajo, como las de la hoja) y el id en `SPRITE_KEYS`.
+3. Su dibujo en `packages/client/src/render/sprites/vector-creatures.ts` y el caso en `makeCreatureVector`.
 Si necesita un comportamiento que no sea deambular/perseguir/atacar/huir, ampliar la máquina de estados de `packages/core/src/systems/creatures.ts`.
 
 ## Despliegue con Docker
@@ -99,5 +114,4 @@ Expone el puerto 3000 y guarda la base de datos en el volumen `scores-data`. Sin
 ## Hoja de ruta (fase 2)
 
 - Multijugador en la misma isla: el núcleo en el servidor como autoridad, comandos por WebSocket, snapshots a los clientes. El núcleo ya maneja varios jugadores (`playerId` en todos los comandos y eventos) y es determinista por semilla.
-- Isla compartida o diaria (semilla servida por la API).
-- Cuentas de usuario, sonido, empaquetado de escritorio (Electron/Tauri) usando `VITE_API_BASE`.
+- Cuentas de usuario, empaquetado de escritorio (Electron/Tauri) usando `VITE_API_BASE`.

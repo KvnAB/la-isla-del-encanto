@@ -21,13 +21,13 @@ export function placePlayerAt(world: World, id: EntityId, x: number, y: number):
 
 export function setInventory(world: World, id: EntityId, slots: (Slot | null)[]): void {
   const p = world.player(id);
-  p.inventory = Array.from({ length: 8 }, (_, i) => slots[i] ?? null);
+  p.inventory = Array.from({ length: world.cfg.player.inventorySlots }, (_, i) => slots[i] ?? null);
 }
 
 export function putResource(world: World, kind: ResourceKind, size: Size, x: number, y: number, remaining?: number) {
   const s = world.getState();
   const cfg = world.cfg;
-  const cap = kind === 'apple_tree' ? cfg.resources.appleYield[size] : cfg.resources.capacity[size];
+  const cap = kind === 'apple_tree' ? cfg.resources.appleYield[size] : kind === 'gold_rock' ? cfg.resources.goldCapacity[size] : cfg.resources.capacity[size];
   const r = {
     id: s.nextEntityId++,
     kind,

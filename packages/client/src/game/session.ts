@@ -1,8 +1,9 @@
-import { ITEM_META, World, type Command, type GameEvent, type StartItem } from '@draycol/core';
+import { DEFAULT_CONFIG, ITEM_META, World, type Command, type GameEvent, type StartItem } from '@draycol/core';
 
 export interface SessionOptions {
   name: string;
   startItem: StartItem;
+  /** Por defecto la isla fija de la configuración (igual para todos). */
   seed?: number;
 }
 
@@ -13,17 +14,17 @@ export class Session {
   readonly seed: number;
 
   constructor(opts: SessionOptions) {
-    this.seed = opts.seed ?? Date.now() >>> 0;
+    this.seed = opts.seed ?? DEFAULT_CONFIG.island.seed;
     this.world = new World(this.seed);
     this.playerId = this.world.addPlayer(opts.name, opts.startItem);
   }
 
-  /** Clic izquierdo: usar el slot si es comida o fogata; si no, golpear. */
+  /** Clic izquierdo: usar el slot si es comida, fogata o abrigo; si no, golpear. */
   primaryAction(): Command {
     const p = this.world.player(this.playerId);
     const slot = p.inventory[p.selectedSlot];
     const meta = slot ? ITEM_META[slot.item] : null;
-    if (meta && (meta.food || meta.placeable)) return { playerId: this.playerId, type: 'useSlot' };
+    if (meta && (meta.food || meta.placeable || meta.equippable)) return { playerId: this.playerId, type: 'useSlot' };
     return { playerId: this.playerId, type: 'hit' };
   }
 

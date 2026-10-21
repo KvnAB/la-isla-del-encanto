@@ -62,6 +62,10 @@ describe('objetos en el suelo', () => {
       { item: 'tiger_pelt', count: 1 },
       { item: 'raw_steak', count: 1 },
       { item: 'cooked_steak', count: 1 },
+      { item: 'gold', count: 1 },
+      { item: 'wood_sword', count: 1 },
+      { item: 'stone_sword', count: 1 },
+      { item: 'gold_pickaxe', count: 1 },
     ]);
     const g = putGroundItem(world, 'campfire', 2, p.x + 50, p.y);
     hit(world, id);
@@ -84,6 +88,10 @@ describe('objetos en el suelo', () => {
       { item: 'tiger_pelt', count: 1 },
       { item: 'raw_steak', count: 1 },
       { item: 'cooked_steak', count: 1 },
+      { item: 'gold', count: 1 },
+      { item: 'wood_sword', count: 1 },
+      { item: 'stone_sword', count: 1 },
+      { item: 'gold_pickaxe', count: 1 },
     ]);
     putGroundItem(world, 'wood', 7, p.x + 50, p.y);
     hit(world, id);
@@ -101,6 +109,10 @@ describe('objetos en el suelo', () => {
       { item: 'tiger_pelt', count: 1 },
       { item: 'raw_steak', count: 1 },
       { item: 'cooked_steak', count: 1 },
+      { item: 'gold', count: 1 },
+      { item: 'wood_sword', count: 1 },
+      { item: 'stone_sword', count: 1 },
+      { item: 'gold_pickaxe', count: 1 },
     ];
     const { world, id, p } = setup(full);
     putGroundItem(world, 'campfire', 1, p.x + 40, p.y + 20);
@@ -122,6 +134,10 @@ describe('objetos en el suelo', () => {
       { item: 'tiger_pelt', count: 1 },
       { item: 'raw_steak', count: 1 },
       { item: 'cooked_steak', count: 1 },
+      { item: 'gold', count: 1 },
+      { item: 'wood_sword', count: 1 },
+      { item: 'stone_sword', count: 1 },
+      { item: 'gold_pickaxe', count: 1 },
     ];
     const { world, id, p } = setup(full);
     putGroundItem(world, 'campfire', 1, p.x + 40, p.y + 20);

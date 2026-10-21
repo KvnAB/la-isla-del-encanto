@@ -8,12 +8,12 @@ export interface UseHooks {
   placeCampfire?: (state: WorldState, p: PlayerState) => void;
 }
 
-/** Usa el slot seleccionado: comida → comer; fogata → colocar; herramientas → nada. */
+/** Usa el slot seleccionado: comida → comer; fogata → colocar; abrigo → poner/quitar; herramientas → nada. */
 export function useSelectedSlot(state: WorldState, p: PlayerState, cfg: GameConfig, events: GameEvent[], hooks: UseHooks = {}): void {
   const slot = p.inventory[p.selectedSlot];
   if (!slot) return;
   const meta = ITEM_META[slot.item];
-  if (!meta.food && !meta.placeable) return;
+  if (!meta.food && !meta.placeable && !meta.equippable) return;
   // Mismo cooldown que el golpe: un clic mantenido no consume varias unidades por paso.
   if (p.hitCooldown > 0) return;
   p.hitCooldown = cfg.player.hitCooldown;
@@ -24,6 +24,11 @@ export function useSelectedSlot(state: WorldState, p: PlayerState, cfg: GameConf
     p.hunger = clamp(p.hunger + f.hunger, 0, 100);
     p.health = clamp(p.health + f.health, 0, 100);
     events.push({ type: 'ate', playerId: p.id, item: slot.item });
+    return;
+  }
+  if (meta.equippable) {
+    p.coatOn = !p.coatOn;
+    events.push({ type: 'coatToggled', playerId: p.id, on: p.coatOn });
     return;
   }
   if (hooks.placeCampfire) hooks.placeCampfire(state, p);

@@ -1,5 +1,6 @@
 import type { GameConfig, ItemId, PlayerState, WorldState } from '@draycol/core';
 import './hud.css';
+import { SLOT_KEY_LABELS } from '../game/input';
 import { itemIconDataUrl } from './icons';
 import { formatClock, formatPoints, ITEM_NAMES, ITEM_NAMES_LOWER } from './names';
 
@@ -24,7 +25,7 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, t
   return e;
 }
 
-/** HUD en DOM: barras, 8 slots, recetas disponibles, día y puntos. Solo toca el DOM cuando cambia algo. */
+/** HUD en DOM: barras, slots del inventario, recetas disponibles, día y puntos. Solo toca el DOM cuando cambia algo. */
 export class Hud {
   private readonly root: HTMLElement;
   private readonly bars = new Map<BarKey, { fill: HTMLElement; label: HTMLElement; last: number }>();
@@ -79,9 +80,10 @@ export class Hud {
       this.bars.set(b.key, { fill, label, last: -1 });
     }
     const slotsRow = el('div', 'hud-slots');
-    for (let i = 0; i < 8; i++) {
+    slotsRow.style.gridTemplateColumns = `repeat(${cfg.player.inventorySlots}, var(--slot-size))`;
+    for (let i = 0; i < cfg.player.inventorySlots; i++) {
       const s = el('div', 'slot');
-      const idx = el('span', 'slot-index', String(i + 1));
+      const idx = el('span', 'slot-index', SLOT_KEY_LABELS[i] ?? String(i + 1));
       const img = el('img', 'slot-icon');
       img.alt = '';
       img.draggable = false;
@@ -109,7 +111,7 @@ export class Hud {
       }
     }
 
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < this.slots.length; i++) {
       const s = this.slots[i];
       const slot = p.inventory[i];
       const item = slot?.item ?? null;
@@ -119,7 +121,7 @@ export class Hud {
         s.lastItem = item;
         if (item) {
           s.img.src = itemIconDataUrl(item);
-          s.img.title = ITEM_NAMES[item];
+          s.img.title = item === 'coat1' ? `${ITEM_NAMES[item]} · clic para poner o quitar` : ITEM_NAMES[item];
           s.img.hidden = false;
         } else {
           s.img.hidden = true;

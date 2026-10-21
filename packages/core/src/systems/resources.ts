@@ -8,13 +8,15 @@ import { addItem } from './inventory.js';
 const SIZES: Size[] = ['small', 'medium', 'large'];
 
 export function resourceCapacity(kind: ResourceKind, size: Size, cfg: GameConfig): number {
-  return kind === 'apple_tree' ? cfg.resources.appleYield[size] : cfg.resources.capacity[size];
+  if (kind === 'apple_tree') return cfg.resources.appleYield[size];
+  if (kind === 'gold_rock') return cfg.resources.goldCapacity[size];
+  return cfg.resources.capacity[size];
 }
 
 export function spawnResources(state: WorldState, cfg: GameConfig, rng: Rng): void {
   const map = state.map;
   const spawn = { x: map.spawnX, y: map.spawnY, d: cfg.resources.minDistFromSpawn };
-  const kinds: ResourceKind[] = ['tree', 'apple_tree', 'rock'];
+  const kinds: ResourceKind[] = ['tree', 'apple_tree', 'rock', 'gold_rock'];
   for (const kind of kinds) {
     for (let i = 0; i < cfg.resources.counts[kind]; i++) {
       const size = rng.pick(SIZES);
@@ -69,6 +71,8 @@ function yieldFor(kind: ResourceKind, tool: ToolClass, cfg: GameConfig): { item:
       return { item: 'wood', perHit: cfg.resources.woodPerHit[tool] };
     case 'rock':
       return { item: 'stone', perHit: cfg.resources.stonePerHit[tool] };
+    case 'gold_rock':
+      return { item: 'gold', perHit: cfg.resources.goldPerHit[tool] };
     case 'apple_tree':
       return { item: 'apple', perHit: Number.POSITIVE_INFINITY };
   }
