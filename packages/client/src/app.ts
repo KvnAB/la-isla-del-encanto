@@ -1,5 +1,6 @@
 import { availableRecipes, DEFAULT_CONFIG, ITEM_META, type GameEvent, type ItemId, type StartItem } from '@draycol/core';
 import { getScores, postScore } from './api';
+import { GameAudio } from './audio';
 import { InputController } from './game/input';
 import { FixedLoop } from './game/loop';
 import { Session } from './game/session';
@@ -26,6 +27,7 @@ export class App {
   private running: Running | null = null;
   private readonly startScreen: StartScreen;
   private readonly deathScreen: DeathScreen;
+  readonly audio = new GameAudio();
 
   constructor(private readonly root: HTMLElement) {
     this.startScreen = new StartScreen(root, (opts) => void this.play(opts.name, opts.startItem), () => getScores(20));
@@ -33,6 +35,13 @@ export class App {
   }
 
   async start(): Promise<void> {
+    // El audio solo puede arrancar tras un gesto del usuario; M silencia.
+    const unlock = () => this.audio.unlock();
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', (e) => {
+      unlock();
+      if (e.code === 'KeyM' && !(e.target instanceof HTMLInputElement)) this.audio.setMuted(!this.audio.muted);
+    });
     await preloadItemIcons(Object.keys(ITEM_META) as ItemId[]);
     await this.startScreen.show();
     this.screen = 'start';
@@ -79,6 +88,7 @@ export class App {
         if (input.takeClick() || input.primaryDown) cmds.push(session.primaryAction());
         const events = session.step(cmds);
         renderer.onEvents(events, session.playerId);
+        this.audio.onEvents(events, session.playerId);
         const p = session.world.player(session.playerId);
         hud.update(p, session.world.getState(), availableRecipes(p.inventory, DEFAULT_CONFIG));
         const dead = events.find((e) => e.type === 'playerDied' && e.playerId === session.playerId);

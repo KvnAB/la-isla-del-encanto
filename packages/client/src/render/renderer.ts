@@ -7,6 +7,8 @@ import { PALETTE } from './palette';
 import { animateCampfireVector, makeCampfireVector, makeCreatureVector, makeGroundItemVector, makeRegenRing, makeResourceVector, makeShadow, PlayerView, updateRegenRing, type CampfireVectorView } from './sprites';
 import { buildTerrain } from './terrain';
 
+const HIT_FX_SECONDS = 0.18;
+
 /** Posiciones del paso anterior para interpolar. */
 export interface PrevSnapshot {
   players: Map<number, { x: number; y: number; angle: number }>;
@@ -71,6 +73,8 @@ export class Renderer {
   private readonly campfires = new Map<number, { view: CampfireVectorView; shadow: Graphics }>();
   private time = 0;
   private lastRenderTime = 0;
+  /** Efectos de golpe activos por entidad: tiempo restante y tipo. */
+  private readonly hitFx = new Map<number, { t: number; kind: 'hit' | 'hurt'; dx: number; dy: number }>();
   readonly night = new NightLayer();
   fx: Fx | null = null;
 
@@ -120,8 +124,62 @@ export class Renderer {
   onEvents(events: GameEvent[], localPlayerId: number): void {
     if (!this.fx) return;
     for (const e of events) {
-      if (e.type === 'playerDamaged' && e.playerId === localPlayerId) this.fx.damageFlash();
-      else if ((e.type === 'resourceHit' || e.type === 'creatureHit') && e.playerId === localPlayerId) this.fx.hitShake();
+      if (e.type === 'playerDamaged' && e.playerId === localPlayerId) {
+        this.fx.damageFlash();
+        const attacker = this.creatures.get(e.byEntityId)?.sprite;
+        const me = this.players.get(e.playerId)?.view;
+        const dx = attacker && me ? me.x - attacker.x : 1;
+        const dy = attacker && me ? me.y - attacker.y : 0;
+        const l = Math.hypot(dx, dy) || 1;
+        this.hitFx.set(e.playerId, { t: HIT_FX_SECONDS, kind: 'hurt', dx: dx / l, dy: dy / l });
+      } else if (e.type === 'creatureHit' && e.playerId === localPlayerId) {
+        this.fx.hitShake();
+        const target = this.creatures.get(e.entityId)?.sprite;
+        const me = this.players.get(e.playerId)?.view;
+        const dx = target && me ? target.x - me.x : 1;
+        const dy = target && me ? target.y - me.y : 0;
+        const l = Math.hypot(dx, dy) || 1;
+        this.hitFx.set(e.entityId, { t: HIT_FX_SECONDS, kind: 'hit', dx: dx / l, dy: dy / l });
+      } else if (e.type === 'resourceHit' && e.playerId === localPlayerId) {
+        this.fx.hitShake();
+        this.hitFx.set(e.entityId, { t: HIT_FX_SECONDS, kind: 'hit', dx: 0, dy: 0 });
+      }
+    }
+  }
+
+  /** Aplica destello (tinte) y empujón a los sprites con un efecto de golpe activo. */
+  private applyHitFx(dt: number): void {
+    for (const [id, fx] of this.hitFx) {
+      fx.t -= dt;
+      const k = Math.max(0, fx.t / HIT_FX_SECONDS); // 1 → 0
+      // En el jugador se tiñe solo el cuerpo (no el nombre).
+      const target = this.creatures.get(id)?.sprite ?? this.resources.get(id)?.sprite ?? this.players.get(id)?.view.body;
+      if (!target) {
+        this.hitFx.delete(id);
+        continue;
+      }
+      if (k <= 0) {
+        target.tint = 0xffffff;
+        target.alpha = 1;
+        target.scale.set(1);
+        target.pivot.set(0, 0);
+        this.hitFx.delete(id);
+        continue;
+      }
+      const wave = Math.sin(k * Math.PI); // 0 → 1 → 0
+      if (fx.kind === 'hurt') {
+        // tinte rojizo suave al recibir daño
+        const mix = Math.round(255 - 110 * wave);
+        target.tint = (0xff << 16) | (mix << 8) | mix;
+      } else {
+        // parpadeo al golpear: baja la opacidad un instante
+        target.alpha = 1 - 0.45 * wave;
+      }
+      // "punch" de escala y empujón en la dirección del golpe
+      const punch = 1 + wave * 0.16;
+      target.scale.set(punch);
+      const push = wave * 9;
+      target.pivot.set((-fx.dx * push) / punch, (-fx.dy * push) / punch);
     }
   }
 
@@ -131,6 +189,7 @@ export class Renderer {
     const dt = Math.max(0, this.time - this.lastRenderTime);
     this.lastRenderTime = this.time;
     this.fx?.update(dt);
+    this.applyHitFx(dt);
     this.syncPlayers(state, alpha, prev);
     this.syncResources(state);
     this.syncCreatures(state, alpha, prev);

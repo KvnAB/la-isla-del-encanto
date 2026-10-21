@@ -5,10 +5,10 @@ export const PALETTE = {
   dirt: 0x8a8a5a,
   sand: 0xe9dba3,
   sandEdge: 0xcdbd7e,
-  water: 0x3f93d8,
+  water: 0x6fb6e6,
   waterEdge: 0x1f5c9c,
-  sea: 0x2d74b8,
-  seaDeep: 0x24629e,
+  sea: 0x3c8fd3,
+  seaDeep: 0x2c6fb0,
 
   outline: 0x1f1f1f,
   treeOutline: 0x1c4f22,
