@@ -190,8 +190,8 @@ export function makeRubble(r: number, seed: number): Container {
 }
 
 export function makeResourceVector(kind: ResourceKind, size: Size, r: number, broken: boolean, seed: number): Container {
-  if (broken) return kind === 'rock' || kind === 'gold_rock' ? makeRubble(r, seed) : makeStump(r, seed);
+  if (broken) return kind === 'rock' || kind === 'gold_rock' || kind === 'diamond_rock' ? makeRubble(r, seed) : makeStump(r, seed);
   if (kind === 'rock') return makeRock(size, r, seed);
-  if (kind === 'gold_rock') return makeGoldRock(r, seed);
+  if (kind === 'gold_rock' || kind === 'diamond_rock') return makeGoldRock(r, seed);
   return makeTree(kind, size, r, seed);
 }

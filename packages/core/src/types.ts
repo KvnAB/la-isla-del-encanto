@@ -14,6 +14,9 @@ export type ItemId =
   | 'stone_sword'
   | 'gold_pickaxe'
   | 'gold_sword'
+  | 'diamond'
+  | 'diamond_pickaxe'
+  | 'diamond_sword'
   | 'campfire'
   | 'coat1'
   | 'coat2'
@@ -21,16 +24,16 @@ export type ItemId =
   | 'torch';
 
 export type Size = 'small' | 'medium' | 'large';
-/** `gold_rock` solo da oro con pico de piedra o mejor. */
-export type ResourceKind = 'tree' | 'apple_tree' | 'rock' | 'gold_rock';
+/** `gold_rock` solo da oro con pico de piedra o mejor; `diamond_rock` (solo en nieve) solo con pico de oro o mejor. */
+export type ResourceKind = 'tree' | 'apple_tree' | 'rock' | 'gold_rock' | 'diamond_rock';
 export type CreatureKind = 'tiger' | 'sheep' | 'goblin' | 'wolf';
 /** `water` son ríos y lagos (caminable, nadando). `sea` es el borde infranqueable. */
 export type Terrain = 'sea' | 'land' | 'sand' | 'water' | 'snow';
 /** Bioma de una celda firme: nieve o hierba (todo lo demás). */
 export type Biome = 'grass' | 'snow';
 export type CoatId = 'coat1' | 'coat2';
-export type WeaponClass = 'fist' | 'wood_sword' | 'stone_sword' | 'gold_sword';
-export type ToolClass = 'hand' | 'wood_pickaxe' | 'stone_pickaxe' | 'gold_pickaxe';
+export type WeaponClass = 'fist' | 'wood_sword' | 'stone_sword' | 'gold_sword' | 'diamond_sword';
+export type ToolClass = 'hand' | 'wood_pickaxe' | 'stone_pickaxe' | 'gold_pickaxe' | 'diamond_pickaxe';
 export type EntityId = number;
 export type StartItem = 'wood_pickaxe' | 'wood_sword';
 

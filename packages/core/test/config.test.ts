@@ -16,9 +16,10 @@ describe('DEFAULT_CONFIG reproduce los valores del plan', () => {
   });
 
   it('rendimiento por herramienta', () => {
-    expect(c.resources.woodPerHit).toEqual({ hand: 1, wood_pickaxe: 2, stone_pickaxe: 3, gold_pickaxe: 4 });
-    expect(c.resources.stonePerHit).toEqual({ hand: 0, wood_pickaxe: 1, stone_pickaxe: 2, gold_pickaxe: 3 });
-    expect(c.resources.goldPerHit).toEqual({ hand: 0, wood_pickaxe: 0, stone_pickaxe: 1, gold_pickaxe: 2 });
+    expect(c.resources.woodPerHit).toEqual({ hand: 1, wood_pickaxe: 2, stone_pickaxe: 3, gold_pickaxe: 4, diamond_pickaxe: 5 });
+    expect(c.resources.stonePerHit).toEqual({ hand: 0, wood_pickaxe: 1, stone_pickaxe: 2, gold_pickaxe: 3, diamond_pickaxe: 4 });
+    expect(c.resources.goldPerHit).toEqual({ hand: 0, wood_pickaxe: 0, stone_pickaxe: 1, gold_pickaxe: 2, diamond_pickaxe: 3 });
+    expect(c.resources.diamondPerHit).toEqual({ hand: 0, wood_pickaxe: 0, stone_pickaxe: 0, gold_pickaxe: 1, diamond_pickaxe: 2 });
   });
 
   it('barras vacías en 4 minutos, objetos en el suelo 1 minuto, reaparición 45 s', () => {

@@ -2,6 +2,7 @@ import { DEFAULT_CONFIG, type GameConfig } from '../src/config.js';
 import { World } from '../src/world.js';
 import type { CreatureKind, EntityId, GroundItemState, ItemId, ResourceKind, Size, Slot } from '../src/types.js';
 import { terrainAt } from '../src/island.js';
+import { resourceCapacity } from '../src/systems/resources.js';
 
 export function makeWorld(seed = 7, cfg: GameConfig = DEFAULT_CONFIG): { world: World; id: EntityId } {
   const world = new World(seed, cfg);
@@ -27,7 +28,7 @@ export function setInventory(world: World, id: EntityId, slots: (Slot | null)[])
 export function putResource(world: World, kind: ResourceKind, size: Size, x: number, y: number, remaining?: number) {
   const s = world.getState();
   const cfg = world.cfg;
-  const cap = kind === 'apple_tree' ? cfg.resources.appleYield[size] : kind === 'gold_rock' ? cfg.resources.goldCapacity[size] : cfg.resources.capacity[size];
+  const cap = resourceCapacity(kind, size, cfg);
   const r = {
     id: s.nextEntityId++,
     kind,

@@ -80,6 +80,7 @@ export interface GameConfig {
   resources: {
     capacity: Record<Size, number>;
     goldCapacity: Record<Size, number>;
+    diamondCapacity: Record<Size, number>;
     regenSeconds: Record<Size, number>;
     appleYield: Record<Size, number>;
     radius: Record<ResourceKind, Record<Size, number>>;
@@ -90,7 +91,10 @@ export interface GameConfig {
     woodPerHit: Record<ToolClass, number>;
     stonePerHit: Record<ToolClass, number>;
     goldPerHit: Record<ToolClass, number>;
+    diamondPerHit: Record<ToolClass, number>;
     counts: Record<ResourceKind, number>;
+    /** Bioma obligatorio de un recurso; sin entrada, cualquier terreno firme. */
+    biome: Partial<Record<ResourceKind, Biome>>;
     minDistFromSpawn: number;
   };
   food: Record<'apple' | 'raw_steak' | 'cooked_steak', { hunger: number; health: number }>;
@@ -150,6 +154,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   resources: {
     capacity: { small: 20, medium: 50, large: 100 },
     goldCapacity: { small: 6, medium: 12, large: 20 }, // (*)
+    diamondCapacity: { small: 3, medium: 5, large: 8 }, // (*)
     regenSeconds: { small: 60, medium: 120, large: 210 },
     appleYield: { small: 3, medium: 4, large: 6 },
     radius: {
@@ -157,14 +162,18 @@ export const DEFAULT_CONFIG: GameConfig = {
       apple_tree: treeRadius,
       rock: { small: 28, medium: 40, large: 56 },
       gold_rock: { small: 28, medium: 40, large: 56 },
+      diamond_rock: { small: 28, medium: 40, large: 56 },
     }, // (*)
-    collision: { tree: 0.75, apple_tree: 0.85, rock: 0.9, gold_rock: 0.9 }, // (*)
+    collision: { tree: 0.75, apple_tree: 0.85, rock: 0.9, gold_rock: 0.9, diamond_rock: 0.9 }, // (*)
     brokenCollision: 0.5, // (*) el tocón se dibuja a la mitad del radio
-    woodPerHit: { hand: 1, wood_pickaxe: 2, stone_pickaxe: 3, gold_pickaxe: 4 },
-    stonePerHit: { hand: 0, wood_pickaxe: 1, stone_pickaxe: 2, gold_pickaxe: 3 },
-    // El oro solo sale con pico de piedra (1 por golpe); el de oro saca 2.
-    goldPerHit: { hand: 0, wood_pickaxe: 0, stone_pickaxe: 1, gold_pickaxe: 2 },
-    counts: { tree: 135, apple_tree: 40, rock: 90, gold_rock: 30 }, // (*) ×2,25 al pasar de 3000 a 4500
+    woodPerHit: { hand: 1, wood_pickaxe: 2, stone_pickaxe: 3, gold_pickaxe: 4, diamond_pickaxe: 5 },
+    stonePerHit: { hand: 0, wood_pickaxe: 1, stone_pickaxe: 2, gold_pickaxe: 3, diamond_pickaxe: 4 },
+    // El oro solo sale con pico de piedra (1 por golpe); el de oro saca 2; el de diamante 3.
+    goldPerHit: { hand: 0, wood_pickaxe: 0, stone_pickaxe: 1, gold_pickaxe: 2, diamond_pickaxe: 3 },
+    // El diamante solo sale con pico de oro (1) o de diamante (2).
+    diamondPerHit: { hand: 0, wood_pickaxe: 0, stone_pickaxe: 0, gold_pickaxe: 1, diamond_pickaxe: 2 },
+    counts: { tree: 135, apple_tree: 40, rock: 90, gold_rock: 30, diamond_rock: 8 }, // (*) ×2,25 al pasar de 3000 a 4500
+    biome: { apple_tree: 'grass', diamond_rock: 'snow' }, // (*)
     minDistFromSpawn: 200, // (*)
   },
   food: {
@@ -245,7 +254,7 @@ export const DEFAULT_CONFIG: GameConfig = {
       },
     },
   },
-  weaponDamage: { fist: 1, wood_sword: 2, stone_sword: 3, gold_sword: 4 }, // (*) oro: tigre 8, oveja 5, duende 2
+  weaponDamage: { fist: 1, wood_sword: 2, stone_sword: 3, gold_sword: 4, diamond_sword: 6 }, // (*) oro: tigre 8, oveja 5, duende 2; diamante: tigre 5, oso 10
   recipes: [
     { id: 'wood_pickaxe', cost: { wood: 10 }, points: 25 },
     { id: 'wood_sword', cost: { wood: 30 }, points: 25 },
@@ -253,6 +262,8 @@ export const DEFAULT_CONFIG: GameConfig = {
     { id: 'stone_sword', cost: { wood: 60, stone: 30 }, consumes: 'wood_sword', replaces: 'wood_sword', points: 100 },
     { id: 'gold_pickaxe', cost: { gold: 20, stone: 10, wood: 30 }, consumes: 'stone_pickaxe', replaces: 'stone_pickaxe', points: 200 },
     { id: 'gold_sword', cost: { gold: 20, stone: 30, wood: 60 }, consumes: 'stone_sword', replaces: 'stone_sword', points: 200 },
+    { id: 'diamond_pickaxe', cost: { diamond: 15, gold: 20, stone: 30 }, consumes: 'gold_pickaxe', replaces: 'gold_pickaxe', points: 400 },
+    { id: 'diamond_sword', cost: { diamond: 15, gold: 20, wood: 60 }, consumes: 'gold_sword', replaces: 'gold_sword', points: 400 },
     { id: 'campfire', cost: { wood: 15, stone: 5 }, points: 25 },
     { id: 'coat1', cost: { wool: 5, tiger_pelt: 5, needle: 1 }, unique: true, points: 100 },
     { id: 'torch', cost: { wood: 5, stone: 1 }, points: 25 },
@@ -289,6 +300,9 @@ export const ITEM_META: Record<ItemId, ItemMeta> = {
   stone_sword: { stackable: false, weapon: 'stone_sword' },
   gold_pickaxe: { stackable: false, tool: 'gold_pickaxe' },
   gold_sword: { stackable: false, weapon: 'gold_sword' },
+  diamond: { stackable: true },
+  diamond_pickaxe: { stackable: false, tool: 'diamond_pickaxe' },
+  diamond_sword: { stackable: false, weapon: 'diamond_sword' },
   campfire: { stackable: true, placeable: true },
   coat1: { stackable: false, equippable: true },
   coat2: { stackable: false, equippable: true },
