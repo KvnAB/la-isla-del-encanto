@@ -3,7 +3,7 @@ import { nextId } from '../entities.js';
 import { findLandSpot, terrainAt } from '../island.js';
 import type { Rng } from '../rng.js';
 import type { CreatureKind, CreatureState, GameEvent, PlayerState, WorldState } from '../types.js';
-import { angleTo, dist } from '../vec.js';
+import { angleTo, dist, norm } from '../vec.js';
 import { dropToGround } from './ground.js';
 import { moveCircle, resourceSolids, type Solid } from './movement.js';
 import { weaponClassOf } from './resources.js';
@@ -51,10 +51,20 @@ export function spawnInitialCreatures(state: WorldState, cfg: GameConfig, rng: R
   }
 }
 
+/** Desplaza un círculo `distance` px alejándose de `from`, respetando terreno y recursos. */
+function knockback(state: WorldState, cfg: GameConfig, body: { x: number; y: number; radius: number }, from: { x: number; y: number }, distance: number): void {
+  const [dx, dy] = norm(body.x - from.x, body.y - from.y);
+  if (dx === 0 && dy === 0) return;
+  const [nx, ny] = moveCircle(state.map, body.x, body.y, body.radius, dx * distance, dy * distance, resourceSolids(state, cfg));
+  body.x = nx;
+  body.y = ny;
+}
+
 export function hitCreature(state: WorldState, p: PlayerState, c: CreatureState, cfg: GameConfig, rng: Rng, events: GameEvent[]): void {
   const weapon = weaponClassOf(p.inventory[p.selectedSlot]);
   const amount = cfg.weaponDamage[weapon];
   c.hp -= amount;
+  knockback(state, cfg, c, p, cfg.combat.creatureKnockback);
   events.push({ type: 'creatureHit', playerId: p.id, entityId: c.id, amount });
   if (c.hp > 0) return;
 
@@ -166,6 +176,9 @@ export function stepCreatures(state: WorldState, cfg: GameConfig, dt: number, rn
         if (c.attackCooldown <= 0 && def.damage > 0) {
           near.p.health -= def.damage;
           near.p.noRegenUntil = state.time + cfg.vitals.regenDelayAfterDamage;
+          near.p.lastHitBy = c.kind;
+          near.p.lastHitAt = state.time;
+          knockback(state, cfg, near.p, c, cfg.combat.playerKnockback);
           c.attackCooldown = def.attackCooldown;
           events.push({ type: 'playerDamaged', playerId: near.p.id, amount: def.damage, byEntityId: c.id });
         }

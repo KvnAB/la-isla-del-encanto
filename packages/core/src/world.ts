@@ -11,7 +11,7 @@ import { resolveHit } from './systems/hit.js';
 import { resourceSolids, stepPlayerMovement, type Solid } from './systems/movement.js';
 import { spawnResources } from './systems/resources.js';
 import { stepVitals } from './systems/vitals.js';
-import type { Command, EntityId, GameEvent, PlayerState, StartItem, WorldState } from './types.js';
+import type { Command, DeathCause, EntityId, GameEvent, PlayerState, StartItem, WorldState } from './types.js';
 import { norm } from './vec.js';
 
 export class World {
@@ -143,7 +143,16 @@ export class World {
     p.alive = false;
     p.moveDx = 0;
     p.moveDy = 0;
-    this.events.push({ type: 'playerDied', playerId: p.id, days: this.state.day - 1, points: p.points, cause: { kind: 'hunger' } });
+    this.events.push({ type: 'playerDied', playerId: p.id, days: this.state.day - 1, points: p.points, cause: this.deathCause(p) });
+  }
+
+  /** La criatura que lo golpeó hace poco; si no, la primera barra vacía (hambre, sed, frío); si ninguna, hambre. */
+  private deathCause(p: PlayerState): DeathCause {
+    if (p.lastHitBy && this.state.time - p.lastHitAt <= this.cfg.combat.lastHitWindow) return { kind: 'creature', creature: p.lastHitBy };
+    if (p.hunger <= 0) return { kind: 'hunger' };
+    if (p.thirst <= 0) return { kind: 'thirst' };
+    if (p.warmth <= 0) return { kind: 'cold' };
+    return { kind: 'hunger' };
   }
 
   private apply(cmd: Command): void {

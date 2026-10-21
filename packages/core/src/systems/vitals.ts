@@ -37,7 +37,8 @@ export function stepVitals(state: WorldState, p: PlayerState, cfg: GameConfig, d
   const empty = bars.filter((b) => b <= 0).length;
   if (empty > 0) {
     p.health -= empty * v.healthLossPerEmptyBar * dt;
-  } else if (state.time >= p.noRegenUntil) {
+  } else if (p.health > 0 && state.time >= p.noRegenUntil) {
+    // con la vida en 0 no se regenera: el jugador muere en este mismo paso
     const good = bars.every((b) => b >= v.goodThreshold);
     p.health += (good ? v.healthRegenGood : v.healthRegenBase) * dt;
   }
