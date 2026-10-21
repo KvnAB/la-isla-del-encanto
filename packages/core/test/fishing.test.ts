@@ -87,3 +87,16 @@ describe('pesca', () => {
     expect(p.fishingUntil).toBeGreaterThan(0);
   });
 });
+
+describe('pesca en movimiento', () => {
+  it('no se lanza la caña mientras el jugador se mueve', () => {
+    const { world, id, p } = byWater();
+    world.enqueue({ playerId: id, type: 'move', dx: 0, dy: -1 });
+    world.step();
+    p.hitCooldown = 0;
+    world.enqueue({ playerId: id, type: 'useSlot' });
+    world.step();
+    expect(p.fishingUntil).toBe(0);
+    expect(world.drainEvents().some((e) => e.type === 'fishingStarted')).toBe(false);
+  });
+});

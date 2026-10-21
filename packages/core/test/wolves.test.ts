@@ -39,8 +39,9 @@ describe('manada nocturna de lobos', () => {
     expect(w).toHaveLength(2);
     for (const c of w) {
       expect(c.raid).toBe(true);
+      expect(c.mode).toBe('chase'); // nacen persiguiendo: aparecen fuera de su radio de detección
       const d = Math.hypot(c.x - p.x, c.y - p.y);
-      expect(d).toBeGreaterThanOrEqual(380); // 500 menos lo que corren hacia el jugador en el primer segundo
+      expect(d).toBeGreaterThanOrEqual(280); // 500 menos lo que corren hacia el jugador (200 px/s) en el primer segundo
       expect(d).toBeLessThanOrEqual(900);
     }
   });

@@ -169,3 +169,29 @@ describe('cantimplora', () => {
     expect(p.hunger).toBeCloseTo(95, 0);
   });
 });
+
+describe('cantimplora en la orilla', () => {
+  function shore(slot: Slot) {
+    const { world, id } = makeWorld();
+    clearWorld(world);
+    const spot = findLandNextTo(world, 'water', 60);
+    placePlayerAt(world, id, spot.x, spot.y);
+    setInventory(world, id, [slot]);
+    const p = world.player(id);
+    p.angle = 0; // mirando al agua, con los pies en tierra
+    p.selectedSlot = 0;
+    p.hitCooldown = 0;
+    use(world, id);
+    return { p };
+  }
+
+  it('llena y apuntando al agua desde la orilla: bebe (no rellena)', () => {
+    const { p } = shore({ item: 'canteen_full', count: 3 });
+    expect(p.inventory[0]).toEqual({ item: 'canteen_full', count: 2 });
+  });
+
+  it('a medias y apuntando al agua desde la orilla: bebe hasta vaciarla', () => {
+    const { p } = shore({ item: 'canteen_full', count: 1 });
+    expect(p.inventory[0]).toEqual({ item: 'canteen', count: 1 });
+  });
+});

@@ -12,9 +12,10 @@ export function aimedAtWater(state: WorldState, p: PlayerState, cfg: GameConfig)
   return false;
 }
 
-/** Lanza la caña si hay agua delante y no se está pescando ya. */
+/** Lanza la caña si hay agua delante, el jugador está quieto y no se está pescando ya. */
 export function startFishing(state: WorldState, p: PlayerState, cfg: GameConfig, events: GameEvent[]): void {
   if (p.fishingUntil > 0) return;
+  if (p.moveDx !== 0 || p.moveDy !== 0) return;
   if (!aimedAtWater(state, p, cfg)) return;
   p.fishingUntil = state.time + cfg.fishing.seconds;
   events.push({ type: 'fishingStarted', playerId: p.id });

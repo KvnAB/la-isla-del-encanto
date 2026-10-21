@@ -44,16 +44,18 @@ export function useSelectedSlot(state: WorldState, p: PlayerState, cfg: GameConf
   if (hooks.placeCampfire) hooks.placeCampfire(state, p);
 }
 
-/** Vacía junto al agua → llena (3 tragos); llena junto al agua → rellena; llena en seco → un trago de sed. */
+/**
+ * Vacía junto al agua (nadando o apuntando) → llena (3 tragos). Con tragos: nadando → rellena; si no → un trago de sed,
+ * aunque se esté apuntando al agua desde la orilla (así beber tras llenarla siempre funciona).
+ */
 function useCanteen(state: WorldState, p: PlayerState, slot: Slot, cfg: GameConfig, events: GameEvent[]): void {
-  const water = aimedAtWater(state, p, cfg);
-  if (water) {
-    if (slot.item === 'canteen_full' && slot.count >= cfg.canteen.sips) return;
+  const refill = slot.item === 'canteen' ? aimedAtWater(state, p, cfg) : p.inWater && slot.count < cfg.canteen.sips;
+  if (refill) {
     p.inventory[p.selectedSlot] = { item: 'canteen_full', count: cfg.canteen.sips };
     events.push({ type: 'canteenFilled', playerId: p.id });
     return;
   }
-  if (slot.item !== 'canteen_full') return;
+  if (slot.item !== 'canteen_full' || p.inWater) return;
   p.thirst = clamp(p.thirst + cfg.canteen.thirstPerSip, 0, 100);
   slot.count -= 1;
   if (slot.count <= 0) p.inventory[p.selectedSlot] = { item: 'canteen', count: 1 };

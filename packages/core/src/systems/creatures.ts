@@ -70,6 +70,7 @@ export function spawnPack(state: WorldState, kind: CreatureKind, cfg: GameConfig
   const add = (x: number, y: number) => {
     const c = makeCreature(state, kind, x, y, cfg);
     c.raid = raid;
+    if (raid) c.mode = 'chase'; // la manada aparece fuera de su radio de detección: nace persiguiendo
     state.creatures.push(c);
     out.push(c);
     events.push({ type: 'creatureSpawned', entityId: c.id, kind });
@@ -103,11 +104,15 @@ export function spawnInitialCreatures(state: WorldState, cfg: GameConfig, rng: R
   }
 }
 
-/** Desplaza un círculo `distance` px alejándose de `from`, respetando terreno y recursos. */
-function knockback(state: WorldState, cfg: GameConfig, body: { x: number; y: number; radius: number }, from: { x: number; y: number }, distance: number): void {
+/**
+ * Desplaza un círculo `distance` px alejándose de `from`, respetando terreno y recursos.
+ * Las criaturas no nadan (`canSwim` falso): si el empujón las metiera en agua se quedarían atrapadas, así que se descarta.
+ */
+function knockback(state: WorldState, cfg: GameConfig, body: { x: number; y: number; radius: number }, from: { x: number; y: number }, distance: number, canSwim: boolean): void {
   const [dx, dy] = norm(body.x - from.x, body.y - from.y);
   if (dx === 0 && dy === 0) return;
   const [nx, ny] = moveCircle(state.map, body.x, body.y, body.radius, dx * distance, dy * distance, resourceSolids(state, cfg));
+  if (!canSwim && terrainAt(state.map, nx, ny) === 'water') return;
   body.x = nx;
   body.y = ny;
 }
@@ -116,7 +121,7 @@ export function hitCreature(state: WorldState, p: PlayerState, c: CreatureState,
   const weapon = weaponClassOf(p.inventory[p.selectedSlot]);
   const amount = cfg.weaponDamage[weapon];
   c.hp -= amount;
-  knockback(state, cfg, c, p, cfg.combat.creatureKnockback);
+  knockback(state, cfg, c, p, cfg.combat.creatureKnockback, false);
   events.push({ type: 'creatureHit', playerId: p.id, entityId: c.id, amount });
   if (c.hp > 0) return;
 
@@ -251,7 +256,7 @@ export function stepCreatures(state: WorldState, cfg: GameConfig, dt: number, rn
           near.p.noRegenUntil = state.time + cfg.vitals.regenDelayAfterDamage;
           near.p.lastHitBy = c.kind;
           near.p.lastHitAt = state.time;
-          knockback(state, cfg, near.p, c, cfg.combat.playerKnockback);
+          knockback(state, cfg, near.p, c, cfg.combat.playerKnockback, true);
           c.attackCooldown = def.attackCooldown;
           events.push({ type: 'playerDamaged', playerId: near.p.id, amount: def.damage, byEntityId: c.id });
         }

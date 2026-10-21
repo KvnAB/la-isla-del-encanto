@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { terrainAt } from '../src/island.js';
 import { collisionRadius } from '../src/systems/resources.js';
-import { clearWorld, makeWorld, placePlayerAt, putCreature, putResource, setInventory } from './helpers.js';
+import { clearWorld, findLandNextTo, makeWorld, placePlayerAt, putCreature, putResource, setInventory } from './helpers.js';
 
 function fresh() {
   const { world, id } = makeWorld();
@@ -57,3 +58,21 @@ describe('empujón al recibir daño', () => {
 function c0(world: ReturnType<typeof makeWorld>['world'], kind: 'tiger'): number {
   return world.cfg.creatures.defs[kind].radius + world.cfg.player.radius + 4;
 }
+
+describe('empujón y agua', () => {
+  it('una criatura empujada hacia un río no cae al agua (se quedaría atrapada); el golpe cuenta', () => {
+    const { world, id } = makeWorld();
+    clearWorld(world);
+    const spot = findLandNextTo(world, 'water', 60);
+    placePlayerAt(world, id, spot.x - 20, spot.y);
+    setInventory(world, id, []);
+    const p = world.player(id);
+    p.angle = 0;
+    const c = putCreature(world, 'sheep', spot.x + 40, spot.y); // a 20 px del agua: el empujón de 26 la metería dentro
+    c.wanderTimer = 99;
+    world.enqueue({ playerId: id, type: 'hit' });
+    world.step();
+    expect(terrainAt(world.getState().map, c.x, c.y)).not.toBe('water');
+    expect(world.drainEvents().some((e) => e.type === 'creatureHit')).toBe(true);
+  });
+});
