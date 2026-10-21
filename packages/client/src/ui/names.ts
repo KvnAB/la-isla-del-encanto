@@ -1,4 +1,4 @@
-import type { CreatureKind, ItemId } from '@draycol/core';
+import type { CreatureKind, DeathCause, ItemId } from '@draycol/core';
 
 export const ITEM_NAMES: Record<ItemId, string> = {
   wood: 'Madera',
@@ -27,6 +27,28 @@ export const CREATURE_NAMES: Record<CreatureKind, string> = {
   goblin: 'Duende',
   wolf: 'Lobo',
 };
+
+/** "un tigre", "una oveja mala": artículo según el género del nombre. */
+const CREATURE_WITH_ARTICLE: Record<CreatureKind, string> = {
+  tiger: 'un tigre',
+  sheep: 'una oveja mala',
+  goblin: 'un duende',
+  wolf: 'un lobo',
+};
+
+/** Frase de la pantalla de muerte. */
+export function causeText(cause: DeathCause): string {
+  switch (cause.kind) {
+    case 'creature':
+      return `Te mató ${CREATURE_WITH_ARTICLE[cause.creature]}`;
+    case 'hunger':
+      return 'Moriste de hambre';
+    case 'thirst':
+      return 'Moriste de sed';
+    case 'cold':
+      return 'Moriste de frío';
+  }
+}
 
 /** Nombre en minúsculas para listas de materiales ("15 madera"). */
 export const ITEM_NAMES_LOWER: Record<ItemId, string> = Object.fromEntries(

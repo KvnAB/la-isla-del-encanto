@@ -409,6 +409,24 @@
   color: var(--hud-muted);
 }
 
+.death-cause {
+  margin: -14px 0 20px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.death-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.play-btn.secondary {
+  background: var(--hud-slot);
+  color: #fff;
+  box-shadow: none;
+}
+
 .death-rank {
   min-height: 24px;
   margin: 0 0 22px;

@@ -1,11 +1,13 @@
+import type { DeathCause } from '@draycol/core';
 import type { ScoreEntry } from '../api';
-import { formatPoints } from './names';
+import { causeText, formatPoints } from './names';
 import './screens.css';
 
 export interface GameResult {
   name: string;
   days: number;
   points: number;
+  cause: DeathCause;
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -21,7 +23,8 @@ export class DeathScreen {
   constructor(
     private readonly parent: HTMLElement,
     private readonly onBack: () => void,
-    private readonly submit: (s: GameResult) => Promise<{ score: ScoreEntry; rank: number }>,
+    private readonly onPlayAgain: () => void,
+    private readonly submit: (s: Pick<GameResult, 'name' | 'days' | 'points'>) => Promise<{ score: ScoreEntry; rank: number }>,
   ) {}
 
   async show(result: GameResult): Promise<void> {
@@ -33,6 +36,7 @@ export class DeathScreen {
     const panel = el('div', 'panel panel-death');
     panel.appendChild(el('h1', 'death-title', 'Has muerto'));
     panel.appendChild(el('p', 'death-name', result.name));
+    panel.appendChild(el('p', 'death-cause', causeText(result.cause)));
 
     const stats = el('div', 'death-stats');
     const days = el('div', 'stat stat-days');
@@ -45,15 +49,20 @@ export class DeathScreen {
     const rank = el('p', 'death-rank', 'Guardando récord…');
     panel.appendChild(rank);
 
-    const back = el('button', 'play-btn back-btn', 'Volver al inicio');
+    const again = el('button', 'play-btn again-btn', 'Jugar otra vez');
+    again.type = 'button';
+    again.addEventListener('click', () => this.onPlayAgain());
+    const back = el('button', 'play-btn back-btn secondary', 'Volver al inicio');
     back.type = 'button';
     back.addEventListener('click', () => this.onBack());
-    panel.appendChild(back);
+    const actions = el('div', 'death-actions');
+    actions.append(again, back);
+    panel.appendChild(actions);
 
     layout.appendChild(panel);
     root.appendChild(layout);
     this.parent.appendChild(root);
-    setTimeout(() => back.focus(), 0);
+    setTimeout(() => again.focus(), 0);
 
     void this.submit({ name: result.name, days: result.days, points: result.points }).then(
       (res) => {

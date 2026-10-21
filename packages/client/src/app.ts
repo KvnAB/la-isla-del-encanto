@@ -28,10 +28,17 @@ export class App {
   private readonly startScreen: StartScreen;
   private readonly deathScreen: DeathScreen;
   readonly audio = new GameAudio();
+  /** Última partida: nombre y objeto inicial, para "Jugar otra vez". */
+  private lastPlay: { name: string; startItem: StartItem } | null = null;
 
   constructor(private readonly root: HTMLElement) {
     this.startScreen = new StartScreen(root, (opts) => void this.play(opts.name, opts.startItem), () => getScores(20));
-    this.deathScreen = new DeathScreen(root, () => void this.backToStart(), (s) => postScore(s));
+    this.deathScreen = new DeathScreen(
+      root,
+      () => void this.backToStart(),
+      () => void this.playAgain(),
+      (s) => postScore(s),
+    );
   }
 
   async start(): Promise<void> {
@@ -53,6 +60,7 @@ export class App {
     if (this.screen === 'playing') return;
     this.startScreen.hide();
     this.screen = 'playing';
+    this.lastPlay = { name, startItem };
 
     const gameLayer = document.createElement('div');
     gameLayer.className = 'game-layer';
@@ -118,10 +126,10 @@ export class App {
 
   private async onDeath(name: string, e: GameEvent): Promise<void> {
     if (e.type !== 'playerDied' || !this.running) return;
-    const { days, points } = e;
+    const { days, points, cause } = e;
     this.teardown();
     this.screen = 'dead';
-    await this.deathScreen.show({ name, days, points });
+    await this.deathScreen.show({ name, days, points, cause });
   }
 
   private teardown(): void {
@@ -133,6 +141,16 @@ export class App {
     r.renderer.destroy();
     r.gameLayer.remove();
     this.running = null;
+  }
+
+  /** Desde la pantalla de muerte: misma persona, mismo objeto inicial, isla nueva. */
+  private async playAgain(): Promise<void> {
+    const last = this.lastPlay;
+    if (!last) return this.backToStart();
+    this.deathScreen.hide();
+    this.teardown();
+    this.screen = 'start';
+    await this.play(last.name, last.startItem);
   }
 
   private async backToStart(): Promise<void> {
