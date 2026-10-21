@@ -48,7 +48,6 @@ export class PlayerView extends Container {
     L.handBack.position.set(r * HAND_X, r * HAND_Y);
     L.handFront.position.set(r * HAND_X, -r * HAND_Y);
     L.tool.position.copyFrom(L.handFront.position);
-    this.drawCoat(L.coat);
     L.coat.visible = false;
 
     this.body.addChild(L.coat, L.torso, L.handBack, L.tool, L.hat, L.handFront);
@@ -64,14 +63,27 @@ export class PlayerView extends Container {
     this.addChild(this.nameText);
   }
 
-  /** Abrigo: anillo naranja con rayas alrededor del cuerpo y cuello de lana blanco por dentro. */
-  private drawCoat(g: Graphics): void {
+  /**
+   * Abrigo 1: anillo naranja de piel de tigre con rayas; abrigo 2: anillo blanco de piel de oso con ribete dorado.
+   * Los dos con cuello de lana por dentro.
+   */
+  private drawCoat(g: Graphics, coat: CoatId): void {
     const r = this.r;
     const R = r * 1.45;
-    g.circle(0, 0, R).fill(PALETTE.tiger).stroke({ width: OUT_W, color: OL });
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2 + 0.2;
-      g.moveTo(Math.cos(a) * r * 1.08, Math.sin(a) * r * 1.08).lineTo(Math.cos(a + 0.12) * R * 0.97, Math.sin(a + 0.12) * R * 0.97).stroke({ width: r * 0.16, color: PALETTE.tigerStripe, cap: 'round' });
+    g.clear();
+    if (coat === 'coat2') {
+      g.circle(0, 0, R).fill(PALETTE.polar).stroke({ width: OUT_W, color: OL });
+      g.circle(0, 0, R * 0.9).stroke({ width: r * 0.1, color: PALETTE.gold });
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2 + 0.2;
+        g.moveTo(Math.cos(a) * r * 1.1, Math.sin(a) * r * 1.1).lineTo(Math.cos(a + 0.1) * R * 0.86, Math.sin(a + 0.1) * R * 0.86).stroke({ width: r * 0.12, color: PALETTE.polarShade, cap: 'round' });
+      }
+    } else {
+      g.circle(0, 0, R).fill(PALETTE.tiger).stroke({ width: OUT_W, color: OL });
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2 + 0.2;
+        g.moveTo(Math.cos(a) * r * 1.08, Math.sin(a) * r * 1.08).lineTo(Math.cos(a + 0.12) * R * 0.97, Math.sin(a + 0.12) * R * 0.97).stroke({ width: r * 0.16, color: PALETTE.tigerStripe, cap: 'round' });
+      }
     }
     // cuello de lana: bultos blancos pegados al cuerpo
     const n = 10;
@@ -102,6 +114,7 @@ export class PlayerView extends Container {
     if (coat !== this.coat) {
       this.coat = coat;
       L.coat.visible = coat !== null;
+      if (coat) this.drawCoat(L.coat, coat);
     }
 
     const slot = p.inventory[p.selectedSlot];
@@ -115,7 +128,7 @@ export class PlayerView extends Container {
       if (shown) {
         const g = new Graphics();
         const s = r * 1.2;
-        const material = shown.startsWith('gold') ? 'gold' : shown.startsWith('stone') ? 'stone' : 'wood';
+        const material = shown.startsWith('diamond') ? 'diamond' : shown.startsWith('gold') ? 'gold' : shown.startsWith('stone') ? 'stone' : 'wood';
         if (meta?.tool) drawPickaxe(g, s, material);
         else if (meta?.weapon) drawSword(g, s, material);
         else drawItem(g, shown, s * 0.8); // objetos que se llevan en la mano (antorcha, etc.)

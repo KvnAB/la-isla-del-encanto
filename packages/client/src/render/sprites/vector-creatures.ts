@@ -144,6 +144,59 @@ export function makeWolfVector(r: number): Container {
   return c;
 }
 
+/** Oso polar: cuerpo blanco grande y redondo, cabeza pequeña con orejas redondas, hocico negro, garras. */
+export function makePolarBearVector(r: number): Container {
+  const c = new Container();
+  const g = new Graphics();
+  const o = ow(r);
+  const bw = r * 1.45;
+  const bh = r * 1.05;
+  for (const [sx, sy] of [[0.5, -1], [0.5, 1], [-0.55, -1], [-0.55, 1]] as const) {
+    const px = bw * sx;
+    const py = sy * bh * 0.95;
+    g.ellipse(px, py, r * 0.34, r * 0.28).fill(PALETTE.polar).stroke({ width: o, color: OL });
+    for (let k = -1; k <= 1; k++) g.circle(px + k * r * 0.14 + (sx > 0 ? r * 0.1 : 0), py + sy * r * 0.22, r * 0.05).fill(OL);
+  }
+  g.ellipse(0, 0, bw, bh).fill(PALETTE.polar).stroke({ width: o, color: OL });
+  g.ellipse(-bw * 0.15, 0, bw * 0.55, bh * 0.45).fill(PALETTE.polarShade, 0.7);
+  g.circle(-bw * 0.95, 0, r * 0.18).fill(PALETTE.polar).stroke({ width: o, color: OL }); // cola corta
+  const hx = bw * 0.82;
+  const hr = r * 0.62;
+  for (const s of [-1, 1]) {
+    g.circle(hx - hr * 0.35, s * hr * 0.9, hr * 0.3).fill(PALETTE.polar).stroke({ width: o, color: OL });
+    g.circle(hx - hr * 0.35, s * hr * 0.9, hr * 0.14).fill(PALETTE.polarShade);
+  }
+  g.circle(hx, 0, hr).fill(PALETTE.polar).stroke({ width: o, color: OL });
+  g.ellipse(hx + hr * 0.55, 0, hr * 0.42, hr * 0.5).fill(PALETTE.polarShade);
+  g.ellipse(hx + hr * 0.85, 0, hr * 0.2, hr * 0.15).fill(OL);
+  for (const s of [-1, 1]) {
+    g.circle(hx + hr * 0.1, s * hr * 0.45, hr * 0.11).fill(OL);
+    g.moveTo(hx - hr * 0.15, s * hr * 0.25).lineTo(hx + hr * 0.32, s * hr * 0.6).stroke({ width: r * 0.09, color: OL, cap: 'round' });
+  }
+  c.addChild(g);
+  return c;
+}
+
+/** Pingüino: cuerpo negro ovalado con barriga blanca, aletas, pico y patas naranjas. */
+export function makePenguinVector(r: number): Container {
+  const c = new Container();
+  const g = new Graphics();
+  const o = ow(r);
+  const bw = r * 1.2;
+  const bh = r * 0.95;
+  for (const s of [-1, 1]) g.ellipse(bw * 0.55, s * bh * 0.55, r * 0.3, r * 0.16).fill(PALETTE.penguinBeak).stroke({ width: Math.max(1.5, o * 0.6), color: OL }); // patas
+  for (const s of [-1, 1]) g.ellipse(-bw * 0.1, s * bh * 1.0, r * 0.55, r * 0.2).fill(PALETTE.penguin).stroke({ width: o, color: OL }); // aletas
+  g.ellipse(0, 0, bw, bh).fill(PALETTE.penguin).stroke({ width: o, color: OL });
+  g.ellipse(bw * 0.15, 0, bw * 0.6, bh * 0.62).fill(PALETTE.penguinBelly);
+  for (const s of [-1, 1]) {
+    g.circle(bw * 0.6, s * bh * 0.3, r * 0.14).fill(0xffffff).stroke({ width: 1, color: OL });
+    g.circle(bw * 0.64, s * bh * 0.3, r * 0.07).fill(OL);
+  }
+  g.poly([bw * 0.8, -r * 0.18, bw * 1.25, 0, bw * 0.8, r * 0.18], true).fill(PALETTE.penguinBeak).stroke({ width: Math.max(1.5, o * 0.6), color: OL, join: 'round' });
+  c.addChild(g);
+  return c;
+}
+
 export function makeCreatureVector(kind: CreatureKind, r: number): Container {
   switch (kind) {
     case 'tiger':
@@ -155,8 +208,8 @@ export function makeCreatureVector(kind: CreatureKind, r: number): Container {
     case 'wolf':
       return makeWolfVector(r);
     case 'polar_bear':
-      return makeWolfVector(r); // provisional hasta la tarea 17
+      return makePolarBearVector(r);
     case 'penguin':
-      return makeGoblinVector(r); // provisional hasta la tarea 17
+      return makePenguinVector(r);
   }
 }

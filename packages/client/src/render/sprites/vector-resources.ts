@@ -10,13 +10,25 @@ import { OUTLINE_WIDTH, PALETTE } from '../palette';
 export const OL = PALETTE.outline;
 export const outlineWidth = (r: number): number => Math.max(OUTLINE_WIDTH, r * 0.07);
 
+/** Gorro de nieve: casquete blanco en la parte superior izquierda de un círculo de radio r. */
+export function snowCap(g: Graphics, x: number, y: number, r: number): void {
+  const a0 = Math.PI * 1.02;
+  const a1 = Math.PI * 1.78;
+  g.moveTo(x + Math.cos(a0) * r, y + Math.sin(a0) * r)
+    .arc(x, y, r, a0, a1)
+    .quadraticCurveTo(x + r * 0.15, y - r * 0.1, x + Math.cos(a0) * r * 0.95, y + Math.sin(a0) * r + r * 0.12)
+    .closePath()
+    .fill(PALETTE.snow);
+  g.circle(x + r * 0.1, y - r * 0.72, r * 0.12).fill(0xffffff, 0.9);
+}
+
 /** Un "anillo" de árbol: círculo oscuro con contorno y círculo interior más claro. */
 function treeRing(g: Graphics, x: number, y: number, r: number, ow: number): void {
   g.circle(x, y, r).fill(PALETTE.treeMid).stroke({ width: ow, color: PALETTE.treeOutline });
   g.circle(x, y, r * 0.62).fill(PALETTE.treeLight);
 }
 
-export function makeTree(kind: 'tree' | 'apple_tree', size: Size, r: number, seed: number): Container {
+export function makeTree(kind: 'tree' | 'apple_tree', size: Size, r: number, seed: number, snowy = false): Container {
   const rng = new Rng(seed);
   const c = new Container();
   const g = new Graphics();
@@ -44,6 +56,7 @@ export function makeTree(kind: 'tree' | 'apple_tree', size: Size, r: number, see
     }
   } else if (size === 'small') {
     treeRing(g, 0, 0, r, ow);
+    if (snowy) snowCap(g, 0, 0, r * 0.8);
   } else {
     // racimo de anillos: uno grande y 2-3 satélites, como en la referencia
     const sats = size === 'medium' ? 2 : 3;
@@ -54,6 +67,7 @@ export function makeTree(kind: 'tree' | 'apple_tree', size: Size, r: number, see
     }
     rings.push([0, 0, r * 0.68]);
     for (const [x, y, rr] of rings) treeRing(g, x, y, rr, ow);
+    if (snowy) for (const [x, y, rr] of rings) snowCap(g, x, y, rr * 0.8);
   }
   c.addChild(g);
   return c;
@@ -117,6 +131,14 @@ export function drawFlatRock(g: Graphics, x: number, y: number, r: number, rng: 
   if (dark.length >= 6) g.poly(dark, true).fill(PALETTE.rockDark);
 }
 
+/** Cristal de diamante: rombo facetado celeste con brillo. */
+export function drawDiamond(g: Graphics, x: number, y: number, s: number, o: number): void {
+  g.poly([x, y - s, x + s * 0.8, y - s * 0.25, x, y + s, x - s * 0.8, y - s * 0.25], true).fill(PALETTE.diamond).stroke({ width: o, color: PALETTE.diamondOutline, join: 'round' });
+  g.poly([x - s * 0.8, y - s * 0.25, x + s * 0.8, y - s * 0.25, x, y + s], true).fill(PALETTE.diamondDark, 0.55);
+  g.poly([x, y - s, x + s * 0.8, y - s * 0.25, x - s * 0.8, y - s * 0.25], true).fill(PALETTE.diamondLight, 0.7);
+  g.circle(x - s * 0.25, y - s * 0.55, s * 0.14).fill(0xffffff, 0.9);
+}
+
 /** Pepita de oro: polígono facetado dorado con un brillo. */
 export function drawGoldNugget(g: Graphics, x: number, y: number, r: number, rng: Rng, ow: number, vertices = 7): void {
   const pts: number[] = [];
@@ -138,12 +160,13 @@ export function drawGoldNugget(g: Graphics, x: number, y: number, r: number, rng
 }
 
 /** Roca de oro: roca gris con vetas y pepitas doradas incrustadas. */
-export function makeGoldRock(r: number, seed: number): Container {
+export function makeGoldRock(r: number, seed: number, snowy = false): Container {
   const rng = new Rng(seed);
   const c = new Container();
   const g = new Graphics();
   const ow = outlineWidth(r);
   drawFlatRock(g, 0, 0, r, rng, ow);
+  if (snowy) snowCap(g, 0, 0, r * 0.82);
   // vetas
   for (let i = 0; i < 2; i++) {
     const a = rng.range(0, Math.PI * 2);
@@ -164,11 +187,30 @@ export function makeGoldRock(r: number, seed: number): Container {
   return c;
 }
 
-export function makeRock(_size: Size, r: number, seed: number): Container {
+export function makeRock(_size: Size, r: number, seed: number, snowy = false): Container {
   const rng = new Rng(seed);
   const c = new Container();
   const g = new Graphics();
   drawFlatRock(g, 0, 0, r, rng, outlineWidth(r));
+  if (snowy) snowCap(g, 0, 0, r * 0.82);
+  c.addChild(g);
+  return c;
+}
+
+/** Roca de diamante: roca gris con cristales celestes incrustados. */
+export function makeDiamondRock(r: number, seed: number, snowy = false): Container {
+  const rng = new Rng(seed);
+  const c = new Container();
+  const g = new Graphics();
+  const ow = outlineWidth(r);
+  drawFlatRock(g, 0, 0, r, rng, ow);
+  if (snowy) snowCap(g, 0, 0, r * 0.82);
+  const n = 3 + rng.int(0, 1);
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + rng.range(-0.4, 0.4);
+    const d = r * rng.range(0.2, 0.55);
+    drawDiamond(g, Math.cos(a) * d, Math.sin(a) * d, r * rng.range(0.2, 0.3), Math.max(1.5, ow * 0.6));
+  }
   c.addChild(g);
   return c;
 }
@@ -189,9 +231,11 @@ export function makeRubble(r: number, seed: number): Container {
   return c;
 }
 
-export function makeResourceVector(kind: ResourceKind, size: Size, r: number, broken: boolean, seed: number): Container {
+/** `snowy`: el recurso está sobre nieve y lleva gorro blanco. */
+export function makeResourceVector(kind: ResourceKind, size: Size, r: number, broken: boolean, seed: number, snowy = false): Container {
   if (broken) return kind === 'rock' || kind === 'gold_rock' || kind === 'diamond_rock' ? makeRubble(r, seed) : makeStump(r, seed);
-  if (kind === 'rock') return makeRock(size, r, seed);
-  if (kind === 'gold_rock' || kind === 'diamond_rock') return makeGoldRock(r, seed);
-  return makeTree(kind, size, r, seed);
+  if (kind === 'rock') return makeRock(size, r, seed, snowy);
+  if (kind === 'gold_rock') return makeGoldRock(r, seed, snowy);
+  if (kind === 'diamond_rock') return makeDiamondRock(r, seed, snowy);
+  return makeTree(kind, size, r, seed, snowy);
 }

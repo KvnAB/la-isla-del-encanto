@@ -9,6 +9,9 @@ const C = {
   sea: '#1c3a5c',
   sand: '#d6c68e',
   land: '#5c9646',
+  snow: '#e9eef3',
+  snowEdge: '#c9d6e1',
+  diamond: '#7fe7ff',
   water: '#5fa0d2',
   waterEdge: '#2a5e8f',
   tree: '#2f7a35',
@@ -24,14 +27,15 @@ export function toMinimap(x: number, y: number, map: IslandMap): { x: number; y:
   return { x: (x / map.width) * MINIMAP_SIZE, y: (y / map.height) * MINIMAP_SIZE };
 }
 
-/** Contornos suavizados de la isla (todo lo que no es mar) y del agua interior, ya escalados al minimapa. */
-export function islandShapes(map: IslandMap): { island: Loop[]; water: Loop[] } {
+/** Contornos suavizados de la isla (todo lo que no es mar), de la nieve y del agua interior, ya escalados al minimapa. */
+export function islandShapes(map: IslandMap): { island: Loop[]; water: Loop[]; snow: Loop[] } {
   const k = MINIMAP_SIZE / map.width;
   const at = (c: number, r: number) => map.cells[r * map.cols + c];
   const scale = (l: Loop) => l.map((v) => v * k);
   return {
     island: traceContours(map.cols, map.rows, map.cellSize, (c, r) => at(c, r) !== 'sea').map((l) => scale(smoothLoop(l, 3))),
     water: traceContours(map.cols, map.rows, map.cellSize, (c, r) => at(c, r) === 'water').map((l) => scale(smoothLoop(l, 3))),
+    snow: traceContours(map.cols, map.rows, map.cellSize, (c, r) => at(c, r) === 'snow').map((l) => scale(smoothLoop(l, 3))),
   };
 }
 
@@ -69,7 +73,7 @@ export class Minimap {
   readonly el: HTMLElement;
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D | null;
-  private shapes: { island: Path2D[]; water: Path2D[] } | null = null;
+  private shapes: { island: Path2D[]; water: Path2D[]; snow: Path2D[] } | null = null;
   private shapesOf: IslandMap | null = null;
   private lastSignature = '';
   /** Última posición pintada, en píxeles del minimapa (para tests y depuración). */
@@ -107,9 +111,9 @@ export class Minimap {
     if (this.shapesOf !== map) {
       this.shapesOf = map;
       const s = islandShapes(map);
-      this.shapes = { island: s.island.map(pathOf), water: s.water.map(pathOf) };
+      this.shapes = { island: s.island.map(pathOf), water: s.water.map(pathOf), snow: s.snow.map(pathOf) };
     }
-    const { island, water } = this.shapes!;
+    const { island, water, snow } = this.shapes!;
 
     ctx.clearRect(0, 0, MINIMAP_SIZE, MINIMAP_SIZE);
     ctx.fillStyle = C.sea;
@@ -125,6 +129,13 @@ export class Minimap {
       ctx.lineWidth = 5;
       ctx.stroke(path);
       ctx.restore();
+    }
+    for (const path of snow) {
+      ctx.fillStyle = C.snow;
+      ctx.fill(path);
+      ctx.strokeStyle = C.snowEdge;
+      ctx.lineWidth = 1;
+      ctx.stroke(path);
     }
     for (const path of water) {
       ctx.fillStyle = C.water;
@@ -190,10 +201,10 @@ export class Minimap {
       ctx.fill();
       ctx.strokeStyle = C.rockDark;
       ctx.stroke();
-      if (m.kind === 'gold_rock') {
+      if (m.kind === 'gold_rock' || m.kind === 'diamond_rock') {
         ctx.beginPath();
         ctx.arc(0, 0, Math.max(0.9, m.r * 0.45), 0, Math.PI * 2);
-        ctx.fillStyle = C.gold;
+        ctx.fillStyle = m.kind === 'gold_rock' ? C.gold : C.diamond;
         ctx.fill();
       }
     }

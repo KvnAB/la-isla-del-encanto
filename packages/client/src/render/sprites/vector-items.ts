@@ -1,7 +1,7 @@
 import { Container, Graphics } from 'pixi.js';
 import { Rng, type ItemId } from '@draycol/core';
 import { OUTLINE_WIDTH, PALETTE } from '../palette';
-import { drawFlatRock, drawGoldNugget } from './vector-resources';
+import { drawDiamond, drawFlatRock, drawGoldNugget } from './vector-resources';
 
 /**
  * Objetos y fogata en estilo plano. `drawItem` dibuja dentro de un cuadrado de lado 2*s centrado en (0,0).
@@ -15,21 +15,23 @@ const MEAT = { raw: 0xd94a3c, rawLight: 0xf2a59a, fat: 0xf8ebe4, cooked: 0xa5552
 const FUR = { orange: PALETTE.tiger, stripe: PALETTE.tigerStripe, wool: PALETTE.sheepWool, woolShade: 0xd9d5cc };
 const METAL = { base: 0xcfd6dc, light: 0xf2f5f7, dark: 0x8c969e };
 const GOLD = { base: PALETTE.gold, light: PALETTE.goldLight, dark: PALETTE.goldDark };
+const DIAMOND = { base: PALETTE.diamond, light: PALETTE.diamondLight, dark: PALETTE.diamondDark };
 
-export type PickaxeMaterial = 'wood' | 'stone' | 'gold';
+export type PickaxeMaterial = 'wood' | 'stone' | 'gold' | 'diamond';
 export type SwordMaterial = PickaxeMaterial;
 const ow = (s: number): number => Math.max(OUTLINE_WIDTH, s * 0.12);
 
 /** Pico apuntando hacia arriba (-y). */
 export function drawPickaxe(g: Graphics, s: number, material: PickaxeMaterial): void {
   const o = ow(s) * 0.8;
-  const head = material === 'gold' ? GOLD : STONE;
+  const head = material === 'gold' ? GOLD : material === 'diamond' ? DIAMOND : STONE;
   g.moveTo(-s * 0.1, s * 0.95).lineTo(s * 0.1, -s * 0.55).stroke({ width: s * 0.2 + o * 2, color: OL, cap: 'round' });
   g.moveTo(-s * 0.1, s * 0.95).lineTo(s * 0.1, -s * 0.55).stroke({ width: s * 0.2, color: WOOD.base, cap: 'round' });
   if (material !== 'wood') {
     g.moveTo(-s * 0.9, -s * 0.3).quadraticCurveTo(0, -s * 1.0, s * 0.95, -s * 0.35).lineTo(s * 0.7, -s * 0.55).quadraticCurveTo(0, -s * 0.75, -s * 0.65, -s * 0.5).closePath().fill(head.base).stroke({ width: o * 1.4, color: OL, join: 'round' });
     g.moveTo(-s * 0.5, -s * 0.5).quadraticCurveTo(0, -s * 0.88, s * 0.6, -s * 0.5).quadraticCurveTo(0, -s * 0.7, -s * 0.5, -s * 0.5).fill(head.light);
-    if (material === 'gold') g.circle(s * 0.55, -s * 0.42, s * 0.07).fill(0xffffff, 0.85);
+    if (material === 'gold' || material === 'diamond') g.circle(s * 0.55, -s * 0.42, s * 0.07).fill(0xffffff, 0.85);
+    if (material === 'diamond') g.moveTo(-s * 0.6, -s * 0.48).lineTo(-s * 0.3, -s * 0.62).lineTo(0, -s * 0.5).stroke({ width: Math.max(1.5, o * 0.5), color: 0xffffff, alpha: 0.7 });
   } else {
     g.moveTo(-s * 0.9, -s * 0.3).quadraticCurveTo(0, -s * 1.05, s * 0.95, -s * 0.35).stroke({ width: s * 0.22 + o * 2, color: OL, cap: 'round' });
     g.moveTo(-s * 0.9, -s * 0.3).quadraticCurveTo(0, -s * 1.05, s * 0.95, -s * 0.35).stroke({ width: s * 0.22, color: WOOD.base, cap: 'round' });
@@ -41,14 +43,15 @@ export function drawPickaxe(g: Graphics, s: number, material: PickaxeMaterial): 
 export function drawSword(g: Graphics, s: number, material: SwordMaterial): void {
   const o = ow(s) * 0.8;
   const gold = material === 'gold';
+  const diamond = material === 'diamond';
   g.roundRect(-s * 0.1, s * 0.25, s * 0.2, s * 0.7, s * 0.07).fill(WOOD.dark).stroke({ width: o * 1.2, color: OL });
-  // la guarda de la espada de oro también es dorada
-  g.roundRect(-s * 0.42, s * 0.15, s * 0.84, s * 0.17, s * 0.06).fill(gold ? GOLD.dark : WOOD.base).stroke({ width: o * 1.2, color: OL });
-  const blade = gold ? GOLD.base : material === 'stone' ? METAL.base : WOOD.light;
-  const edge = gold ? GOLD.light : material === 'stone' ? METAL.light : 0xe0b47a;
+  // la guarda de las espadas de oro y diamante también es de su material
+  g.roundRect(-s * 0.42, s * 0.15, s * 0.84, s * 0.17, s * 0.06).fill(gold ? GOLD.dark : diamond ? DIAMOND.dark : WOOD.base).stroke({ width: o * 1.2, color: OL });
+  const blade = gold ? GOLD.base : diamond ? DIAMOND.base : material === 'stone' ? METAL.base : WOOD.light;
+  const edge = gold ? GOLD.light : diamond ? DIAMOND.light : material === 'stone' ? METAL.light : 0xe0b47a;
   g.poly([-s * 0.2, s * 0.15, -s * 0.2, -s * 0.55, 0, -s * 0.98, s * 0.2, -s * 0.55, s * 0.2, s * 0.15], true).fill(blade).stroke({ width: o * 1.4, color: OL, join: 'round' });
   g.poly([-s * 0.1, s * 0.1, -s * 0.1, -s * 0.5, 0, -s * 0.8, 0, s * 0.1], true).fill(edge);
-  if (gold) g.circle(s * 0.08, -s * 0.45, s * 0.07).fill(0xffffff, 0.85); // brillo, como en el pico de oro
+  if (gold || diamond) g.circle(s * 0.08, -s * 0.45, s * 0.07).fill(0xffffff, 0.85); // brillo, como en el pico de oro
 }
 
 /** Antorcha apuntando hacia arriba (-y): palo, cabeza envuelta en tela y llama. */
@@ -98,6 +101,27 @@ export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
     case 'gold':
       drawGoldNugget(g, 0, s * 0.05, s * 0.85, rng, o);
       break;
+    case 'diamond':
+      drawDiamond(g, 0, 0, s * 0.9, o);
+      break;
+    case 'bear_pelt': {
+      // piel blanca extendida con cuatro patas y cabeza
+      g.moveTo(0, -s * 0.9).bezierCurveTo(s * 0.9, -s * 1.0, s * 0.95, -s * 0.2, s * 0.55, 0).bezierCurveTo(s * 0.95, s * 0.2, s * 0.9, s * 1.0, 0, s * 0.9).bezierCurveTo(-s * 0.9, s * 1.0, -s * 0.95, s * 0.2, -s * 0.55, 0).bezierCurveTo(-s * 0.95, -s * 0.2, -s * 0.9, -s * 1.0, 0, -s * 0.9).closePath().fill(PALETTE.polar).stroke({ width: o, color: OL, join: 'round' });
+      g.ellipse(0, s * 0.05, s * 0.4, s * 0.55).fill(PALETTE.polarShade, 0.8);
+      g.circle(0, -s * 0.75, s * 0.2).fill(PALETTE.polar).stroke({ width: o * 0.8, color: OL });
+      g.circle(0, -s * 0.72, s * 0.06).fill(OL);
+      break;
+    }
+    case 'raw_fish': {
+      // pez de perfil: cuerpo, cola, ojo y branquia
+      g.moveTo(-s * 0.95, 0).quadraticCurveTo(-s * 0.3, -s * 0.75, s * 0.55, -s * 0.1).quadraticCurveTo(-s * 0.3, s * 0.75, -s * 0.95, 0).closePath().fill(PALETTE.fish).stroke({ width: o, color: OL, join: 'round' });
+      g.poly([s * 0.45, 0, s * 0.95, -s * 0.5, s * 0.95, s * 0.5], true).fill(PALETTE.fish).stroke({ width: o, color: OL, join: 'round' });
+      g.moveTo(-s * 0.6, s * 0.05).quadraticCurveTo(-s * 0.1, s * 0.45, s * 0.4, s * 0.05).stroke({ width: s * 0.14, color: PALETTE.fishLight, cap: 'round' });
+      g.moveTo(-s * 0.3, -s * 0.5).quadraticCurveTo(-s * 0.2, -s * 0.15, -s * 0.32, s * 0.2).stroke({ width: Math.max(1.5, o * 0.6), color: PALETTE.fishDark });
+      g.circle(-s * 0.6, -s * 0.18, s * 0.12).fill(0xffffff).stroke({ width: 1, color: OL });
+      g.circle(-s * 0.58, -s * 0.18, s * 0.06).fill(OL);
+      break;
+    }
     case 'apple': {
       g.circle(-s * 0.3, s * 0.15, s * 0.58).fill(PALETTE.apple).stroke({ width: o, color: PALETTE.appleOutline });
       g.circle(s * 0.3, s * 0.15, s * 0.58).fill(PALETTE.apple).stroke({ width: o, color: PALETTE.appleOutline });
@@ -152,6 +176,9 @@ export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
     case 'gold_pickaxe':
       drawPickaxe(g, s, 'gold');
       break;
+    case 'diamond_pickaxe':
+      drawPickaxe(g, s, 'diamond');
+      break;
     case 'wood_sword':
       drawSword(g, s, 'wood');
       break;
@@ -161,6 +188,9 @@ export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
     case 'gold_sword':
       drawSword(g, s, 'gold');
       break;
+    case 'diamond_sword':
+      drawSword(g, s, 'diamond');
+      break;
     case 'campfire':
       drawCampfireBase(g, s);
       drawFlame(g, s, 1);
@@ -168,6 +198,16 @@ export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
     case 'torch':
       drawTorch(g, s);
       break;
+    case 'coat2': {
+      // abrigo de piel de oso: blanco con ribete dorado y cuello de lana
+      g.roundRect(-s * 0.95, -s * 0.75, s * 1.9, s * 1.6, s * 0.3).fill(PALETTE.polar).stroke({ width: o, color: OL });
+      g.roundRect(-s * 0.82, -s * 0.62, s * 1.64, s * 1.34, s * 0.22).stroke({ width: Math.max(2, o * 0.7), color: GOLD.base });
+      for (const k of [-0.5, -0.1, 0.3]) g.moveTo(s * k - s * 0.08, -s * 0.5).quadraticCurveTo(s * k + s * 0.1, s * 0.1, s * k - s * 0.08, s * 0.7).stroke({ width: s * 0.1, color: PALETTE.polarShade, cap: 'round' });
+      for (const [x, y, rr] of [[-0.35, -0.7, 0.26], [0, -0.78, 0.28], [0.35, -0.7, 0.26], [-0.82, 0.3, 0.2], [0.82, 0.3, 0.2]] as const) g.circle(x * s, y * s, rr * s).fill(FUR.wool).stroke({ width: o * 0.9, color: OL });
+      g.moveTo(0, -s * 0.5).lineTo(0, s * 0.8).stroke({ width: Math.max(1.5, o * 0.6), color: OL, alpha: 0.6 });
+      g.circle(0, s * 0.1, s * 0.09).fill(GOLD.base).stroke({ width: 1, color: OL });
+      break;
+    }
     case 'coat1': {
       // abrigo: cuerpo con rayas y cuello/puños de lana
       g.roundRect(-s * 0.95, -s * 0.75, s * 1.9, s * 1.6, s * 0.3).fill(FUR.orange).stroke({ width: o, color: OL });

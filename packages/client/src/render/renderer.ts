@@ -1,5 +1,5 @@
 import { Application, Container, Graphics } from 'pixi.js';
-import { resourceAvailable, resourceCapacity, Rng, type GameConfig, type GameEvent, type IslandMap, type ResourceState, type WorldState } from '@draycol/core';
+import { resourceAvailable, resourceCapacity, terrainAt, type GameConfig, type GameEvent, type IslandMap, type ResourceState, type WorldState } from '@draycol/core';
 import { Camera } from './camera';
 import { FloatingNumbers } from './floating';
 import { Fx } from './fx';
@@ -120,7 +120,7 @@ export class Renderer {
     this.parent.appendChild(this.app.canvas);
 
     this.layers.entities.sortableChildren = true;
-    this.layers.terrain.addChild(buildTerrain(map, new Rng(1234)));
+    this.layers.terrain.addChild(buildTerrain(map, this.app.renderer));
     for (const layer of [this.layers.terrain, this.layers.shadows, this.layers.ground, this.layers.entities, this.layers.fx]) this.world.addChild(layer);
     this.layers.fx.addChild(this.hitboxGfx, this.floating);
     this.app.stage.addChild(this.world);
@@ -255,8 +255,9 @@ export class Renderer {
       }
   }
 
-  private buildResourceSprite(r: ResourceState, broken: boolean): Container {
-    return makeResourceVector(r.kind, r.size, r.radius, broken, r.id * 7919);
+  private buildResourceSprite(state: WorldState, r: ResourceState, broken: boolean): Container {
+    const snowy = terrainAt(state.map, r.x, r.y) === 'snow';
+    return makeResourceVector(r.kind, r.size, r.radius, broken, r.id * 7919, snowy);
   }
 
   private syncResources(state: WorldState): void {
@@ -282,7 +283,7 @@ export class Renderer {
       const broken = r.brokenAt !== null;
       let v = this.resources.get(r.id);
       if (!v) {
-        v = { sprite: this.buildResourceSprite(r, broken), shadow: makeShadow(r.radius), ring: makeRegenRing(), broken };
+        v = { sprite: this.buildResourceSprite(state, r, broken), shadow: makeShadow(r.radius), ring: makeRegenRing(), broken };
         v.sprite.position.set(r.x, r.y);
         v.sprite.zIndex = r.y;
         v.shadow.position.set(r.x, r.y + 6);
@@ -294,7 +295,7 @@ export class Renderer {
       }
       if (v.broken !== broken) {
         v.sprite.destroy();
-        v.sprite = this.buildResourceSprite(r, broken);
+        v.sprite = this.buildResourceSprite(state, r, broken);
         v.sprite.position.set(r.x, r.y);
         v.sprite.zIndex = r.y;
         this.layers.entities.addChild(v.sprite);

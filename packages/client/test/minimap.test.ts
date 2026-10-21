@@ -77,3 +77,16 @@ describe('Hud con minimapa', () => {
     expect(hud.minimap.player).toEqual({ ...toMinimap(p.x, p.y, map), angle: p.angle });
   });
 });
+
+describe('minimapa: nieve y marcadores nuevos', () => {
+  it('islandShapes devuelve contornos de nieve y todos están en la mitad norte', () => {
+    const { snow } = islandShapes(map);
+    expect(snow.length).toBeGreaterThanOrEqual(1);
+    for (const loop of snow) for (let i = 1; i < loop.length; i += 2) expect(loop[i]).toBeLessThan(MINIMAP_SIZE * 0.55);
+  });
+
+  it('las rocas de diamante tienen marcador', () => {
+    const markers = minimapMarkers(world.getState(), map);
+    expect(markers.filter((m) => m.kind === 'diamond_rock')).toHaveLength(8);
+  });
+});
