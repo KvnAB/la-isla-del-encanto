@@ -111,7 +111,7 @@ const treeRadius: Record<Size, number> = { small: 36, medium: 50, large: 70 };
 
 export const DEFAULT_CONFIG: GameConfig = {
   stepSeconds: 1 / 30,
-  island: { width: 3000, height: 3000, cellSize: 40, seed: 20261042 }, // (*)
+  island: { width: 4500, height: 4500, cellSize: 40, seed: 20261042 }, // (*) 112×112 celdas; el tercio norte es nieve
   dayCycleSeconds: 480,
   daySeconds: 240,
   vitals: {
@@ -158,7 +158,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     stonePerHit: { hand: 0, wood_pickaxe: 1, stone_pickaxe: 2, gold_pickaxe: 3 },
     // El oro solo sale con pico de piedra (1 por golpe); el de oro saca 2.
     goldPerHit: { hand: 0, wood_pickaxe: 0, stone_pickaxe: 1, gold_pickaxe: 2 },
-    counts: { tree: 60, apple_tree: 18, rock: 40, gold_rock: 14 }, // (*)
+    counts: { tree: 135, apple_tree: 40, rock: 90, gold_rock: 30 }, // (*) ×2,25 al pasar de 3000 a 4500
     minDistFromSpawn: 200, // (*)
   },
   food: {
@@ -170,7 +170,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   groundItemSeconds: 60,
   groundItemRadius: 14, // (*)
   creatures: {
-    maxActive: 12, // (*)
+    maxActive: 26, // (*)
     respawnSeconds: 45,
     minSpawnDistFromPlayer: 600, // (*)
     nightRaidDist: { min: 500, max: 800 }, // (*)

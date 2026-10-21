@@ -42,10 +42,10 @@ describe('generateIsland', () => {
   const map = gen(1);
 
   it('tiene la rejilla esperada', () => {
-    expect(map.cols).toBe(75);
-    expect(map.rows).toBe(75);
-    expect(map.cells.length).toBe(5625);
-    expect(map.width).toBe(3000);
+    expect(map.cols).toBe(112);
+    expect(map.rows).toBe(112);
+    expect(map.cells.length).toBe(112 * 112);
+    expect(map.width).toBe(4500);
     expect(map.cellSize).toBe(40);
   });
 
@@ -78,7 +78,7 @@ describe('generateIsland', () => {
 
   it('fuera del mapa es mar', () => {
     expect(terrainAt(map, -10, -10)).toBe('sea');
-    expect(terrainAt(map, 5000, 100)).toBe('sea');
+    expect(terrainAt(map, 7000, 100)).toBe('sea');
   });
 
   it('es determinista por semilla', () => {
@@ -103,12 +103,12 @@ describe('generateIsland', () => {
 });
 
 describe('findLandSpot', () => {
-  it('devuelve un punto en tierra o arena, lejos del punto indicado', () => {
+  it('devuelve un punto en terreno firme, lejos del punto indicado', () => {
     const map = gen(1);
     const rng = new Rng(5);
     for (let i = 0; i < 20; i++) {
       const p = findLandSpot(map, rng, { x: map.spawnX, y: map.spawnY, d: 600 });
-      expect(['land', 'sand']).toContain(terrainAt(map, p.x, p.y));
+      expect(['land', 'sand', 'snow']).toContain(terrainAt(map, p.x, p.y));
       expect(Math.hypot(p.x - map.spawnX, p.y - map.spawnY)).toBeGreaterThanOrEqual(600);
     }
   });
@@ -134,3 +134,41 @@ describe('bioma', () => {
     }
   });
 });
+
+describe('nieve', () => {
+  const map = gen(1);
+
+  it('hay nieve y toda está en la mitad norte', () => {
+    let n = 0;
+    for (let r = 0; r < map.rows; r++)
+      for (let c = 0; c < map.cols; c++)
+        if (map.cells[r * map.cols + c] === 'snow') {
+          n++;
+          expect(r).toBeLessThan(map.rows * 0.5);
+        }
+    expect(n).toBeGreaterThan(200);
+    // y es una parte sustancial, pero no la mayoría, de lo caminable
+    const ratio = n / walkableCount(map);
+    expect(ratio).toBeGreaterThan(0.12);
+    expect(ratio).toBeLessThan(0.45);
+  });
+
+  it('el spawn no está en nieve y la isla fija tampoco', () => {
+    expect(terrainAt(map, map.spawnX, map.spawnY)).toBe('land');
+    const fixed = generateIsland(new Rng(DEFAULT_CONFIG.island.seed), DEFAULT_CONFIG);
+    expect(terrainAt(fixed, fixed.spawnX, fixed.spawnY)).toBe('land');
+    expect(fixed.cells.includes('snow')).toBe(true);
+  });
+
+  it('findLandSpot con bioma snow devuelve nieve y con grass nunca', () => {
+    const rng = new Rng(4);
+    for (let i = 0; i < 20; i++) {
+      expect(terrainAt(map, ...xy(findLandSpot(map, rng, undefined, 'snow')))).toBe('snow');
+      expect(terrainAt(map, ...xy(findLandSpot(map, rng, undefined, 'grass')))).not.toBe('snow');
+    }
+  });
+});
+
+function xy(p: { x: number; y: number }): [number, number] {
+  return [p.x, p.y];
+}

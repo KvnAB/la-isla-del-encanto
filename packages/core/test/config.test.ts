@@ -115,3 +115,12 @@ describe('bloque 1: noche, combate y lobo', () => {
     expect(c.vitals.lowHealth).toBe(25);
   });
 });
+
+describe('bloque 2: isla grande', () => {
+  it('isla de 4500 con recuentos escalados y 26 criaturas', () => {
+    expect(DEFAULT_CONFIG.island.width).toBe(4500);
+    expect(DEFAULT_CONFIG.island.height).toBe(4500);
+    expect(DEFAULT_CONFIG.resources.counts).toEqual(expect.objectContaining({ tree: 135, apple_tree: 40, rock: 90, gold_rock: 30 }));
+    expect(DEFAULT_CONFIG.creatures.maxActive).toBe(26);
+  });
+});

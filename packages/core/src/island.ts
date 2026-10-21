@@ -191,6 +191,17 @@ export function generateIsland(rng: Rng, cfg: GameConfig): IslandMap {
   }
   for (let i = 0; i < cells.length; i++) if (sandMask[i]) cells[i] = 'sand';
 
+  // 6b) Nieve: el tercio norte, con borde irregular por ruido. Cubre tierra y arena (no el agua).
+  const snowNoise = [new ValueNoise(8, rng), new ValueNoise(16, rng)];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const t = cells[idx(c, r)];
+      if (t !== 'land' && t !== 'sand') continue;
+      const n = fbm(snowNoise, (c / cols) * 4, (r / rows) * 4);
+      if (r < rows * 0.34 + (n - 0.5) * rows * 0.14) cells[idx(c, r)] = 'snow';
+    }
+  }
+
   // 7) Spawn: celda de tierra más cercana al centro a ≥ 3 celdas de agua/mar.
   const safe = (c: number, r: number): boolean => {
     if (cells[idx(c, r)] !== 'land') return false;
