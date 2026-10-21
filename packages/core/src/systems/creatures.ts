@@ -130,7 +130,28 @@ export function hitCreature(state: WorldState, p: PlayerState, c: CreatureState,
   });
   p.points += def.points;
   events.push({ type: 'creatureDied', playerId: p.id, entityId: c.id, kind: c.kind });
-  state.respawnQueue.push({ kind: c.kind, at: state.time + cfg.creatures.respawnSeconds });
+  if (!c.raid) state.respawnQueue.push({ kind: c.kind, at: state.time + cfg.creatures.respawnSeconds });
+}
+
+/** Al caer la noche: por cada criatura con `nightRaid`, una manada cerca del jugador (en cualquier bioma). */
+export function onNightfall(state: WorldState, cfg: GameConfig, rng: Rng, events: GameEvent[]): void {
+  const p = state.players.find((x) => x.alive);
+  if (!p) return;
+  const { min, max } = cfg.creatures.nightRaidDist;
+  for (const kind of Object.keys(cfg.creatures.defs) as CreatureKind[]) {
+    const n = cfg.creatures.defs[kind].nightRaid;
+    if (n) spawnPack(state, kind, cfg, rng, events, { x: p.x, y: p.y, min, max }, n, true);
+  }
+}
+
+/** Al amanecer: las manadas nocturnas desaparecen estén donde estén, sin botín ni reaparición. */
+export function onDawn(state: WorldState, events: GameEvent[]): void {
+  for (let i = state.creatures.length - 1; i >= 0; i--) {
+    const c = state.creatures[i];
+    if (!c.raid) continue;
+    state.creatures.splice(i, 1);
+    events.push({ type: 'creatureDespawned', entityId: c.id, kind: c.kind });
+  }
 }
 
 function nearestPlayer(state: WorldState, c: CreatureState): { p: PlayerState; d: number } | null {
