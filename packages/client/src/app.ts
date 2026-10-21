@@ -98,6 +98,7 @@ export class App {
         const events = session.step(cmds);
         renderer.onEvents(events, session.playerId);
         this.audio.onEvents(events, session.playerId);
+        hud.onEvents(events);
         const p = session.world.player(session.playerId);
         hud.update(p, session.world.getState(), availableRecipes(p.inventory, DEFAULT_CONFIG));
         this.audio.tick(DEFAULT_CONFIG.stepSeconds, p.health, DEFAULT_CONFIG.vitals.lowHealth);

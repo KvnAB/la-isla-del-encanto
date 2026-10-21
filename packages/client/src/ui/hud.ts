@@ -1,4 +1,4 @@
-import type { GameConfig, ItemId, PlayerState, WorldState } from '@draycol/core';
+import type { GameConfig, GameEvent, ItemId, PlayerState, WorldState } from '@draycol/core';
 import './hud.css';
 import { SLOT_KEY_LABELS } from '../game/input';
 import { itemIconDataUrl } from './icons';
@@ -12,6 +12,9 @@ const ICONS: Record<BarKey, string> = {
   thirst: '<svg viewBox="0 0 24 24"><path d="M12 2.5s6.5 7.2 6.5 12a6.5 6.5 0 0 1-13 0c0-4.8 6.5-12 6.5-12z"/></svg>',
   warmth: '<svg viewBox="0 0 24 24"><path d="M11 2h2v5.3l3.2-1.9 1 1.7L13 9.6v4.8l4.2 2.5-1 1.7L13 16.7V22h-2v-5.3l-3.2 1.9-1-1.7 4.2-2.5V9.6L6.8 7.1l1-1.7L11 7.3z"/></svg>',
 };
+/** Cuánto dura el cartel grande del centro (DÍA N / CAE LA NOCHE). */
+export const BANNER_SECONDS = 2.5;
+
 const BARS: { key: BarKey; label: string }[] = [
   { key: 'health', label: 'VIDA' },
   { key: 'hunger', label: 'HAMBRE' },
@@ -29,7 +32,9 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, t
 /** HUD en DOM: barras, slots del inventario, recetas disponibles, día y puntos. Solo toca el DOM cuando cambia algo. */
 export class Hud {
   private readonly root: HTMLElement;
-  private readonly bars = new Map<BarKey, { fill: HTMLElement; label: HTMLElement; last: number }>();
+  private readonly bars = new Map<BarKey, { el: HTMLElement; fill: HTMLElement; label: HTMLElement; last: number; low: boolean }>();
+  private banner: HTMLElement | null = null;
+  private bannerTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly slots: { el: HTMLElement; img: HTMLImageElement; count: HTMLElement; lastItem: ItemId | null; lastCount: number; lastSelected: boolean }[] = [];
   private readonly craftBox: HTMLElement;
   private lastRecipes = '';
@@ -81,7 +86,7 @@ export class Hud {
       track.append(fill, label);
       bar.append(icon, track);
       barsRow.appendChild(bar);
-      this.bars.set(b.key, { fill, label, last: -1 });
+      this.bars.set(b.key, { el: bar, fill, label, last: -1, low: false });
     }
     const slotsRow = el('div', 'hud-slots');
     slotsRow.style.gridTemplateColumns = `repeat(${cfg.player.inventorySlots}, var(--slot-size))`;
@@ -112,6 +117,12 @@ export class Hud {
         entry.last = v;
         entry.fill.style.width = `${Math.max(0, Math.min(100, v))}%`;
         entry.label.textContent = `${b.label} ${v}`;
+      }
+      // hambre, sed y frío parpadean por debajo del umbral de aviso
+      const low = b.key !== 'health' && v < this.cfg.vitals.lowThreshold;
+      if (low !== entry.low) {
+        entry.low = low;
+        entry.el.classList.toggle('low', low);
       }
     }
 
@@ -187,7 +198,31 @@ export class Hud {
     }
   }
 
+  /** Eventos del paso: carteles de amanecer y anochecer. */
+  onEvents(events: GameEvent[]): void {
+    for (const e of events) {
+      if (e.type === 'dayPassed') this.showBanner(`DÍA ${e.day + 1}`);
+      else if (e.type === 'nightFell') this.showBanner('CAE LA NOCHE');
+    }
+  }
+
+  /** Cartel grande centrado que se funde solo; uno a la vez. */
+  showBanner(text: string): void {
+    this.banner?.remove();
+    if (this.bannerTimer) clearTimeout(this.bannerTimer);
+    const b = el('div', 'hud-banner', text);
+    this.root.appendChild(b);
+    this.banner = b;
+    this.bannerTimer = setTimeout(() => {
+      if (this.banner === b) {
+        b.remove();
+        this.banner = null;
+      }
+    }, BANNER_SECONDS * 1000);
+  }
+
   destroy(): void {
+    if (this.bannerTimer) clearTimeout(this.bannerTimer);
     this.root.remove();
   }
 }

@@ -101,3 +101,24 @@ describe('Hud', () => {
     expect(root.querySelector('.hud')).toBeNull();
   });
 });
+
+describe('Hud: carteles y avisos', () => {
+  it('muestra el cartel del día al amanecer y el de la noche al anochecer', () => {
+    hud.onEvents([{ type: 'dayPassed', day: 1 }]);
+    expect(text('.hud-banner')).toBe('DÍA 2');
+    hud.onEvents([{ type: 'nightFell', day: 2 }]);
+    expect(text('.hud-banner')).toBe('CAE LA NOCHE');
+    expect(root.querySelectorAll('.hud-banner')).toHaveLength(1);
+  });
+
+  it('las barras por debajo del 20 % llevan la clase low', () => {
+    p.thirst = 15;
+    p.hunger = 50;
+    hud.update(p, state, []);
+    expect(root.querySelector('[data-bar="thirst"]')!.classList.contains('low')).toBe(true);
+    expect(root.querySelector('[data-bar="hunger"]')!.classList.contains('low')).toBe(false);
+    p.thirst = 80;
+    hud.update(p, state, []);
+    expect(root.querySelector('[data-bar="thirst"]')!.classList.contains('low')).toBe(false);
+  });
+});

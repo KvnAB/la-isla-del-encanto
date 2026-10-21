@@ -96,6 +96,12 @@ export class GameAudio {
         case 'dayPassed':
           this.play('day', () => this.blip([523, 659, 784, 1047], 0.12));
           break;
+        case 'nightFell':
+          this.play('night', () => this.drone());
+          break;
+        case 'vitalLow':
+          if (e.playerId === localPlayerId) this.play('warn', () => this.warn());
+          break;
         case 'playerDied':
           if (e.playerId === localPlayerId) this.play('die', () => this.fall());
           break;
@@ -154,6 +160,43 @@ export class GameAudio {
     o.connect(og).connect(this.master!);
     o.start(t);
     o.stop(t + 0.1);
+  }
+
+  /** Aviso de barra baja: dos notas descendentes. */
+  private warn(): void {
+    const ctx = this.ctx!;
+    const t0 = ctx.currentTime;
+    [660, 440].forEach((f, i) => {
+      const o = ctx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = f;
+      const g = ctx.createGain();
+      const t = t0 + i * 0.16;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.3, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+      o.connect(g).connect(this.master!);
+      o.start(t);
+      o.stop(t + 0.16);
+    });
+  }
+
+  /** Cae la noche: tono grave largo que se apaga. */
+  private drone(): void {
+    const ctx = this.ctx!;
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(110, t);
+    o.frequency.exponentialRampToValueAtTime(55, t + 1.4);
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 400;
+    const g = ctx.createGain();
+    this.env(g, 0.35, 0.05, 1.4);
+    o.connect(f).connect(g).connect(this.master!);
+    o.start(t);
+    o.stop(t + 1.5);
   }
 
   /** Latido: dos golpes graves, el segundo más flojo. */
