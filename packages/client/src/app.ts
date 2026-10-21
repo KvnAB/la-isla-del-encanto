@@ -64,7 +64,12 @@ export class App {
       gameLayer,
       DEFAULT_CONFIG,
       (id) => session.world.enqueue({ playerId: session.playerId, type: 'craft', recipeId: id }),
-      (i) => session.world.enqueue({ playerId: session.playerId, type: 'selectSlot', slot: i }),
+      (i) => {
+        session.world.enqueue({ playerId: session.playerId, type: 'selectSlot', slot: i });
+        // Clic en el slot del abrigo: se pone o se quita directamente.
+        const item = session.world.player(session.playerId).inventory[i]?.item;
+        if (item && ITEM_META[item].equippable) session.world.enqueue({ playerId: session.playerId, type: 'useSlot' });
+      },
     );
 
     const input = new InputController(renderer.app.canvas, {
