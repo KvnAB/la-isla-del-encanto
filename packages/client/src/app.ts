@@ -100,6 +100,8 @@ export class App {
         this.audio.onEvents(events, session.playerId);
         const p = session.world.player(session.playerId);
         hud.update(p, session.world.getState(), availableRecipes(p.inventory, DEFAULT_CONFIG));
+        this.audio.tick(DEFAULT_CONFIG.stepSeconds, p.health, DEFAULT_CONFIG.vitals.lowHealth);
+        renderer.fx?.setLowHealth(p.alive && p.health < DEFAULT_CONFIG.vitals.lowHealth);
         const dead = events.find((e) => e.type === 'playerDied' && e.playerId === session.playerId);
         if (dead) {
           died = dead;

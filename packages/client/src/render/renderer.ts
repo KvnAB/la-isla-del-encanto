@@ -1,6 +1,7 @@
 import { Application, Container, Graphics } from 'pixi.js';
 import { resourceAvailable, resourceCapacity, Rng, type GameConfig, type GameEvent, type IslandMap, type ResourceState, type WorldState } from '@draycol/core';
 import { Camera } from './camera';
+import { FloatingNumbers } from './floating';
 import { Fx } from './fx';
 import { lightsFor } from './lights';
 import { nightAmount, NightLayer } from './night';
@@ -10,6 +11,12 @@ import { animateCampfireVector, makeCampfireVector, makeCreatureVector, makeGrou
 import { buildTerrain } from './terrain';
 
 const HIT_FX_SECONDS = 0.18;
+const DAMAGE_COLOR = 0xff5a4a;
+
+/** 14.285… → "14"; 12.5 → "12.5". */
+function formatDamage(n: number): string {
+  return Number.isInteger(n) ? String(n) : (Math.round(n * 10) / 10).toString();
+}
 
 /** Posiciones del paso anterior para interpolar. */
 export interface PrevSnapshot {
@@ -84,6 +91,8 @@ export class Renderer {
   /** Jugador cuya luz y cámara se usan; por defecto el primero del estado. */
   localPlayerId: number | null = null;
   private readonly hitboxGfx = new Graphics();
+  /** Números de daño flotantes. */
+  readonly floating = new FloatingNumbers();
 
   constructor(
     private readonly parent: HTMLElement,
@@ -113,7 +122,7 @@ export class Renderer {
     this.layers.entities.sortableChildren = true;
     this.layers.terrain.addChild(buildTerrain(map, new Rng(1234)));
     for (const layer of [this.layers.terrain, this.layers.shadows, this.layers.ground, this.layers.entities, this.layers.fx]) this.world.addChild(layer);
-    this.layers.fx.addChild(this.hitboxGfx);
+    this.layers.fx.addChild(this.hitboxGfx, this.floating);
     this.app.stage.addChild(this.world);
     this.screen.addChild(this.night);
     this.app.stage.addChild(this.screen);
@@ -140,6 +149,7 @@ export class Renderer {
         const dy = attacker && me ? me.y - attacker.y : 0;
         const l = Math.hypot(dx, dy) || 1;
         this.hitFx.set(e.playerId, { t: HIT_FX_SECONDS, kind: 'hurt', dx: dx / l, dy: dy / l });
+        if (me) this.floating.spawn(me.x, me.y - me.r - 6, `-${formatDamage(e.amount)}`, DAMAGE_COLOR);
       } else if (e.type === 'creatureHit' && e.playerId === localPlayerId) {
         this.fx.hitShake();
         const target = this.creatures.get(e.entityId)?.sprite;
@@ -148,6 +158,7 @@ export class Renderer {
         const dy = target && me ? target.y - me.y : 0;
         const l = Math.hypot(dx, dy) || 1;
         this.hitFx.set(e.entityId, { t: HIT_FX_SECONDS, kind: 'hit', dx: dx / l, dy: dy / l });
+        if (target) this.floating.spawn(target.x, target.y - 30, `-${formatDamage(e.amount)}`, 0xffffff);
       } else if (e.type === 'resourceHit' && e.playerId === localPlayerId) {
         this.fx.hitShake();
         this.hitFx.set(e.entityId, { t: HIT_FX_SECONDS, kind: 'hit', dx: 0, dy: 0 });
@@ -197,6 +208,7 @@ export class Renderer {
     const dt = Math.max(0, this.time - this.lastRenderTime);
     this.lastRenderTime = this.time;
     this.fx?.update(dt);
+    this.floating.update(dt);
     this.applyHitFx(dt);
     this.syncPlayers(state, alpha, prev);
     this.syncResources(state);

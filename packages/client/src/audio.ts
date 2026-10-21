@@ -10,6 +10,7 @@ export class GameAudio {
   private master: GainNode | null = null;
   private _muted = false;
   private lastPlay = new Map<string, number>();
+  private heartbeatT = 0;
 
   constructor() {
     try {
@@ -44,6 +45,19 @@ export class GameAudio {
       this.master.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') void this.ctx.resume();
+  }
+
+  /** Llamar cada paso: con la vida baja suena un latido cada segundo. */
+  tick(dt: number, health: number, lowHealth: number): void {
+    if (health >= lowHealth || health <= 0) {
+      this.heartbeatT = 0;
+      return;
+    }
+    this.heartbeatT -= dt;
+    if (this.heartbeatT <= 0) {
+      this.heartbeatT = 1;
+      this.play('heart', () => this.heartbeat());
+    }
   }
 
   onEvents(events: GameEvent[], localPlayerId: number): void {
@@ -140,6 +154,25 @@ export class GameAudio {
     o.connect(og).connect(this.master!);
     o.start(t);
     o.stop(t + 0.1);
+  }
+
+  /** Latido: dos golpes graves, el segundo más flojo. */
+  private heartbeat(): void {
+    const ctx = this.ctx!;
+    for (const [delay, peak] of [[0, 0.5], [0.16, 0.32]] as const) {
+      const t = ctx.currentTime + delay;
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(70, t);
+      o.frequency.exponentialRampToValueAtTime(40, t + 0.12);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(peak, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+      o.connect(g).connect(this.master!);
+      o.start(t);
+      o.stop(t + 0.16);
+    }
   }
 
   /** Impacto blando (criatura). */

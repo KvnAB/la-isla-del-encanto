@@ -36,7 +36,7 @@ export class PlayerView extends Container {
   private readonly nameText: Text;
   private toolItem: ItemId | null | undefined = undefined;
   private coatOn: boolean | undefined = undefined;
-  private readonly r: number;
+  readonly r: number;
   hat: HatStyle = 'none';
 
   constructor(r: number, name: string) {

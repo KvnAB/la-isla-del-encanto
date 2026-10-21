@@ -1,6 +1,10 @@
-/** Efectos de pantalla: destello rojo al recibir daño y sacudida leve al golpear. */
+const FLASH_SECONDS = 0.25;
+
+/** Efectos de pantalla: destello rojo al recibir daño, viñeta de vida baja y sacudida leve al golpear. */
 export class Fx {
   private readonly flash: HTMLDivElement;
+  private readonly lowHealth: HTMLDivElement;
+  private lowOn = false;
   private flashT = 0;
   private shakeT = 0;
   shakeX = 0;
@@ -10,10 +14,20 @@ export class Fx {
     this.flash = document.createElement('div');
     this.flash.className = 'damage-flash';
     parent.appendChild(this.flash);
+    this.lowHealth = document.createElement('div');
+    this.lowHealth.className = 'low-health';
+    parent.appendChild(this.lowHealth);
   }
 
   damageFlash(): void {
-    this.flashT = 0.15;
+    this.flashT = FLASH_SECONDS;
+  }
+
+  /** Viñeta roja que late mientras la vida está baja. */
+  setLowHealth(on: boolean): void {
+    if (on === this.lowOn) return;
+    this.lowOn = on;
+    this.lowHealth.classList.toggle('on', on);
   }
 
   hitShake(): void {
@@ -23,7 +37,7 @@ export class Fx {
   update(dt: number): void {
     if (this.flashT > 0) {
       this.flashT = Math.max(0, this.flashT - dt);
-      this.flash.style.opacity = String(Math.min(1, this.flashT / 0.15));
+      this.flash.style.opacity = String(Math.min(1, this.flashT / FLASH_SECONDS));
     } else if (this.flash.style.opacity !== '0') {
       this.flash.style.opacity = '0';
     }
@@ -40,5 +54,6 @@ export class Fx {
 
   destroy(): void {
     this.flash.remove();
+    this.lowHealth.remove();
   }
 }
