@@ -4,7 +4,27 @@
   overflow: hidden;
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--hud-text);
+  /* Relleno: la portada ampliada, desenfocada y oscurecida (solo se ve en los bordes). */
   background: #0b1630 url('/portada.png') center / cover no-repeat;
+}
+
+.screen::before {
+  content: '';
+  position: absolute;
+  inset: -24px;
+  background: inherit;
+  filter: blur(14px) brightness(0.55);
+  z-index: 0;
+}
+
+/* La portada nítida: nunca por encima de su tamaño real (1376 px), centrada. */
+.screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/portada.png') center / min(100%, 1376px) auto no-repeat;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .sr-only {
@@ -291,13 +311,9 @@
   color: #e5a0a0;
 }
 
-/* Pantalla de muerte: portada oscurecida y desenfocada */
-.death-screen::before {
-  content: '';
-  position: absolute;
-  inset: -20px;
-  background: inherit;
-  filter: blur(6px) brightness(0.55) saturate(0.8);
+/* Pantalla de muerte: solo la versión desenfocada y oscurecida */
+.death-screen::after {
+  display: none;
 }
 
 .death-screen .screen-layout {
