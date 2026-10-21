@@ -1,10 +1,13 @@
 import type { Container } from 'pixi.js';
 
+/** Zoom por defecto: algo más cerca que 1:1 para que no se vea tanto mundo de golpe. */
+export const DEFAULT_ZOOM = 1.3;
+
 /** Cámara centrada en un punto del mundo con zoom fijo. */
 export class Camera {
   x = 0;
   y = 0;
-  zoom = 1;
+  zoom = DEFAULT_ZOOM;
 
   follow(px: number, py: number): void {
     this.x = px;

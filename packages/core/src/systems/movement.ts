@@ -1,11 +1,17 @@
 import type { GameConfig } from '../config.js';
 import { isWalkable, terrainAt } from '../island.js';
 import type { IslandMap, PlayerState, WorldState } from '../types.js';
+import { collisionRadius } from './resources.js';
 
 export interface Solid {
   x: number;
   y: number;
   radius: number;
+}
+
+/** Los recursos como sólidos, con su radio de colisión (no el dibujado). */
+export function resourceSolids(state: WorldState, cfg: GameConfig): Solid[] {
+  return state.resources.map((r) => ({ x: r.x, y: r.y, radius: collisionRadius(r, cfg) }));
 }
 
 function circleFits(map: IslandMap, x: number, y: number, r: number): boolean {

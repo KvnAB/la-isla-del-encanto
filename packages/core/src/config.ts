@@ -65,6 +65,10 @@ export interface GameConfig {
     regenSeconds: Record<Size, number>;
     appleYield: Record<Size, number>;
     radius: Record<ResourceKind, Record<Size, number>>;
+    /** Fracción del radio dibujado que bloquea el paso; el resto del dibujo se puede rozar. */
+    collision: Record<ResourceKind, number>;
+    /** Fracción del radio que bloquea un recurso roto (tocón o escombro). */
+    brokenCollision: number;
     woodPerHit: Record<ToolClass, number>;
     stonePerHit: Record<ToolClass, number>;
     goldPerHit: Record<ToolClass, number>;
@@ -127,6 +131,8 @@ export const DEFAULT_CONFIG: GameConfig = {
       rock: { small: 28, medium: 40, large: 56 },
       gold_rock: { small: 28, medium: 40, large: 56 },
     }, // (*)
+    collision: { tree: 0.75, apple_tree: 0.85, rock: 0.9, gold_rock: 0.9 }, // (*)
+    brokenCollision: 0.5, // (*) el tocón se dibuja a la mitad del radio
     woodPerHit: { hand: 1, wood_pickaxe: 2, stone_pickaxe: 3, gold_pickaxe: 4 },
     stonePerHit: { hand: 0, wood_pickaxe: 1, stone_pickaxe: 2, gold_pickaxe: 3 },
     // El oro solo sale con pico de piedra (1 por golpe); el de oro saca 2.
@@ -191,13 +197,14 @@ export const DEFAULT_CONFIG: GameConfig = {
       },
     },
   },
-  weaponDamage: { fist: 1, wood_sword: 2, stone_sword: 3 },
+  weaponDamage: { fist: 1, wood_sword: 2, stone_sword: 3, gold_sword: 4 }, // (*) oro: tigre 8, oveja 5, duende 2
   recipes: [
     { id: 'wood_pickaxe', cost: { wood: 10 }, points: 25 },
     { id: 'wood_sword', cost: { wood: 30 }, points: 25 },
     { id: 'stone_pickaxe', cost: { wood: 20, stone: 20 }, consumes: 'wood_pickaxe', replaces: 'wood_pickaxe', points: 100 },
     { id: 'stone_sword', cost: { wood: 60, stone: 30 }, consumes: 'wood_sword', replaces: 'wood_sword', points: 100 },
     { id: 'gold_pickaxe', cost: { gold: 20, stone: 10, wood: 30 }, consumes: 'stone_pickaxe', replaces: 'stone_pickaxe', points: 200 },
+    { id: 'gold_sword', cost: { gold: 20, stone: 30, wood: 60 }, consumes: 'stone_sword', replaces: 'stone_sword', points: 200 },
     { id: 'campfire', cost: { wood: 15, stone: 5 }, points: 25 },
     { id: 'coat1', cost: { wool: 5, tiger_pelt: 5, needle: 1 }, unique: true, points: 100 },
   ],
@@ -229,6 +236,7 @@ export const ITEM_META: Record<ItemId, ItemMeta> = {
   stone_pickaxe: { stackable: false, tool: 'stone_pickaxe' },
   stone_sword: { stackable: false, weapon: 'stone_sword' },
   gold_pickaxe: { stackable: false, tool: 'gold_pickaxe' },
+  gold_sword: { stackable: false, weapon: 'gold_sword' },
   campfire: { stackable: true, placeable: true },
   coat1: { stackable: false, equippable: true },
 };

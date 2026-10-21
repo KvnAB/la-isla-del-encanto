@@ -5,7 +5,7 @@ import type { Rng } from '../rng.js';
 import type { CreatureKind, CreatureState, GameEvent, PlayerState, WorldState } from '../types.js';
 import { angleTo, dist } from '../vec.js';
 import { dropToGround } from './ground.js';
-import { moveCircle, type Solid } from './movement.js';
+import { moveCircle, resourceSolids, type Solid } from './movement.js';
 import { weaponClassOf } from './resources.js';
 
 const KINDS: CreatureKind[] = ['tiger', 'sheep', 'goblin'];
@@ -117,7 +117,7 @@ function moveToward(state: WorldState, c: CreatureState, tx: number, ty: number,
 }
 
 export function stepCreatures(state: WorldState, cfg: GameConfig, dt: number, rng: Rng, events: GameEvent[]): void {
-  const solids: Solid[] = [...state.resources, ...state.players.filter((p) => p.alive)];
+  const solids: Solid[] = [...resourceSolids(state, cfg), ...state.players.filter((p) => p.alive)];
   for (const c of state.creatures) {
     const def = cfg.creatures.defs[c.kind];
     if (c.attackCooldown > 0) c.attackCooldown = Math.max(0, c.attackCooldown - dt);

@@ -13,6 +13,7 @@ export type ItemId =
   | 'stone_pickaxe'
   | 'stone_sword'
   | 'gold_pickaxe'
+  | 'gold_sword'
   | 'campfire'
   | 'coat1';
 
@@ -22,7 +23,7 @@ export type ResourceKind = 'tree' | 'apple_tree' | 'rock' | 'gold_rock';
 export type CreatureKind = 'tiger' | 'sheep' | 'goblin';
 /** `water` son ríos y lagos (caminable, nadando). `sea` es el borde infranqueable. */
 export type Terrain = 'sea' | 'land' | 'sand' | 'water';
-export type WeaponClass = 'fist' | 'wood_sword' | 'stone_sword';
+export type WeaponClass = 'fist' | 'wood_sword' | 'stone_sword' | 'gold_sword';
 export type ToolClass = 'hand' | 'wood_pickaxe' | 'stone_pickaxe' | 'gold_pickaxe';
 export type EntityId = number;
 export type StartItem = 'wood_pickaxe' | 'wood_sword';

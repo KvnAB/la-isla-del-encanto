@@ -3,6 +3,7 @@ import './hud.css';
 import { SLOT_KEY_LABELS } from '../game/input';
 import { itemIconDataUrl } from './icons';
 import { formatClock, formatPoints, ITEM_NAMES, ITEM_NAMES_LOWER } from './names';
+import { Minimap } from './minimap';
 
 type BarKey = 'health' | 'hunger' | 'thirst' | 'warmth';
 const ICONS: Record<BarKey, string> = {
@@ -36,6 +37,7 @@ export class Hud {
   private readonly pointsEl: HTMLElement;
   private readonly phaseIcon: HTMLElement;
   private readonly phaseTime: HTMLElement;
+  readonly minimap = new Minimap();
   private last = { day: -1, points: -1, isNight: false, clock: '' };
 
   constructor(
@@ -50,7 +52,8 @@ export class Hud {
     this.craftBox = el('div', 'hud-craft');
     this.root.appendChild(this.craftBox);
 
-    // Arriba derecha: día y puntos
+    // Arriba derecha: día y puntos, y debajo el minimapa
+    const topRight = el('div', 'hud-topright');
     const top = el('div', 'hud-top');
     const phase = el('div', 'hud-phase');
     this.phaseIcon = el('span', 'hud-phase-icon', '☀');
@@ -61,7 +64,8 @@ export class Hud {
     this.pointsEl = el('div', 'hud-points', '0 pts');
     dayBox.append(this.dayEl, this.pointsEl);
     top.append(phase, dayBox);
-    this.root.appendChild(top);
+    topRight.append(top, this.minimap.el);
+    this.root.appendChild(topRight);
 
     // Abajo centro: barras + slots
     const bottom = el('div', 'hud-bottom');
@@ -175,6 +179,7 @@ export class Hud {
       this.phaseIcon.textContent = state.isNight ? '☾' : '☀';
       this.phaseIcon.classList.toggle('night', state.isNight);
     }
+    this.minimap.update(p, state);
     const clock = formatClock(state.phaseRemaining);
     if (this.last.clock !== clock) {
       this.last.clock = clock;

@@ -15,6 +15,7 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   stone_pickaxe: 'Pico de piedra',
   stone_sword: 'Espada de piedra',
   gold_pickaxe: 'Pico de oro',
+  gold_sword: 'Espada de oro',
   campfire: 'Fogata',
   coat1: 'Abrigo nivel 1',
 };

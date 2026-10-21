@@ -5,6 +5,9 @@ vi.mock('../src/ui/icons', () => ({
   itemIconDataUrl: (item: string) => `data:icon/${item}`,
 }));
 
+// jsdom no implementa canvas 2D: el minimapa se queda sin contexto y no dibuja (sin errores en la salida)
+vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+
 import { Hud } from '../src/ui/hud';
 
 let root: HTMLElement;

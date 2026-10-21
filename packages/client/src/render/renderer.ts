@@ -3,6 +3,7 @@ import { resourceAvailable, resourceCapacity, Rng, type GameConfig, type GameEve
 import { Camera } from './camera';
 import { Fx } from './fx';
 import { nightAmount, NightLayer } from './night';
+import { drawHitboxes, hitboxCircles } from './debug';
 import { PALETTE } from './palette';
 import { animateCampfireVector, makeCampfireVector, makeCreatureVector, makeGroundItemVector, makeRegenRing, makeResourceVector, makeShadow, PlayerView, updateRegenRing, type CampfireVectorView } from './sprites';
 import { buildTerrain } from './terrain';
@@ -77,6 +78,9 @@ export class Renderer {
   private readonly hitFx = new Map<number, { t: number; kind: 'hit' | 'hurt'; dx: number; dy: number }>();
   readonly night = new NightLayer();
   fx: Fx | null = null;
+  /** Overlay de círculos de colisión (tecla H en desarrollo). */
+  showHitboxes = false;
+  private readonly hitboxGfx = new Graphics();
 
   constructor(
     private readonly parent: HTMLElement,
@@ -106,6 +110,7 @@ export class Renderer {
     this.layers.entities.sortableChildren = true;
     this.layers.terrain.addChild(buildTerrain(map, new Rng(1234)));
     for (const layer of [this.layers.terrain, this.layers.shadows, this.layers.ground, this.layers.entities, this.layers.fx]) this.world.addChild(layer);
+    this.layers.fx.addChild(this.hitboxGfx);
     this.app.stage.addChild(this.world);
     this.screen.addChild(this.night);
     this.app.stage.addChild(this.screen);
@@ -195,6 +200,8 @@ export class Renderer {
     this.syncCreatures(state, alpha, prev);
     this.syncGroundItems(state);
     this.syncCampfires(state);
+    this.hitboxGfx.visible = this.showHitboxes;
+    if (this.showHitboxes) drawHitboxes(this.hitboxGfx, hitboxCircles(state, this.cfg));
     this.camera.apply(this.world, this.viewW, this.viewH);
     if (this.fx) {
       this.world.position.x += Math.round(this.fx.shakeX);

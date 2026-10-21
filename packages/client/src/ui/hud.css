@@ -93,11 +93,32 @@
   }
 }
 
-/* Arriba derecha: día / puntos */
-.hud-top {
+/* Arriba derecha: día / puntos y, debajo, el minimapa */
+.hud-topright {
   position: absolute;
   top: 16px;
   right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.hud-minimap {
+  padding: 4px;
+  background: rgba(10, 16, 24, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  line-height: 0;
+}
+
+.hud-minimap canvas {
+  display: block;
+  border-radius: 8px;
+  image-rendering: auto;
+}
+
+.hud-top {
   display: flex;
   align-items: center;
   gap: 12px;

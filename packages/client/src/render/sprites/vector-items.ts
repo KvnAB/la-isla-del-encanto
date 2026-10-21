@@ -17,6 +17,7 @@ const METAL = { base: 0xcfd6dc, light: 0xf2f5f7, dark: 0x8c969e };
 const GOLD = { base: PALETTE.gold, light: PALETTE.goldLight, dark: PALETTE.goldDark };
 
 export type PickaxeMaterial = 'wood' | 'stone' | 'gold';
+export type SwordMaterial = PickaxeMaterial;
 const ow = (s: number): number => Math.max(OUTLINE_WIDTH, s * 0.12);
 
 /** Pico apuntando hacia arriba (-y). */
@@ -37,14 +38,17 @@ export function drawPickaxe(g: Graphics, s: number, material: PickaxeMaterial): 
 }
 
 /** Espada apuntando hacia arriba (-y). */
-export function drawSword(g: Graphics, s: number, stone: boolean): void {
+export function drawSword(g: Graphics, s: number, material: SwordMaterial): void {
   const o = ow(s) * 0.8;
+  const gold = material === 'gold';
   g.roundRect(-s * 0.1, s * 0.25, s * 0.2, s * 0.7, s * 0.07).fill(WOOD.dark).stroke({ width: o * 1.2, color: OL });
-  g.roundRect(-s * 0.42, s * 0.15, s * 0.84, s * 0.17, s * 0.06).fill(WOOD.base).stroke({ width: o * 1.2, color: OL });
-  const blade = stone ? METAL.base : WOOD.light;
-  const edge = stone ? METAL.light : 0xe0b47a;
+  // la guarda de la espada de oro también es dorada
+  g.roundRect(-s * 0.42, s * 0.15, s * 0.84, s * 0.17, s * 0.06).fill(gold ? GOLD.dark : WOOD.base).stroke({ width: o * 1.2, color: OL });
+  const blade = gold ? GOLD.base : material === 'stone' ? METAL.base : WOOD.light;
+  const edge = gold ? GOLD.light : material === 'stone' ? METAL.light : 0xe0b47a;
   g.poly([-s * 0.2, s * 0.15, -s * 0.2, -s * 0.55, 0, -s * 0.98, s * 0.2, -s * 0.55, s * 0.2, s * 0.15], true).fill(blade).stroke({ width: o * 1.4, color: OL, join: 'round' });
   g.poly([-s * 0.1, s * 0.1, -s * 0.1, -s * 0.5, 0, -s * 0.8, 0, s * 0.1], true).fill(edge);
+  if (gold) g.circle(s * 0.08, -s * 0.45, s * 0.07).fill(0xffffff, 0.85); // brillo, como en el pico de oro
 }
 
 export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
@@ -126,10 +130,13 @@ export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
       drawPickaxe(g, s, 'gold');
       break;
     case 'wood_sword':
-      drawSword(g, s, false);
+      drawSword(g, s, 'wood');
       break;
     case 'stone_sword':
-      drawSword(g, s, true);
+      drawSword(g, s, 'stone');
+      break;
+    case 'gold_sword':
+      drawSword(g, s, 'gold');
       break;
     case 'campfire':
       drawCampfireBase(g, s);

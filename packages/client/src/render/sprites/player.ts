@@ -2,6 +2,7 @@ import { Container, Graphics, Text } from 'pixi.js';
 import { coatWorn, ITEM_META, type ItemId, type PlayerState } from '@draycol/core';
 import { OUTLINE_WIDTH, PALETTE } from '../palette';
 import { drawPickaxe, drawSword } from './vector-items';
+import { swingPose } from './swing';
 
 /**
  * Jugador en estilo plano (referencia estilo-plano): círculo de piel con contorno y dos manos.
@@ -12,6 +13,12 @@ import { drawPickaxe, drawSword } from './vector-items';
 
 const OL = PALETTE.skinOutline;
 const OUT_W = OUTLINE_WIDTH + 1;
+/** Manos en reposo: delantera arriba-delante, trasera abajo-delante (el cuerpo mira a +x). */
+const HAND_X = 0.78;
+const HAND_Y = 0.95;
+const HAND_ANGLE = Math.atan2(-HAND_Y, HAND_X);
+const HAND_DIST = Math.hypot(HAND_X, HAND_Y);
+const TOOL_ROT = Math.PI / 2 - 0.25;
 
 export type HatStyle = 'none';
 
@@ -38,8 +45,8 @@ export class PlayerView extends Container {
     const L = this.layers;
     L.torso.circle(0, 0, r).fill(PALETTE.skin).stroke({ width: OUT_W, color: OL });
     for (const h of [L.handBack, L.handFront]) h.circle(0, 0, r * 0.36).fill(PALETTE.skin).stroke({ width: OUT_W, color: OL });
-    L.handBack.position.set(r * 0.78, r * 0.95);
-    L.handFront.position.set(r * 0.78, -r * 0.95);
+    L.handBack.position.set(r * HAND_X, r * HAND_Y);
+    L.handFront.position.set(r * HAND_X, -r * HAND_Y);
     L.tool.position.copyFrom(L.handFront.position);
     this.drawCoat(L.coat);
     L.coat.visible = false;
@@ -79,9 +86,17 @@ export class PlayerView extends Container {
     this.body.rotation = p.angle;
     const r = this.r;
     const L = this.layers;
-    const push = Math.sin(Math.min(1, p.swing) * Math.PI) * r * 0.9;
-    L.handFront.position.set(r * 0.78 + push, -r * 0.95);
-    L.tool.position.set(r * 0.78 + push, -r * 0.95);
+
+    // Golpe: la mano delantera (con la herramienta) barre en arco por delante del cuerpo y se estira,
+    // la herramienta gira con ella, la mano trasera retrocede y el cuerpo se adelanta un poco.
+    const pose = swingPose(p.swing);
+    const a = HAND_ANGLE + pose.handAngle;
+    const d = r * (HAND_DIST + pose.handReach);
+    L.handFront.position.set(Math.cos(a) * d, Math.sin(a) * d);
+    L.tool.position.copyFrom(L.handFront.position);
+    L.tool.rotation = pose.toolRot;
+    L.handBack.position.set(r * (HAND_X - pose.backHandPull), r * HAND_Y);
+    this.body.position.set(Math.cos(p.angle) * pose.lunge * r, Math.sin(p.angle) * pose.lunge * r);
 
     const coatOn = coatWorn(p);
     if (coatOn !== this.coatOn) {
@@ -100,10 +115,11 @@ export class PlayerView extends Container {
       if (shown) {
         const g = new Graphics();
         const s = r * 1.2;
-        if (shown === 'wood_pickaxe' || shown === 'stone_pickaxe' || shown === 'gold_pickaxe') drawPickaxe(g, s, shown === 'wood_pickaxe' ? 'wood' : shown === 'stone_pickaxe' ? 'stone' : 'gold');
-        else drawSword(g, s, shown === 'stone_sword');
+        const material = shown.startsWith('gold') ? 'gold' : shown.startsWith('stone') ? 'stone' : 'wood';
+        if (meta?.tool) drawPickaxe(g, s, material);
+        else drawSword(g, s, material);
         g.pivot.set(0, s * 0.55);
-        g.rotation = Math.PI / 2 - 0.25;
+        g.rotation = TOOL_ROT;
         this.toolGfx = g;
         L.tool.addChild(g);
       }

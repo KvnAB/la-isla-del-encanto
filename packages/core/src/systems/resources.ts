@@ -50,6 +50,12 @@ export function spawnResources(state: WorldState, cfg: GameConfig, rng: Rng): vo
 
 
 /** Unidades disponibles ahora: lo que queda, o la fracción regenerada si está roto. */
+/** Radio que bloquea el paso: más pequeño que el dibujado, y aún menor cuando está roto. */
+export function collisionRadius(r: ResourceState, cfg: GameConfig): number {
+  const k = r.brokenAt !== null ? cfg.resources.brokenCollision : cfg.resources.collision[r.kind];
+  return r.radius * k;
+}
+
 export function resourceAvailable(r: ResourceState, cfg: GameConfig, now: number): number {
   if (r.brokenAt === null) return r.remaining;
   const cap = resourceCapacity(r.kind, r.size, cfg);

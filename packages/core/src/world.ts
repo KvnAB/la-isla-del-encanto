@@ -8,7 +8,7 @@ import { hitCreature, spawnInitialCreatures, stepCreatures, stepRespawns } from 
 import { stepDayCycle } from './systems/daycycle.js';
 import { stepGroundItems, tryPickup } from './systems/ground.js';
 import { resolveHit } from './systems/hit.js';
-import { stepPlayerMovement, type Solid } from './systems/movement.js';
+import { resourceSolids, stepPlayerMovement, type Solid } from './systems/movement.js';
 import { spawnResources } from './systems/resources.js';
 import { stepVitals } from './systems/vitals.js';
 import type { Command, EntityId, GameEvent, PlayerState, StartItem, WorldState } from './types.js';
@@ -113,7 +113,8 @@ export class World {
     stepDayCycle(s, cfg, dt, this.events);
     if (s.day > dayBefore) for (const p of s.players) if (p.alive) p.points += cfg.points.dayPassed;
 
-    const playerSolids: Solid[] = [...s.resources, ...s.creatures];
+    // Las criaturas no bloquean al jugador (puede pasar por debajo para no quedar acorralado); ellas sí se detienen en él.
+    const playerSolids: Solid[] = resourceSolids(s, cfg);
     for (const p of s.players) {
       if (!p.alive) continue;
       stepPlayerMovement(s, p, cfg, dt, playerSolids);

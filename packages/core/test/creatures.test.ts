@@ -39,13 +39,16 @@ describe('combate contra criaturas', () => {
     ['tiger', { item: 'wood_sword', count: 1 }, 15],
     ['tiger', null, 30],
     ['tiger', { item: 'stone_sword', count: 1 }, 10],
+    ['tiger', { item: 'gold_sword', count: 1 }, 8],
     ['tiger', { item: 'wood_pickaxe', count: 1 }, 30],
     ['sheep', null, 20],
     ['sheep', { item: 'wood_sword', count: 1 }, 10],
     ['sheep', { item: 'stone_sword', count: 1 }, 7],
+    ['sheep', { item: 'gold_sword', count: 1 }, 5],
     ['goblin', null, 8],
     ['goblin', { item: 'wood_sword', count: 1 }, 4],
     ['goblin', { item: 'stone_sword', count: 1 }, 3],
+    ['goblin', { item: 'gold_sword', count: 1 }, 2],
   ];
   for (const [kind, weapon, hits] of cases) {
     it(`${kind} muere al golpe ${hits} con ${weapon?.item ?? 'puño'}`, () => {
@@ -164,17 +167,15 @@ describe('colisiones entre criaturas y jugador', () => {
     expect(c.mode).toBe('attack');
   });
 
-  it('el jugador no atraviesa una oveja quieta', () => {
+  it('el jugador sí atraviesa una oveja quieta (regla del 2026-10-21: las criaturas no lo bloquean)', () => {
     const { world, id, c, p } = setup(null, 'sheep', 120);
     c.mode = 'wander';
     c.wanderTimer = 99;
     c.targetX = c.x;
     c.targetY = c.y;
     world.enqueue({ playerId: id, type: 'move', dx: 1, dy: 0 });
-    for (let i = 0; i < 30; i++) {
-      world.step();
-      expect(Math.hypot(c.x - p.x, c.y - p.y)).toBeGreaterThanOrEqual(c.radius + p.radius - 1);
-    }
+    world.stepSeconds(1);
+    expect(p.x).toBeGreaterThan(c.x + c.radius);
   });
 });
 
