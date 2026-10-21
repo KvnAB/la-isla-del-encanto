@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from '../src/config.js';
-import { findLandSpot, generateIsland, isWalkable, terrainAt } from '../src/island.js';
+import { biomeAt, findLandSpot, generateIsland, isGround, isWalkable, terrainAt } from '../src/island.js';
 import { Rng } from '../src/rng.js';
 import type { IslandMap } from '../src/types.js';
 
@@ -110,6 +110,27 @@ describe('findLandSpot', () => {
       const p = findLandSpot(map, rng, { x: map.spawnX, y: map.spawnY, d: 600 });
       expect(['land', 'sand']).toContain(terrainAt(map, p.x, p.y));
       expect(Math.hypot(p.x - map.spawnX, p.y - map.spawnY)).toBeGreaterThanOrEqual(600);
+    }
+  });
+});
+
+describe('bioma', () => {
+  it('isGround acepta tierra, arena y nieve; biomeAt distingue nieve de hierba', () => {
+    expect(isGround('land')).toBe(true);
+    expect(isGround('sand')).toBe(true);
+    expect(isGround('snow')).toBe(true);
+    expect(isGround('water')).toBe(false);
+    expect(isGround('sea')).toBe(false);
+    const map = gen(1);
+    expect(biomeAt(map, map.spawnX, map.spawnY)).toBe('grass');
+  });
+
+  it('findLandSpot con bioma grass nunca devuelve nieve', () => {
+    const map = gen(1);
+    const rng = new Rng(9);
+    for (let i = 0; i < 20; i++) {
+      const p = findLandSpot(map, rng, undefined, 'grass');
+      expect(['land', 'sand']).toContain(terrainAt(map, p.x, p.y));
     }
   });
 });

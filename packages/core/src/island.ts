@@ -1,9 +1,18 @@
 import type { GameConfig } from './config.js';
 import type { Rng } from './rng.js';
-import type { IslandMap, Terrain } from './types.js';
+import type { Biome, IslandMap, Terrain } from './types.js';
 
 export function isWalkable(t: Terrain): boolean {
   return t !== 'sea';
+}
+
+/** Terreno firme (sin nadar): tierra, arena o nieve. Donde pueden estar recursos y criaturas. */
+export function isGround(t: Terrain): boolean {
+  return t === 'land' || t === 'sand' || t === 'snow';
+}
+
+export function biomeAt(map: IslandMap, x: number, y: number): Biome {
+  return terrainAt(map, x, y) === 'snow' ? 'snow' : 'grass';
 }
 
 export function terrainAt(map: IslandMap, x: number, y: number): Terrain {
@@ -233,13 +242,16 @@ export function generateIsland(rng: Rng, cfg: GameConfig): IslandMap {
   };
 }
 
-/** Punto aleatorio en tierra o arena; opcionalmente a ≥ d de un punto dado. Lanza si no encuentra. */
-export function findLandSpot(map: IslandMap, rng: Rng, minDistFrom?: { x: number; y: number; d: number }): { x: number; y: number } {
+/** Punto aleatorio en terreno firme (y del bioma pedido, si se indica); opcionalmente a ≥ d de un punto dado. Lanza si no encuentra. */
+export function findLandSpot(map: IslandMap, rng: Rng, minDistFrom?: { x: number; y: number; d: number }, biome?: Biome): { x: number; y: number } {
+  // Un bioma que no existe en el mapa (p. ej. nieve en una isla sin nieve) no restringe nada.
+  const want = biome === 'snow' && !map.cells.includes('snow') ? undefined : biome;
   for (let i = 0; i < 2000; i++) {
     const x = rng.next() * map.width;
     const y = rng.next() * map.height;
     const t = terrainAt(map, x, y);
-    if (t !== 'land' && t !== 'sand') continue;
+    if (!isGround(t)) continue;
+    if (want && biomeAt(map, x, y) !== want) continue;
     if (minDistFrom && Math.hypot(x - minDistFrom.x, y - minDistFrom.y) < minDistFrom.d) continue;
     return { x, y };
   }

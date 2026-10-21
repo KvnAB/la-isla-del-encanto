@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG, type GameConfig } from '../src/config.js';
-import { terrainAt } from '../src/island.js';
+import { isGround, terrainAt } from '../src/island.js';
+import { Rng } from '../src/rng.js';
+import { spawnPack } from '../src/systems/creatures.js';
 import { World } from '../src/world.js';
 import { clearWorld, makeWorld, placePlayerAt, putCreature, setInventory } from './helpers.js';
 import type { CreatureKind, GameEvent, Slot } from '../src/types.js';
@@ -222,5 +224,41 @@ describe('aparición y reaparición', () => {
     s.creatures.length = 0;
     world.stepSeconds(0.1);
     expect(s.creatures.filter((x) => x.kind === 'tiger')).toHaveLength(1);
+  });
+});
+
+describe('manadas y bioma al aparecer', () => {
+  it('los lobos iniciales aparecen en pareja (a menos de 120 px uno del otro)', () => {
+    const world = new World(1);
+    const wolves = world.getState().creatures.filter((c) => c.kind === 'wolf');
+    expect(wolves).toHaveLength(2);
+    expect(Math.hypot(wolves[0].x - wolves[1].x, wolves[0].y - wolves[1].y)).toBeLessThan(120);
+    // sin nieve en el mapa de esta semilla, caen a cualquier terreno firme (documentado en spawnPack)
+    for (const w of wolves) expect(isGround(terrainAt(world.getState().map, w.x, w.y))).toBe(true);
+  });
+
+  it('spawnPack con near coloca la manada entre min y max del punto', () => {
+    const { world } = makeWorld();
+    const s = world.getState();
+    s.creatures.length = 0;
+    const events: GameEvent[] = [];
+    const pack = spawnPack(s, 'wolf', world.cfg, new Rng(3), events, { x: s.map.spawnX, y: s.map.spawnY, min: 500, max: 800 });
+    expect(pack).toHaveLength(2);
+    for (const w of pack) {
+      const d = Math.hypot(w.x - s.map.spawnX, w.y - s.map.spawnY);
+      expect(d).toBeGreaterThanOrEqual(480);
+      expect(d).toBeLessThanOrEqual(900);
+      expect(isGround(terrainAt(s.map, w.x, w.y))).toBe(true);
+    }
+    expect(events.filter((e) => e.type === 'creatureSpawned')).toHaveLength(2);
+  });
+
+  it('spawnPack respeta maxActive', () => {
+    const cfg: GameConfig = { ...DEFAULT_CONFIG, creatures: { ...DEFAULT_CONFIG.creatures, maxActive: 1 } };
+    const { world } = makeWorld(7, cfg);
+    const s = world.getState();
+    s.creatures.length = 0;
+    const pack = spawnPack(s, 'wolf', cfg, new Rng(3), []);
+    expect(pack).toHaveLength(1);
   });
 });

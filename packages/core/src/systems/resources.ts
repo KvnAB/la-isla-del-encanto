@@ -1,6 +1,6 @@
 import { ITEM_META, type GameConfig } from '../config.js';
 import { nextId } from '../entities.js';
-import { findLandSpot, terrainAt } from '../island.js';
+import { findLandSpot, isGround, terrainAt } from '../island.js';
 import type { Rng } from '../rng.js';
 import type { GameEvent, ItemId, PlayerState, ResourceKind, ResourceState, Size, Slot, ToolClass, WeaponClass, WorldState } from '../types.js';
 import { addItem } from './inventory.js';
@@ -27,8 +27,7 @@ export function spawnResources(state: WorldState, cfg: GameConfig, rng: Rng): vo
         // el círculo entero debe estar en tierra/arena
         let ok = true;
         for (const [dx, dy] of [[radius, 0], [-radius, 0], [0, radius], [0, -radius]] as const) {
-          const t = terrainAt(map, p.x + dx, p.y + dy);
-          if (t !== 'land' && t !== 'sand') {
+          if (!isGround(terrainAt(map, p.x + dx, p.y + dy))) {
             ok = false;
             break;
           }
