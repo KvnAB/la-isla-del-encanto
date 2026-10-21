@@ -51,6 +51,12 @@ describe('combate contra criaturas', () => {
     ['goblin', { item: 'wood_sword', count: 1 }, 4],
     ['goblin', { item: 'stone_sword', count: 1 }, 3],
     ['goblin', { item: 'gold_sword', count: 1 }, 2],
+    ['wolf', { item: 'stone_sword', count: 1 }, 9],
+    ['wolf', { item: 'diamond_sword', count: 1 }, 5],
+    ['polar_bear', { item: 'gold_sword', count: 1 }, 15],
+    ['polar_bear', { item: 'diamond_sword', count: 1 }, 10],
+    ['penguin', null, 10],
+    ['penguin', { item: 'wood_sword', count: 1 }, 5],
   ];
   for (const [kind, weapon, hits] of cases) {
     it(`${kind} muere al golpe ${hits} con ${weapon?.item ?? 'puño'}`, () => {
@@ -182,16 +188,16 @@ describe('colisiones entre criaturas y jugador', () => {
 });
 
 describe('aparición y reaparición', () => {
-  it('spawnInitialCreatures crea 3 tigres, 4 ovejas, 3 duendes y 2 lobos en tierra lejos del spawn', () => {
+  it('spawnInitialCreatures crea 3 tigres, 4 ovejas, 3 duendes, 2 lobos, 3 osos y 4 pingüinos en tierra lejos del spawn', () => {
     const world = new World(1);
     const s = world.getState();
-    const counts = { tiger: 0, sheep: 0, goblin: 0, wolf: 0 };
+    const counts = { tiger: 0, sheep: 0, goblin: 0, wolf: 0, polar_bear: 0, penguin: 0 };
     for (const c of s.creatures) {
       counts[c.kind]++;
       expect(['land', 'sand', 'snow']).toContain(terrainAt(s.map, c.x, c.y));
       expect(Math.hypot(c.x - s.map.spawnX, c.y - s.map.spawnY)).toBeGreaterThanOrEqual(600);
     }
-    expect(counts).toEqual({ tiger: 3, sheep: 4, goblin: 3, wolf: 2 });
+    expect(counts).toEqual({ tiger: 3, sheep: 4, goblin: 3, wolf: 2, polar_bear: 3, penguin: 4 });
   });
 
   it('un tigre muerto reaparece a los 45 s lejos del jugador', () => {
@@ -260,5 +266,43 @@ describe('manadas y bioma al aparecer', () => {
     s.creatures.length = 0;
     const pack = spawnPack(s, 'wolf', cfg, new Rng(3), []);
     expect(pack).toHaveLength(1);
+  });
+});
+
+describe('animales de nieve', () => {
+  it('el oso polar mata en 5 mordiscos y el pingüino no hace daño', () => {
+    expect(Math.ceil(100 / DEFAULT_CONFIG.creatures.defs.polar_bear.damage)).toBe(5);
+    expect(DEFAULT_CONFIG.creatures.defs.penguin.damage).toBe(0);
+    expect(DEFAULT_CONFIG.creatures.defs.polar_bear.speed).toBeLessThan(DEFAULT_CONFIG.player.speed);
+  });
+
+  it('el pingüino huye del jugador y al morir suelta pescado crudo', () => {
+    const { world, id, c, p } = setup({ item: 'gold_sword', count: 1 }, 'penguin', 100);
+    world.stepSeconds(1);
+    expect(c.mode).toBe('flee');
+    expect(c.x).toBeGreaterThan(1600);
+    hitTimes(world, id, c, 3);
+    expect(world.getState().creatures).toHaveLength(0);
+    expect(world.getState().groundItems.some((g) => g.item === 'raw_fish')).toBe(true);
+    expect(p.points).toBe(30);
+  });
+
+  it('el oso polar suelta piel de oso y 2 filetes y da 150 puntos', () => {
+    const { world, id, c, p } = setup({ item: 'diamond_sword', count: 1 }, 'polar_bear', 60);
+    hitTimes(world, id, c, 10);
+    const items = world.getState().groundItems.map((g) => [g.item, g.count]);
+    expect(items).toContainEqual(['bear_pelt', 1]);
+    expect(items).toContainEqual(['raw_steak', 2]);
+    expect(p.points).toBe(150);
+  });
+
+  it('osos, pingüinos y lobos iniciales aparecen sobre nieve; tigres, ovejas y duendes nunca', () => {
+    const world = new World(1);
+    const s = world.getState();
+    for (const c of s.creatures) {
+      const t = terrainAt(s.map, c.x, c.y);
+      if (c.kind === 'polar_bear' || c.kind === 'penguin' || c.kind === 'wolf') expect(t, c.kind).toBe('snow');
+      else expect(t, c.kind).not.toBe('snow');
+    }
   });
 });

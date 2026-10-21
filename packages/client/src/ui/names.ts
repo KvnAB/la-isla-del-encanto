@@ -23,6 +23,7 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   coat1: 'Abrigo nivel 1',
   coat2: 'Abrigo nivel 2',
   bear_pelt: 'Piel de oso',
+  raw_fish: 'Pescado crudo',
   torch: 'Antorcha',
 };
 
@@ -31,6 +32,8 @@ export const CREATURE_NAMES: Record<CreatureKind, string> = {
   sheep: 'Oveja mala',
   goblin: 'Duende',
   wolf: 'Lobo',
+  polar_bear: 'Oso polar',
+  penguin: 'Pingüino',
 };
 
 /** "un tigre", "una oveja mala": artículo según el género del nombre. */
@@ -39,6 +42,8 @@ const CREATURE_WITH_ARTICLE: Record<CreatureKind, string> = {
   sheep: 'una oveja mala',
   goblin: 'un duende',
   wolf: 'un lobo',
+  polar_bear: 'un oso polar',
+  penguin: 'un pingüino',
 };
 
 /** Frase de la pantalla de muerte. */

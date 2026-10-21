@@ -97,7 +97,7 @@ export interface GameConfig {
     biome: Partial<Record<ResourceKind, Biome>>;
     minDistFromSpawn: number;
   };
-  food: Record<'apple' | 'raw_steak' | 'cooked_steak', { hunger: number; health: number }>;
+  food: Record<'apple' | 'raw_steak' | 'cooked_steak' | 'raw_fish', { hunger: number; health: number }>;
   campfire: { durationSeconds: number; cookSeconds: number; placeDistance: number };
   groundItemSeconds: number;
   groundItemRadius: number;
@@ -180,6 +180,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     apple: { hunger: 20, health: 0 },
     raw_steak: { hunger: 15, health: -10 },
     cooked_steak: { hunger: 45, health: 0 },
+    raw_fish: { hunger: 12, health: -5 }, // (*)
   },
   campfire: { durationSeconds: 90, cookSeconds: 4, placeDistance: 50 },
   groundItemSeconds: 60,
@@ -252,6 +253,37 @@ export const DEFAULT_CONFIG: GameConfig = {
         packSize: 2,
         nightRaid: 2,
       },
+      polar_bear: {
+        hp: 60,
+        damage: 20, // mata en 5
+        speed: 150, // (*)
+        radius: 36, // (*)
+        aggroRadius: 300, // (*)
+        fleeRadius: 0,
+        attackCooldown: 1, // (*)
+        loot: [
+          { item: 'bear_pelt', count: 1 },
+          { item: 'raw_steak', count: 2 },
+        ],
+        points: 150,
+        aggressive: true,
+        initialCount: 3, // (*)
+        biome: 'snow',
+      },
+      penguin: {
+        hp: 10,
+        damage: 0,
+        speed: 120, // (*) huye despacio
+        radius: 18, // (*)
+        aggroRadius: 0,
+        fleeRadius: 200, // (*)
+        attackCooldown: 1,
+        loot: [{ item: 'raw_fish', count: 1 }],
+        points: 30,
+        aggressive: false,
+        initialCount: 4, // (*)
+        biome: 'snow',
+      },
     },
   },
   weaponDamage: { fist: 1, wood_sword: 2, stone_sword: 3, gold_sword: 4, diamond_sword: 6 }, // (*) oro: tigre 8, oveja 5, duende 2; diamante: tigre 5, oso 10
@@ -307,5 +339,6 @@ export const ITEM_META: Record<ItemId, ItemMeta> = {
   coat1: { stackable: false, equippable: true },
   coat2: { stackable: false, equippable: true },
   bear_pelt: { stackable: true },
+  raw_fish: { stackable: true, food: true },
   torch: { stackable: false, held: true },
 };

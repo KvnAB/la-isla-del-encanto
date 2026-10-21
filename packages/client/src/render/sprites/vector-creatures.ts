@@ -154,5 +154,9 @@ export function makeCreatureVector(kind: CreatureKind, r: number): Container {
       return makeGoblinVector(r);
     case 'wolf':
       return makeWolfVector(r);
+    case 'polar_bear':
+      return makeWolfVector(r); // provisional hasta la tarea 17
+    case 'penguin':
+      return makeGoblinVector(r); // provisional hasta la tarea 17
   }
 }
