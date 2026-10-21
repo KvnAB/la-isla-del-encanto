@@ -11,6 +11,7 @@ export function resourceCapacity(kind: ResourceKind, size: Size, cfg: GameConfig
   if (kind === 'apple_tree') return cfg.resources.appleYield[size];
   if (kind === 'gold_rock') return cfg.resources.goldCapacity[size];
   if (kind === 'diamond_rock') return cfg.resources.diamondCapacity[size];
+  if (kind === 'berry_bush') return cfg.resources.berryYield;
   return cfg.resources.capacity[size];
 }
 
@@ -20,7 +21,7 @@ export function spawnResources(state: WorldState, cfg: GameConfig, rng: Rng): vo
   const kinds = Object.keys(cfg.resources.counts) as ResourceKind[];
   for (const kind of kinds) {
     for (let i = 0; i < cfg.resources.counts[kind]; i++) {
-      const size = rng.pick(SIZES);
+      const size = cfg.resources.fixedSize[kind] ?? rng.pick(SIZES);
       const radius = cfg.resources.radius[kind][size];
       let placed = false;
       for (let attempt = 0; attempt < 200 && !placed; attempt++) {
@@ -83,6 +84,8 @@ function yieldFor(kind: ResourceKind, tool: ToolClass, cfg: GameConfig): { item:
       return { item: 'diamond', perHit: cfg.resources.diamondPerHit[tool] };
     case 'apple_tree':
       return { item: 'apple', perHit: Number.POSITIVE_INFINITY };
+    case 'berry_bush':
+      return { item: 'berry', perHit: Number.POSITIVE_INFINITY };
   }
 }
 

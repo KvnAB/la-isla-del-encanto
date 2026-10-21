@@ -24,6 +24,11 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   coat2: 'Abrigo nivel 2',
   bear_pelt: 'Piel de oso',
   raw_fish: 'Pescado crudo',
+  cooked_fish: 'Pescado cocinado',
+  berry: 'Bayas',
+  canteen: 'Cantimplora vacía',
+  canteen_full: 'Cantimplora',
+  fishing_rod: 'Caña de pescar',
   torch: 'Antorcha',
 };
 

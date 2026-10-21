@@ -4,6 +4,7 @@ import { Rng } from './rng.js';
 import { placeCampfire, stepCampfires } from './systems/campfire.js';
 import { dropSlot, useSelectedSlot } from './systems/consume.js';
 import { craft } from './systems/crafting.js';
+import { startFishing, stepFishing } from './systems/fishing.js';
 import { hitCreature, onDawn, onNightfall, spawnInitialCreatures, stepCreatures, stepRespawns } from './systems/creatures.js';
 import { stepDayCycle } from './systems/daycycle.js';
 import { stepGroundItems, tryPickup } from './systems/ground.js';
@@ -74,6 +75,7 @@ export class World {
       noRegenUntil: 0,
       lastHitBy: null,
       lastHitAt: -1000,
+      fishingUntil: 0,
     });
     return id;
   }
@@ -125,6 +127,7 @@ export class World {
       stepPlayerMovement(s, p, cfg, dt, playerSolids);
       if (p.hitCooldown > 0) p.hitCooldown = Math.max(0, p.hitCooldown - dt);
       if (p.swing > 0) p.swing = Math.max(0, p.swing - dt / cfg.player.hitCooldown);
+      stepFishing(s, p, cfg, this.events);
     }
 
     stepCreatures(s, cfg, dt, this.rng, this.events);
@@ -183,6 +186,7 @@ export class World {
       case 'useSlot':
         useSelectedSlot(this.state, p, this.cfg, this.events, {
           placeCampfire: (st, pl) => placeCampfire(st, pl, this.cfg, this.events),
+          fish: (st, pl) => startFishing(st, pl, this.cfg, this.events),
         });
         break;
       case 'dropSlot':

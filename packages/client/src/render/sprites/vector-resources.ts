@@ -231,8 +231,38 @@ export function makeRubble(r: number, seed: number): Container {
   return c;
 }
 
+/** Arbusto de bayas: mata de hojas redondeadas verde oscuro con bayas moradas; vacío, sin bayas y más apagado. */
+export function makeBerryBush(r: number, broken: boolean, seed: number): Container {
+  const rng = new Rng(seed);
+  const c = new Container();
+  const g = new Graphics();
+  const ow = Math.max(OUTLINE_WIDTH, r * 0.1);
+  const lobes: [number, number, number][] = [[0, 0, r * 0.72]];
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + rng.range(-0.25, 0.25);
+    lobes.push([Math.cos(a) * r * 0.5, Math.sin(a) * r * 0.5, r * rng.range(0.38, 0.5)]);
+  }
+  for (const [x, y, rr] of lobes) g.circle(x, y, rr + ow).fill(PALETTE.treeOutline);
+  for (const [x, y, rr] of lobes) g.circle(x, y, rr).fill(broken ? PALETTE.treeDark : PALETTE.bush);
+  for (const [x, y, rr] of lobes) g.circle(x - r * 0.05, y - r * 0.06, rr * 0.5).fill(broken ? PALETTE.treeMid : PALETTE.bushLight, 0.9);
+  if (!broken) {
+    const br = Math.max(2.5, r * 0.13);
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2 + rng.range(-0.3, 0.3);
+      const d = r * rng.range(0.15, 0.7);
+      const x = Math.cos(a) * d;
+      const y = Math.sin(a) * d;
+      g.circle(x, y, br).fill(PALETTE.berry).stroke({ width: Math.max(1.2, ow * 0.4), color: PALETTE.berryOutline });
+      g.circle(x - br * 0.3, y - br * 0.3, br * 0.28).fill(0xffffff, 0.75);
+    }
+  }
+  c.addChild(g);
+  return c;
+}
+
 /** `snowy`: el recurso está sobre nieve y lleva gorro blanco. */
 export function makeResourceVector(kind: ResourceKind, size: Size, r: number, broken: boolean, seed: number, snowy = false): Container {
+  if (kind === 'berry_bush') return makeBerryBush(r, broken, seed);
   if (broken) return kind === 'rock' || kind === 'gold_rock' || kind === 'diamond_rock' ? makeRubble(r, seed) : makeStump(r, seed);
   if (kind === 'rock') return makeRock(size, r, seed, snowy);
   if (kind === 'gold_rock') return makeGoldRock(r, seed, snowy);

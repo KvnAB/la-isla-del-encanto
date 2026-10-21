@@ -1,19 +1,21 @@
 import { ITEM_META, type GameConfig } from '../config.js';
-import type { GameEvent, PlayerState, WorldState } from '../types.js';
+import type { GameEvent, PlayerState, Slot, WorldState } from '../types.js';
 import { clamp } from '../vec.js';
+import { aimedAtWater } from './fishing.js';
 import { dropToGround } from './ground.js';
 import { removeItem } from './inventory.js';
 
 export interface UseHooks {
   placeCampfire?: (state: WorldState, p: PlayerState) => void;
+  fish?: (state: WorldState, p: PlayerState) => void;
 }
 
-/** Usa el slot seleccionado: comida → comer; fogata → colocar; abrigo → poner/quitar; herramientas → nada. */
+/** Usa el slot seleccionado: comida → comer; fogata → colocar; abrigo → poner/quitar; cantimplora → llenar/beber; caña → pescar; herramientas → nada. */
 export function useSelectedSlot(state: WorldState, p: PlayerState, cfg: GameConfig, events: GameEvent[], hooks: UseHooks = {}): void {
   const slot = p.inventory[p.selectedSlot];
   if (!slot) return;
   const meta = ITEM_META[slot.item];
-  if (!meta.food && !meta.placeable && !meta.equippable) return;
+  if (!meta.food && !meta.placeable && !meta.equippable && !meta.usable) return;
   // Mismo cooldown que el golpe: un clic mantenido no consume varias unidades por paso.
   if (p.hitCooldown > 0) return;
   p.hitCooldown = cfg.player.hitCooldown;
@@ -31,7 +33,31 @@ export function useSelectedSlot(state: WorldState, p: PlayerState, cfg: GameConf
     events.push({ type: 'coatToggled', playerId: p.id, on: p.coatOn });
     return;
   }
+  if (slot.item === 'canteen' || slot.item === 'canteen_full') {
+    useCanteen(state, p, slot, cfg, events);
+    return;
+  }
+  if (slot.item === 'fishing_rod') {
+    if (hooks.fish) hooks.fish(state, p);
+    return;
+  }
   if (hooks.placeCampfire) hooks.placeCampfire(state, p);
+}
+
+/** Vacía junto al agua → llena (3 tragos); llena junto al agua → rellena; llena en seco → un trago de sed. */
+function useCanteen(state: WorldState, p: PlayerState, slot: Slot, cfg: GameConfig, events: GameEvent[]): void {
+  const water = aimedAtWater(state, p, cfg);
+  if (water) {
+    if (slot.item === 'canteen_full' && slot.count >= cfg.canteen.sips) return;
+    p.inventory[p.selectedSlot] = { item: 'canteen_full', count: cfg.canteen.sips };
+    events.push({ type: 'canteenFilled', playerId: p.id });
+    return;
+  }
+  if (slot.item !== 'canteen_full') return;
+  p.thirst = clamp(p.thirst + cfg.canteen.thirstPerSip, 0, 100);
+  slot.count -= 1;
+  if (slot.count <= 0) p.inventory[p.selectedSlot] = { item: 'canteen', count: 1 };
+  events.push({ type: 'drank', playerId: p.id });
 }
 
 /** Tira todo el slot al suelo, delante del jugador. */

@@ -36,6 +36,10 @@ export const PALETTE = {
   diamondLight: 0xd8fbff,
   diamondDark: 0x2d9fc4,
   diamondOutline: 0x0f3f55,
+  bush: 0x2f6b2e,
+  bushLight: 0x3f8a3c,
+  berry: 0x7b3fa0,
+  berryOutline: 0x3a1a4e,
 
   skin: 0xf4c9a3,
   skinOutline: 0x2b1d12,

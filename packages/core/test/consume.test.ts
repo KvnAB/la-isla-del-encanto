@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clearWorld, makeWorld, setInventory } from './helpers.js';
+import { clearWorld, findLandNextTo, makeWorld, placePlayerAt, setInventory } from './helpers.js';
 import type { Slot } from '../src/types.js';
 
 function playerWith(slots: (Slot | null)[], selected = 0) {
@@ -101,5 +101,71 @@ describe('seleccionar y tirar', () => {
     world.enqueue({ playerId: id, type: 'dropSlot', slot: 0 });
     world.step();
     expect(world.getState().groundItems).toHaveLength(0);
+  });
+});
+
+describe('cantimplora', () => {
+  function byWater(slot: Slot) {
+    const { world, id } = makeWorld();
+    clearWorld(world);
+    const spot = findLandNextTo(world, 'water', 60);
+    placePlayerAt(world, id, spot.x, spot.y);
+    setInventory(world, id, [slot]);
+    const p = world.player(id);
+    p.angle = 0;
+    p.selectedSlot = 0;
+    return { world, id, p, spot };
+  }
+  function useNow(world: ReturnType<typeof makeWorld>['world'], id: number) {
+    world.player(id).hitCooldown = 0;
+    use(world, id);
+  }
+
+  it('llenar la cantimplora apuntando al agua', () => {
+    const { world, id, p } = byWater({ item: 'canteen', count: 1 });
+    useNow(world, id);
+    expect(p.inventory[0]).toEqual({ item: 'canteen_full', count: 3 });
+    expect(world.drainEvents()).toContainEqual({ type: 'canteenFilled', playerId: id });
+  });
+
+  it('en tierra lejos del agua no pasa nada', () => {
+    const { world, id, p } = byWater({ item: 'canteen', count: 1 });
+    p.angle = Math.PI;
+    useNow(world, id);
+    expect(p.inventory[0]).toEqual({ item: 'canteen', count: 1 });
+  });
+
+  it('beber da 40 de sed y gasta un trago; al tercero vuelve a estar vacía', () => {
+    const { world, id, p } = byWater({ item: 'canteen_full', count: 3 });
+    p.angle = Math.PI;
+    p.thirst = 10;
+    useNow(world, id);
+    expect(p.thirst).toBeCloseTo(50, 0);
+    expect(p.inventory[0]).toEqual({ item: 'canteen_full', count: 2 });
+    useNow(world, id);
+    useNow(world, id);
+    expect(p.inventory[0]).toEqual({ item: 'canteen', count: 1 });
+    expect(world.drainEvents().filter((e) => e.type === 'drank')).toHaveLength(3);
+  });
+
+  it('dentro del agua la llena rellena en vez de beber', () => {
+    const { world, id, p, spot } = byWater({ item: 'canteen_full', count: 1 });
+    placePlayerAt(world, id, spot.x + 80, spot.y);
+    world.step();
+    expect(p.inWater).toBe(true);
+    p.thirst = 10;
+    useNow(world, id);
+    expect(p.inventory[0]).toEqual({ item: 'canteen_full', count: 3 });
+    expect(p.thirst).toBeLessThan(100); // el agua rellena sola la sed, pero no por el trago
+  });
+
+  it('bayas y pescado como comida', () => {
+    const { world, id, p } = playerWith([{ item: 'berry', count: 2 }, { item: 'cooked_fish', count: 1 }]);
+    p.hunger = 50;
+    useNow(world, id);
+    expect(p.hunger).toBeCloseTo(60, 0);
+    p.selectedSlot = 1;
+    useNow(world, id);
+    expect(p.hunger).toBeCloseTo(95, 0);
   });
 });

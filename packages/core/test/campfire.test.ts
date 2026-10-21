@@ -102,3 +102,16 @@ describe('fogata', () => {
     expect(p.warmth).toBe(100);
   });
 });
+
+describe('pescado en la fogata', () => {
+  it('cocina pescado crudo en 4 s y da 10 puntos', () => {
+    const { world, id, p } = setup([{ item: 'campfire', count: 1 }, { item: 'raw_fish', count: 1 }]);
+    placeFire(world, id);
+    world.drainEvents();
+    world.stepSeconds(4.1);
+    expect(p.inventory.some((s) => s?.item === 'raw_fish')).toBe(false);
+    expect(p.inventory.some((s) => s?.item === 'cooked_fish' && s.count === 1)).toBe(true);
+    expect(p.points).toBe(10);
+    expect(world.drainEvents()).toContainEqual({ type: 'cooked', playerId: id });
+  });
+});

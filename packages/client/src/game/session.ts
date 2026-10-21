@@ -24,7 +24,7 @@ export class Session {
     const p = this.world.player(this.playerId);
     const slot = p.inventory[p.selectedSlot];
     const meta = slot ? ITEM_META[slot.item] : null;
-    if (meta && (meta.food || meta.placeable || meta.equippable)) return { playerId: this.playerId, type: 'useSlot' };
+    if (meta && (meta.food || meta.placeable || meta.equippable || meta.usable)) return { playerId: this.playerId, type: 'useSlot' };
     return { playerId: this.playerId, type: 'hit' };
   }
 

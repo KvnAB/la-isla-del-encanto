@@ -1,6 +1,6 @@
 import type { GameConfig } from '../config.js';
 import { nextId } from '../entities.js';
-import type { GameEvent, PlayerState, WorldState } from '../types.js';
+import type { GameEvent, ItemId, PlayerState, WorldState } from '../types.js';
 import { clamp, dist } from '../vec.js';
 import { addItem, findSlot, removeItem } from './inventory.js';
 
@@ -29,16 +29,19 @@ export function stepCampfires(state: WorldState, cfg: GameConfig, dt: number, ev
       continue;
     }
     p.warmth = clamp(p.warmth + cfg.vitals.campfireWarmthPerSec * dt, 0, 100);
-    if (findSlot(p.inventory, 'raw_steak') === -1) {
+    // el primer crudo del inventario que se pueda cocinar (filete, pescado...)
+    const raw = (Object.keys(cfg.campfire.cooks) as ItemId[]).find((item) => findSlot(p.inventory, item) !== -1);
+    if (!raw) {
       p.cookTimer = 0;
       continue;
     }
     p.cookTimer += dt;
     if (p.cookTimer + 1e-6 >= cfg.campfire.cookSeconds) {
       p.cookTimer = 0;
-      removeItem(p.inventory, 'raw_steak', 1);
-      if (addItem(p.inventory, 'cooked_steak', 1) > 0) {
-        addItem(p.inventory, 'raw_steak', 1); // sin hueco: devolver el crudo
+      const cooked = cfg.campfire.cooks[raw]!;
+      removeItem(p.inventory, raw, 1);
+      if (addItem(p.inventory, cooked, 1) > 0) {
+        addItem(p.inventory, raw, 1); // sin hueco: devolver el crudo
         continue;
       }
       p.points += cfg.points.cook;

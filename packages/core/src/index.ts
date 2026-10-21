@@ -12,3 +12,4 @@ export { addItem, removeItem, countItem, findSlot } from './systems/inventory.js
 export { nearCampfire } from './systems/campfire.js';
 export { coatWorn } from './systems/vitals.js';
 export { inReach, inArc } from './systems/hit.js';
+export { aimedAtWater } from './systems/fishing.js';

@@ -125,3 +125,35 @@ describe('bloque 2: isla grande', () => {
     expect(DEFAULT_CONFIG.creatures.maxActive).toBe(26);
   });
 });
+
+describe('bloque 3: cantimplora, bayas y pesca', () => {
+  const c = DEFAULT_CONFIG;
+  const byId = Object.fromEntries(c.recipes.map((r) => [r.id, r]));
+
+  it('cantimplora y caña: recetas y valores', () => {
+    expect(byId.canteen.cost).toEqual({ wood: 10, wool: 5 });
+    expect(byId.canteen.points).toBe(50);
+    expect(byId.fishing_rod.cost).toEqual({ wood: 10, wool: 2 });
+    expect(byId.fishing_rod.points).toBe(50);
+    expect(c.canteen).toEqual({ sips: 3, thirstPerSip: 40 });
+    expect(c.fishing).toEqual({ seconds: 3, points: 5 });
+    expect(ITEM_META.canteen).toEqual({ stackable: false, usable: true, held: true });
+    expect(ITEM_META.canteen_full).toEqual({ stackable: false, usable: true, held: true });
+    expect(ITEM_META.fishing_rod).toEqual({ stackable: false, usable: true, held: true });
+  });
+
+  it('bayas, pescado y cocina', () => {
+    expect(c.food.berry).toEqual({ hunger: 10, health: 0 });
+    expect(c.food.raw_fish).toEqual({ hunger: 12, health: -5 });
+    expect(c.food.cooked_fish).toEqual({ hunger: 35, health: 0 });
+    expect(c.resources.berryYield).toBe(3);
+    expect(c.resources.counts.berry_bush).toBe(30);
+    expect(c.resources.radius.berry_bush).toEqual({ small: 24, medium: 24, large: 24 });
+    expect(c.resources.collision.berry_bush).toBe(0.6);
+    expect(c.resources.biome.berry_bush).toBe('grass');
+    expect(c.resources.fixedSize).toEqual({ berry_bush: 'small' });
+    expect(c.campfire.cooks).toEqual({ raw_steak: 'cooked_steak', raw_fish: 'cooked_fish' });
+    expect(ITEM_META.berry.food).toBe(true);
+    expect(ITEM_META.cooked_fish.food).toBe(true);
+  });
+});

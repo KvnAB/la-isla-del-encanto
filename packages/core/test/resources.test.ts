@@ -162,18 +162,18 @@ describe('golpear recursos', () => {
 });
 
 describe('spawnResources', () => {
-  it('coloca 303 recursos en terreno firme, lejos del spawn y sin solapar', () => {
+  it('coloca 333 recursos en terreno firme, lejos del spawn y sin solapar', () => {
     const world = new World(1);
     const s = world.getState();
-    expect(s.resources.length).toBe(303);
-    const kinds = { tree: 0, apple_tree: 0, rock: 0, gold_rock: 0, diamond_rock: 0 };
+    expect(s.resources.length).toBe(333);
+    const kinds = { tree: 0, apple_tree: 0, rock: 0, gold_rock: 0, diamond_rock: 0, berry_bush: 0 };
     for (const r of s.resources) {
       kinds[r.kind]++;
       expect(['land', 'sand', 'snow']).toContain(terrainAt(s.map, r.x, r.y));
       expect(Math.hypot(r.x - s.map.spawnX, r.y - s.map.spawnY)).toBeGreaterThanOrEqual(200);
       expect(r.remaining).toBe(resourceCapacity(r.kind, r.size, DEFAULT_CONFIG));
     }
-    expect(kinds).toEqual({ tree: 135, apple_tree: 40, rock: 90, gold_rock: 30, diamond_rock: 8 });
+    expect(kinds).toEqual({ tree: 135, apple_tree: 40, rock: 90, gold_rock: 30, diamond_rock: 8, berry_bush: 30 });
     for (let i = 0; i < s.resources.length; i++)
       for (let j = i + 1; j < s.resources.length; j++) {
         const a = s.resources[i];
@@ -198,6 +198,34 @@ describe('spawnResources', () => {
     const w = new World(3);
     w.getState().resources.length = 0;
     spawnResources(w.getState(), w.cfg, new Rng(1));
-    expect(w.getState().resources.length).toBe(303);
+    expect(w.getState().resources.length).toBe(333);
+  });
+});
+
+describe('arbusto de bayas', () => {
+  it('da 3 bayas de un golpe a mano y queda roto', () => {
+    const { world, id, r } = setup(null, 'berry_bush', 'small');
+    hit(world, id);
+    expect(count(world, id, 'berry')).toBe(3);
+    expect(r.brokenAt).not.toBeNull();
+    expect(world.player(id).points).toBe(3);
+  });
+
+  it('regenera en 60 s', () => {
+    const { world, id, r } = setup(null, 'berry_bush', 'small');
+    hit(world, id);
+    world.stepSeconds(61);
+    expect(resourceAvailable(r, DEFAULT_CONFIG, world.getState().time)).toBe(3);
+  });
+
+  it('todos los arbustos son small y están en hierba', () => {
+    const world = new World(1);
+    const s = world.getState();
+    const bushes = s.resources.filter((r) => r.kind === 'berry_bush');
+    expect(bushes).toHaveLength(30);
+    for (const b of bushes) {
+      expect(b.size).toBe('small');
+      expect(terrainAt(s.map, b.x, b.y)).not.toBe('snow');
+    }
   });
 });

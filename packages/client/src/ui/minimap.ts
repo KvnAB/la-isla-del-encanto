@@ -12,6 +12,7 @@ const C = {
   snow: '#e9eef3',
   snowEdge: '#c9d6e1',
   diamond: '#7fe7ff',
+  berry: '#9b5bc4',
   water: '#5fa0d2',
   waterEdge: '#2a5e8f',
   tree: '#2f7a35',
@@ -173,7 +174,12 @@ export class Minimap {
     ctx.translate(m.x, m.y);
     ctx.globalAlpha = m.broken ? 0.35 : 1;
     ctx.lineWidth = 0.8;
-    if (m.kind === 'tree' || m.kind === 'apple_tree') {
+    if (m.kind === 'berry_bush') {
+      ctx.beginPath();
+      ctx.arc(0, 0, 2, 0, Math.PI * 2);
+      ctx.fillStyle = C.berry;
+      ctx.fill();
+    } else if (m.kind === 'tree' || m.kind === 'apple_tree') {
       ctx.beginPath();
       ctx.arc(0, 0, m.r, 0, Math.PI * 2);
       ctx.fillStyle = C.treeLight;
