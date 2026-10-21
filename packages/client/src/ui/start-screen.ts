@@ -59,7 +59,9 @@ export class StartScreen {
 
     // Panel principal
     const panel = el('div', 'panel panel-main');
-    panel.appendChild(el('h1', 'title sr-only', 'La Isla del Encanto'));
+    const heading = el('header', 'panel-heading');
+    heading.append(el('div', 'eyebrow', 'Draycol presenta'), el('h1', 'title', 'La Isla del Encanto'), el('p', 'subtitle', 'Recolecta, fabrica, caza y sobrevive a la noche.'));
+    panel.appendChild(heading);
 
     const field = el('label', 'field');
     field.appendChild(el('span', 'field-label', 'Tu nombre'));
@@ -79,7 +81,8 @@ export class StartScreen {
     field.appendChild(input);
     panel.appendChild(field);
 
-    panel.appendChild(el('div', 'field-label', 'Equipamiento inicial'));
+    const choicesBlock = el('div', 'field');
+    choicesBlock.appendChild(el('span', 'field-label', 'Equipamiento inicial'));
     const choices = el('div', 'choices');
     const cards: HTMLElement[] = [];
     for (const item of ['wood_pickaxe', 'wood_sword'] as StartItem[]) {
@@ -98,7 +101,8 @@ export class StartScreen {
       cards.push(card);
       choices.appendChild(card);
     }
-    panel.appendChild(choices);
+    choicesBlock.appendChild(choices);
+    panel.appendChild(choicesBlock);
 
     const play = el('button', 'play-btn', 'Jugar');
     play.type = 'button';
@@ -107,7 +111,13 @@ export class StartScreen {
     this.playBtn = play;
     panel.appendChild(play);
 
-    panel.appendChild(el('p', 'controls-hint', 'WASD para moverte · ratón para apuntar · clic para golpear o usar · 1–8 o rueda para cambiar de objeto · Q para tirar'));
+    const hint = el('div', 'controls-hint');
+    for (const [key, what] of [['WASD', 'moverte'], ['Ratón', 'apuntar'], ['Clic', 'golpear o usar'], ['1–8', 'cambiar objeto'], ['Q', 'tirar']] as const) {
+      const item = el('span', 'control');
+      item.append(el('kbd', undefined, key), el('span', undefined, what));
+      hint.appendChild(item);
+    }
+    panel.appendChild(hint);
 
     // Panel de récords
     const side = el('div', 'panel panel-scores');
