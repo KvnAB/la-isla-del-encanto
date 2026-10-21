@@ -4,6 +4,12 @@ import { itemIconDataUrl } from './icons';
 import { formatClock, formatPoints, ITEM_NAMES, ITEM_NAMES_LOWER } from './names';
 
 type BarKey = 'health' | 'hunger' | 'thirst' | 'warmth';
+const ICONS: Record<BarKey, string> = {
+  health: '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2 0 3.6 1.1 4.4 2.3.8-1.2 2.4-2.3 4.4-2.3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg>',
+  hunger: '<svg viewBox="0 0 24 24"><path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-1.5-.6-2.4-1-3 2 .8 4 3 4 6.5A6 6 0 0 1 6 14c0-4 4-6 6-12z"/></svg>',
+  thirst: '<svg viewBox="0 0 24 24"><path d="M12 2.5s6.5 7.2 6.5 12a6.5 6.5 0 0 1-13 0c0-4.8 6.5-12 6.5-12z"/></svg>',
+  warmth: '<svg viewBox="0 0 24 24"><path d="M11 2h2v5.3l3.2-1.9 1 1.7L13 9.6v4.8l4.2 2.5-1 1.7L13 16.7V22h-2v-5.3l-3.2 1.9-1-1.7 4.2-2.5V9.6L6.8 7.1l1-1.7L11 7.3z"/></svg>',
+};
 const BARS: { key: BarKey; label: string }[] = [
   { key: 'health', label: 'VIDA' },
   { key: 'hunger', label: 'HAMBRE' },
@@ -62,9 +68,13 @@ export class Hud {
     for (const b of BARS) {
       const bar = el('div', `bar bar-${b.key}`);
       bar.dataset.bar = b.key;
+      const icon = el('span', 'bar-icon');
+      icon.innerHTML = ICONS[b.key];
+      const track = el('div', 'bar-track');
       const fill = el('div', 'bar-fill');
       const label = el('span', 'bar-label', `${b.label} 100`);
-      bar.append(fill, label);
+      track.append(fill, label);
+      bar.append(icon, track);
       barsRow.appendChild(bar);
       this.bars.set(b.key, { fill, label, last: -1 });
     }
@@ -134,15 +144,18 @@ export class Hud {
         const r = this.cfg.recipes.find((x) => x.id === id);
         if (!r) continue;
         const card = el('div', 'craft-card');
+        const btn = el('button', 'craft-btn');
+        btn.type = 'button';
+        btn.title = `Fabricar ${ITEM_NAMES[id]} · ${costText(r.cost, r.consumes)}`;
+        btn.setAttribute('aria-label', btn.title);
         const img = el('img', 'craft-icon');
         img.src = itemIconDataUrl(id);
         img.alt = '';
+        btn.appendChild(img);
+        btn.addEventListener('click', () => this.onCraft(id));
         const info = el('div', 'craft-info');
         info.append(el('div', 'craft-name', ITEM_NAMES[id]), el('div', 'craft-cost', costText(r.cost, r.consumes)));
-        const btn = el('button', 'craft-btn', 'Fabricar');
-        btn.type = 'button';
-        btn.addEventListener('click', () => this.onCraft(id));
-        card.append(img, info, btn);
+        card.append(btn, info);
         this.craftBox.appendChild(card);
       }
     }
