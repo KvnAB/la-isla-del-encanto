@@ -51,6 +51,29 @@ export function drawSword(g: Graphics, s: number, material: SwordMaterial): void
   if (gold) g.circle(s * 0.08, -s * 0.45, s * 0.07).fill(0xffffff, 0.85); // brillo, como en el pico de oro
 }
 
+/** Antorcha apuntando hacia arriba (-y): palo, cabeza envuelta en tela y llama. */
+export function drawTorch(g: Graphics, s: number, flame = 1): void {
+  const o = ow(s) * 0.8;
+  g.moveTo(0, s * 0.95).lineTo(0, -s * 0.25).stroke({ width: s * 0.22 + o * 2, color: OL, cap: 'round' });
+  g.moveTo(0, s * 0.95).lineTo(0, -s * 0.25).stroke({ width: s * 0.22, color: WOOD.base, cap: 'round' });
+  g.roundRect(-s * 0.22, -s * 0.45, s * 0.44, s * 0.4, s * 0.08).fill(ROPE).stroke({ width: o * 1.2, color: OL });
+  for (const y of [-0.36, -0.22]) g.moveTo(-s * 0.2, s * y).lineTo(s * 0.2, s * y + s * 0.06).stroke({ width: Math.max(1.5, o * 0.5), color: WOOD.dark, alpha: 0.6 });
+  drawFlameAt(g, 0, -s * 0.62, s * 0.8, flame);
+}
+
+/** `drawFlame` desplazada: la llama de la antorcha va por encima de la cabeza. */
+function drawFlameAt(g: Graphics, x: number, y: number, s: number, k: number): void {
+  if (k <= 0) return;
+  const o = ow(s);
+  const w = s * 0.34 * k;
+  const h = s * 0.55 * k;
+  const flame = (fw: number, fh: number, col: number, cy: number) =>
+    g.moveTo(x, y + cy - fh).bezierCurveTo(x + fw * 0.95, y + cy - fh * 0.5, x + fw * 1.05, y + cy + fh * 0.3, x, y + cy + fh * 0.5).bezierCurveTo(x - fw * 1.05, y + cy + fh * 0.3, x - fw * 0.95, y + cy - fh * 0.5, x, y + cy - fh).closePath().fill(col);
+  g.moveTo(x, y - h - o * 0.8).bezierCurveTo(x + w * 1.05, y - h * 0.5, x + w * 1.15, y + h * 0.35, x, y + h * 0.55 + o * 0.5).bezierCurveTo(x - w * 1.15, y + h * 0.35, x - w * 1.05, y - h * 0.5, x, y - h - o * 0.8).closePath().fill(OL);
+  flame(w, h, PALETTE.fireOuter, 0);
+  flame(w * 0.5, h * 0.5, PALETTE.fireInner, s * 0.1);
+}
+
 export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
   const o = ow(s);
   const rng = new Rng(seed);
@@ -141,6 +164,9 @@ export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
     case 'campfire':
       drawCampfireBase(g, s);
       drawFlame(g, s, 1);
+      break;
+    case 'torch':
+      drawTorch(g, s);
       break;
     case 'coat1': {
       // abrigo: cuerpo con rayas y cuello/puños de lana

@@ -1,4 +1,4 @@
-import type { ItemId } from '@draycol/core';
+import type { CreatureKind, ItemId } from '@draycol/core';
 
 export const ITEM_NAMES: Record<ItemId, string> = {
   wood: 'Madera',
@@ -18,6 +18,14 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   gold_sword: 'Espada de oro',
   campfire: 'Fogata',
   coat1: 'Abrigo nivel 1',
+  torch: 'Antorcha',
+};
+
+export const CREATURE_NAMES: Record<CreatureKind, string> = {
+  tiger: 'Tigre',
+  sheep: 'Oveja mala',
+  goblin: 'Duende',
+  wolf: 'Lobo',
 };
 
 /** Nombre en minúsculas para listas de materiales ("15 madera"). */

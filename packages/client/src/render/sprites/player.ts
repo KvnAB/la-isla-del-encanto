@@ -1,7 +1,7 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import { coatWorn, ITEM_META, type ItemId, type PlayerState } from '@draycol/core';
 import { OUTLINE_WIDTH, PALETTE } from '../palette';
-import { drawPickaxe, drawSword } from './vector-items';
+import { drawItem, drawPickaxe, drawSword } from './vector-items';
 import { swingPose } from './swing';
 
 /**
@@ -107,7 +107,7 @@ export class PlayerView extends Container {
     const slot = p.inventory[p.selectedSlot];
     const item = slot?.item ?? null;
     const meta = item ? ITEM_META[item] : null;
-    const shown = meta && (meta.tool || meta.weapon) ? item : null;
+    const shown = meta && (meta.tool || meta.weapon || meta.held) ? item : null;
     if (shown !== this.toolItem) {
       this.toolItem = shown;
       this.toolGfx?.destroy();
@@ -117,7 +117,8 @@ export class PlayerView extends Container {
         const s = r * 1.2;
         const material = shown.startsWith('gold') ? 'gold' : shown.startsWith('stone') ? 'stone' : 'wood';
         if (meta?.tool) drawPickaxe(g, s, material);
-        else drawSword(g, s, material);
+        else if (meta?.weapon) drawSword(g, s, material);
+        else drawItem(g, shown, s * 0.8); // objetos que se llevan en la mano (antorcha, etc.)
         g.pivot.set(0, s * 0.55);
         g.rotation = TOOL_ROT;
         this.toolGfx = g;

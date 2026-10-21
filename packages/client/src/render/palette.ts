@@ -40,6 +40,8 @@ export const PALETTE = {
   sheepEye: 0xe02020,
   goblin: 0x6fa852,
   goblinDark: 0x3f6b2f,
+  wolf: 0x8d9499,
+  wolfDark: 0x5b6166,
 
   fireLog: 0x8a5a2b,
   fireOuter: 0xff5a1f,

@@ -107,6 +107,43 @@ export function makeGoblinVector(r: number): Container {
   return c;
 }
 
+/** Lobo: cuerpo gris alargado, lomo oscuro, orejas puntiagudas, hocico claro, ojos amarillos y cola peluda. */
+export function makeWolfVector(r: number): Container {
+  const c = new Container();
+  const g = new Graphics();
+  const o = ow(r);
+  const bw = r * 1.5;
+  const bh = r * 0.9;
+  // cola
+  g.moveTo(-bw * 0.9, 0).quadraticCurveTo(-bw * 1.35, r * 0.2, -bw * 1.45, -r * 0.5).stroke({ width: r * 0.3 + o * 2, color: OL, cap: 'round' });
+  g.moveTo(-bw * 0.9, 0).quadraticCurveTo(-bw * 1.35, r * 0.2, -bw * 1.45, -r * 0.5).stroke({ width: r * 0.3, color: PALETTE.wolf, cap: 'round' });
+  g.circle(-bw * 1.45, -r * 0.5, r * 0.17).fill(PALETTE.wolfDark);
+  // patas
+  for (const [sx, sy] of [[0.5, -1], [0.5, 1], [-0.5, -1], [-0.5, 1]] as const) g.ellipse(bw * sx, sy * bh * 0.95, r * 0.26, r * 0.22).fill(PALETTE.wolf).stroke({ width: o, color: OL });
+  // cuerpo y lomo
+  g.ellipse(0, 0, bw, bh).fill(PALETTE.wolf).stroke({ width: o, color: OL });
+  g.ellipse(-bw * 0.1, 0, bw * 0.7, bh * 0.4).fill(PALETTE.wolfDark);
+  // cabeza con orejas puntiagudas
+  const hx = bw * 0.8;
+  const hr = r * 0.8;
+  for (const s of [-1, 1]) g.poly([hx - hr * 0.6, s * hr * 0.55, hx - hr * 0.9, s * hr * 1.35, hx - hr * 0.05, s * hr * 0.95], true).fill(PALETTE.wolf).stroke({ width: o, color: OL, join: 'round' });
+  for (const s of [-1, 1]) g.poly([hx - hr * 0.55, s * hr * 0.65, hx - hr * 0.72, s * hr * 1.1, hx - hr * 0.25, s * hr * 0.85], true).fill(PALETTE.wolfDark);
+  g.circle(hx, 0, hr).fill(PALETTE.wolf).stroke({ width: o, color: OL });
+  g.moveTo(hx - hr * 0.6, 0).lineTo(hx + hr * 0.2, 0).stroke({ width: r * 0.14, color: PALETTE.wolfDark, cap: 'round' });
+  // hocico claro, nariz y colmillos
+  g.ellipse(hx + hr * 0.55, 0, hr * 0.42, hr * 0.5).fill(PALETTE.tigerLight).stroke({ width: Math.max(1.5, o * 0.6), color: OL });
+  g.ellipse(hx + hr * 0.85, 0, hr * 0.16, hr * 0.12).fill(OL);
+  for (const s of [-1, 1]) g.poly([hx + hr * 0.45, s * hr * 0.3, hx + hr * 0.62, s * hr * 0.16, hx + hr * 0.55, s * hr * 0.05], true).fill(0xffffff).stroke({ width: 1, color: OL });
+  // ojos amarillos con ceja fruncida
+  for (const s of [-1, 1]) {
+    g.ellipse(hx + hr * 0.1, s * hr * 0.45, hr * 0.17, hr * 0.12).fill(0xffd34d).stroke({ width: Math.max(1.5, o * 0.5), color: OL });
+    g.circle(hx + hr * 0.14, s * hr * 0.43, hr * 0.06).fill(OL);
+    g.moveTo(hx - hr * 0.15, s * hr * 0.2).lineTo(hx + hr * 0.32, s * hr * 0.6).stroke({ width: r * 0.1, color: OL, cap: 'round' });
+  }
+  c.addChild(g);
+  return c;
+}
+
 export function makeCreatureVector(kind: CreatureKind, r: number): Container {
   switch (kind) {
     case 'tiger':
@@ -115,5 +152,7 @@ export function makeCreatureVector(kind: CreatureKind, r: number): Container {
       return makeSheepVector(r);
     case 'goblin':
       return makeGoblinVector(r);
+    case 'wolf':
+      return makeWolfVector(r);
   }
 }
