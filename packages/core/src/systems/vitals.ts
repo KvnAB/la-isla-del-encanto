@@ -1,12 +1,16 @@
 import type { GameConfig } from '../config.js';
-import type { GameEvent, PlayerState, WorldState } from '../types.js';
+import { terrainAt } from '../island.js';
+import type { CoatId, GameEvent, PlayerState, WorldState } from '../types.js';
 import { clamp } from '../vec.js';
 import { nearCampfire } from './campfire.js';
 import { findSlot } from './inventory.js';
 
-/** El abrigo abriga solo si se tiene y está puesto. */
-export function coatWorn(p: PlayerState): boolean {
-  return p.coatOn && findSlot(p.inventory, 'coat1') !== -1;
+/** El abrigo puesto (el mejor que se lleve), o null. Solo abriga si se tiene y está puesto. */
+export function coatWorn(p: PlayerState): CoatId | null {
+  if (!p.coatOn) return null;
+  if (findSlot(p.inventory, 'coat2') !== -1) return 'coat2';
+  if (findSlot(p.inventory, 'coat1') !== -1) return 'coat1';
+  return null;
 }
 
 export function stepVitals(state: WorldState, p: PlayerState, cfg: GameConfig, dt: number, events: GameEvent[]): void {
@@ -21,9 +25,12 @@ export function stepVitals(state: WorldState, p: PlayerState, cfg: GameConfig, d
 
   if (!nearCampfire(state, p, cfg)) {
     let mult = 1;
-    if (state.isNight) mult *= v.nightColdMult;
+    const snow = terrainAt(state.map, p.x, p.y) === 'snow';
+    if (snow) mult *= state.isNight ? v.snowNightColdMult : v.snowColdMult;
+    else if (state.isNight) mult *= v.nightColdMult;
     if (p.inWater) mult *= v.waterColdMult;
-    if (coatWorn(p)) mult *= v.coatColdMult;
+    const coat = coatWorn(p);
+    if (coat) mult *= v.coatColdMult[coat];
     p.warmth -= rate * mult * dt;
   }
 

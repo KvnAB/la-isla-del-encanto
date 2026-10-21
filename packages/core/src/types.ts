@@ -16,6 +16,8 @@ export type ItemId =
   | 'gold_sword'
   | 'campfire'
   | 'coat1'
+  | 'coat2'
+  | 'bear_pelt'
   | 'torch';
 
 export type Size = 'small' | 'medium' | 'large';
@@ -26,6 +28,7 @@ export type CreatureKind = 'tiger' | 'sheep' | 'goblin' | 'wolf';
 export type Terrain = 'sea' | 'land' | 'sand' | 'water' | 'snow';
 /** Bioma de una celda firme: nieve o hierba (todo lo demás). */
 export type Biome = 'grass' | 'snow';
+export type CoatId = 'coat1' | 'coat2';
 export type WeaponClass = 'fist' | 'wood_sword' | 'stone_sword' | 'gold_sword';
 export type ToolClass = 'hand' | 'wood_pickaxe' | 'stone_pickaxe' | 'gold_pickaxe';
 export type EntityId = number;

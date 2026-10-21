@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { coatWorn } from '../src/systems/vitals.js';
 import { clearWorld, findTerrainCell, makeWorld, placePlayerAt, setInventory } from './helpers.js';
 
 function fresh() {
@@ -142,5 +143,52 @@ describe('aviso de barra baja', () => {
     world.stepSeconds(100);
     const ev = world.drainEvents().filter((e) => e.type === 'vitalLow' && e.bar === 'thirst');
     expect(ev).toEqual([{ type: 'vitalLow', playerId: id, bar: 'thirst' }]);
+  });
+});
+
+describe('frío en la nieve y abrigos', () => {
+  function onSnow() {
+    const { world, id } = makeWorld();
+    clearWorld(world);
+    const c = findTerrainCell(world, 'snow');
+    placePlayerAt(world, id, c.x, c.y);
+    setInventory(world, id, []);
+    return { world, id, p: world.player(id) };
+  }
+
+  it('en nieve de día el frío baja el doble', () => {
+    const { world, p } = onSnow();
+    world.stepSeconds(60);
+    expect(p.warmth).toBeCloseTo(50, 0);
+  });
+
+  it('en nieve de noche el frío baja el triple (sustituye al ×2 nocturno)', () => {
+    const { world, p } = onSnow();
+    // hasta la noche sin morir de frío: barras llenas cada segundo
+    for (let i = 0; i < 241; i++) {
+      p.hunger = p.thirst = p.warmth = 100;
+      world.stepSeconds(1);
+    }
+    expect(world.getState().isNight).toBe(true);
+    p.hunger = p.thirst = p.warmth = 100;
+    world.stepSeconds(30);
+    expect(p.warmth).toBeCloseTo(100 - 37.5, 0);
+  });
+
+  it('con abrigo 2 de noche el frío baja a un cuarto', () => {
+    const { world, id, p } = fresh();
+    setInventory(world, id, [{ item: 'coat2', count: 1 }]);
+    world.stepSeconds(240.5);
+    p.hunger = p.thirst = p.warmth = 100;
+    world.stepSeconds(60);
+    expect(p.warmth).toBeCloseTo(100 - 12.5, 0);
+  });
+
+  it('coatWorn devuelve coat2 si se lleva el abrigo 2', () => {
+    const { world, id, p } = fresh();
+    setInventory(world, id, [{ item: 'coat2', count: 1 }]);
+    expect(coatWorn(p)).toBe('coat2');
+    p.coatOn = false;
+    expect(coatWorn(p)).toBe(null);
   });
 });

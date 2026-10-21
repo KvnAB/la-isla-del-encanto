@@ -3,7 +3,7 @@
  * Los valores vienen del plan de reglas (docs/plan_juego_survival_2d.md);
  * los marcados con (*) son decisiones del constructor dentro de lo que el plan permite.
  */
-import type { Biome, CreatureKind, ItemId, ResourceKind, Size, ToolClass, WeaponClass } from './types.js';
+import type { Biome, CoatId, CreatureKind, ItemId, ResourceKind, Size, ToolClass, WeaponClass } from './types.js';
 
 export interface RecipeDef {
   id: ItemId;
@@ -46,7 +46,11 @@ export interface GameConfig {
     drainSeconds: number;
     nightColdMult: number;
     waterColdMult: number;
-    coatColdMult: number;
+    /** En nieve el frío baja más: de día y, en vez del multiplicador nocturno normal, de noche. */
+    snowColdMult: number;
+    snowNightColdMult: number;
+    /** Por abrigo puesto. */
+    coatColdMult: Record<CoatId, number>;
     thirstRefillPerSec: number;
     campfireWarmthPerSec: number;
     campfireRadius: number;
@@ -118,7 +122,9 @@ export const DEFAULT_CONFIG: GameConfig = {
     drainSeconds: 240,
     nightColdMult: 2, // (*)
     waterColdMult: 2.5, // (*)
-    coatColdMult: 0.5, // (*)
+    snowColdMult: 2, // (*)
+    snowNightColdMult: 3, // (*)
+    coatColdMult: { coat1: 0.5, coat2: 0.25 }, // (*)
     thirstRefillPerSec: 25, // (*)
     campfireWarmthPerSec: 20, // (*)
     campfireRadius: 150, // (*)
@@ -250,6 +256,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     { id: 'campfire', cost: { wood: 15, stone: 5 }, points: 25 },
     { id: 'coat1', cost: { wool: 5, tiger_pelt: 5, needle: 1 }, unique: true, points: 100 },
     { id: 'torch', cost: { wood: 5, stone: 1 }, points: 25 },
+    { id: 'coat2', cost: { bear_pelt: 5, wool: 10, gold: 10, needle: 1 }, consumes: 'coat1', replaces: 'coat1', unique: true, points: 300 },
   ],
   points: { gatherPerUnit: 1, cook: 10, dayPassed: 250 },
 };
@@ -284,5 +291,7 @@ export const ITEM_META: Record<ItemId, ItemMeta> = {
   gold_sword: { stackable: false, weapon: 'gold_sword' },
   campfire: { stackable: true, placeable: true },
   coat1: { stackable: false, equippable: true },
+  coat2: { stackable: false, equippable: true },
+  bear_pelt: { stackable: true },
   torch: { stackable: false, held: true },
 };

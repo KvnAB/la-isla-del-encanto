@@ -102,3 +102,39 @@ describe('craft', () => {
     expect(p.inventory.some((s) => s?.item === 'wood_pickaxe')).toBe(true);
   });
 });
+
+describe('abrigo nivel 2', () => {
+  it('cuesta 5 piel de oso + 10 lana + 10 oro + 1 aguja, sustituye al abrigo 1 en su slot y queda puesto', () => {
+    const { world, id } = makeWorld();
+    const p = world.player(id);
+    setInventory(world, id, [
+      { item: 'wood_pickaxe', count: 1 },
+      { item: 'coat1', count: 1 },
+      { item: 'bear_pelt', count: 5 },
+      { item: 'wool', count: 10 },
+      { item: 'gold', count: 10 },
+      { item: 'needle', count: 1 },
+    ]);
+    p.coatOn = false;
+    expect(availableRecipes(p.inventory, world.cfg)).toContain('coat2');
+    expect(craft(p, 'coat2', world.cfg, [])).toBe(true);
+    expect(p.inventory[1]).toEqual({ item: 'coat2', count: 1 });
+    expect(p.inventory.filter((s) => s?.item === 'coat1')).toHaveLength(0);
+    expect(p.inventory.filter((s) => s?.item === 'bear_pelt' || s?.item === 'gold' || s?.item === 'needle' || s?.item === 'wool')).toHaveLength(0);
+    expect(p.coatOn).toBe(true);
+    expect(p.points).toBe(300);
+    expect(availableRecipes(p.inventory, world.cfg)).not.toContain('coat2');
+  });
+
+  it('sin abrigo 1 no se puede fabricar el 2', () => {
+    const { world, id } = makeWorld();
+    const p = world.player(id);
+    setInventory(world, id, [
+      { item: 'bear_pelt', count: 5 },
+      { item: 'wool', count: 10 },
+      { item: 'gold', count: 10 },
+      { item: 'needle', count: 1 },
+    ]);
+    expect(availableRecipes(p.inventory, world.cfg)).not.toContain('coat2');
+  });
+});

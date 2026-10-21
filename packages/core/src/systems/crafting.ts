@@ -1,4 +1,4 @@
-import type { GameConfig, RecipeDef } from '../config.js';
+import { ITEM_META, type GameConfig, type RecipeDef } from '../config.js';
 import type { GameEvent, ItemId, PlayerState, Slot } from '../types.js';
 import { addItem, countItem, findSlot, removeItem } from './inventory.js';
 
@@ -34,6 +34,7 @@ export function craft(p: PlayerState, recipeId: ItemId, cfg: GameConfig, events:
     for (const [item, n] of Object.entries(r.cost) as [ItemId, number][]) addItem(inv, item, n);
     return false;
   }
+  if (ITEM_META[r.id].equippable) p.coatOn = true; // los abrigos se fabrican puestos
   p.points += r.points;
   events.push({ type: 'crafted', playerId: p.id, recipeId: r.id });
   return true;

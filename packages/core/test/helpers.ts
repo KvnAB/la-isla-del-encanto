@@ -95,7 +95,7 @@ export function findLandNextTo(world: World, target: 'sea' | 'water', dist: numb
   throw new Error('no se encontró tierra junto a ' + target);
 }
 
-export function findTerrainCell(world: World, target: 'water' | 'land'): { x: number; y: number } {
+export function findTerrainCell(world: World, target: 'water' | 'land' | 'snow'): { x: number; y: number } {
   const map = world.getState().map;
   for (let r = 2; r < map.rows - 2; r++) {
     for (let c = 2; c < map.cols - 2; c++) {

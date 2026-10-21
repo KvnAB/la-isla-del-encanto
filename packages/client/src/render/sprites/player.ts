@@ -1,5 +1,5 @@
 import { Container, Graphics, Text } from 'pixi.js';
-import { coatWorn, ITEM_META, type ItemId, type PlayerState } from '@draycol/core';
+import { coatWorn, ITEM_META, type CoatId, type ItemId, type PlayerState } from '@draycol/core';
 import { OUTLINE_WIDTH, PALETTE } from '../palette';
 import { drawItem, drawPickaxe, drawSword } from './vector-items';
 import { swingPose } from './swing';
@@ -35,7 +35,7 @@ export class PlayerView extends Container {
   private toolGfx: Graphics | null = null;
   private readonly nameText: Text;
   private toolItem: ItemId | null | undefined = undefined;
-  private coatOn: boolean | undefined = undefined;
+  private coat: CoatId | null | undefined = undefined;
   readonly r: number;
   hat: HatStyle = 'none';
 
@@ -98,10 +98,10 @@ export class PlayerView extends Container {
     L.handBack.position.set(r * (HAND_X - pose.backHandPull), r * HAND_Y);
     this.body.position.set(Math.cos(p.angle) * pose.lunge * r, Math.sin(p.angle) * pose.lunge * r);
 
-    const coatOn = coatWorn(p);
-    if (coatOn !== this.coatOn) {
-      this.coatOn = coatOn;
-      L.coat.visible = coatOn;
+    const coat = coatWorn(p);
+    if (coat !== this.coat) {
+      this.coat = coat;
+      L.coat.visible = coat !== null;
     }
 
     const slot = p.inventory[p.selectedSlot];

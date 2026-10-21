@@ -21,13 +21,13 @@ function use(world: ReturnType<typeof makeWorld>['world'], id: number) {
 describe('abrigo', () => {
   it('empieza puesto y usar su slot lo quita y lo vuelve a poner sin consumirlo', () => {
     const { world, id, p } = withCoat();
-    expect(coatWorn(p)).toBe(true);
+    expect(coatWorn(p)).toBe('coat1');
     use(world, id);
     expect(p.coatOn).toBe(false);
-    expect(coatWorn(p)).toBe(false);
+    expect(coatWorn(p)).toBe(null);
     expect(world.drainEvents()).toContainEqual({ type: 'coatToggled', playerId: id, on: false });
     use(world, id);
-    expect(coatWorn(p)).toBe(true);
+    expect(coatWorn(p)).toBe('coat1');
     expect(p.inventory[0]).toEqual({ item: 'coat1', count: 1 });
   });
 
@@ -44,6 +44,6 @@ describe('abrigo', () => {
     const { world, id, p } = withCoat();
     setInventory(world, id, []);
     expect(p.coatOn).toBe(true);
-    expect(coatWorn(p)).toBe(false);
+    expect(coatWorn(p)).toBe(null);
   });
 });

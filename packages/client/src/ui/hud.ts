@@ -1,4 +1,4 @@
-import type { GameConfig, GameEvent, ItemId, PlayerState, WorldState } from '@draycol/core';
+import { ITEM_META, type GameConfig, type GameEvent, type ItemId, type PlayerState, type WorldState } from '@draycol/core';
 import './hud.css';
 import { SLOT_KEY_LABELS } from '../game/input';
 import { itemIconDataUrl } from './icons';
@@ -136,7 +136,7 @@ export class Hud {
         s.lastItem = item;
         if (item) {
           s.img.src = itemIconDataUrl(item);
-          s.img.title = item === 'coat1' ? `${ITEM_NAMES[item]} · clic para poner o quitar` : ITEM_NAMES[item];
+          s.img.title = ITEM_META[item].equippable ? `${ITEM_NAMES[item]} · clic para poner o quitar` : ITEM_NAMES[item];
           s.img.hidden = false;
         } else {
           s.img.hidden = true;

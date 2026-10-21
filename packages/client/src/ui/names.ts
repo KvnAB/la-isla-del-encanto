@@ -18,6 +18,8 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   gold_sword: 'Espada de oro',
   campfire: 'Fogata',
   coat1: 'Abrigo nivel 1',
+  coat2: 'Abrigo nivel 2',
+  bear_pelt: 'Piel de oso',
   torch: 'Antorcha',
 };
 
