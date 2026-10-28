@@ -120,8 +120,8 @@ export interface GameConfig {
     nightRaidFromDay: number;
     defs: Record<CreatureKind, CreatureDef>;
   };
-  /** Criaturas domadas: puntos por domar, distancia a la que siguen al dueño y radio alrededor del dueño que vigilan. */
-  taming: { points: number; followDist: number; guardRadius: number };
+  /** Criaturas domadas: puntos por domar, distancia a la que siguen al dueño, radio alrededor del dueño que vigilan, vida al domar y curación por segundo mientras no pelean. */
+  taming: { points: number; followDist: number; guardRadius: number; hp: number; regenPerSec: number };
   weaponDamage: Record<WeaponClass, number>;
   recipes: RecipeDef[];
   points: { gatherPerUnit: number; cook: number; dayPassed: number };
@@ -334,7 +334,7 @@ export const DEFAULT_CONFIG: GameConfig = {
       },
     },
   },
-  taming: { points: 150, followDist: 90, guardRadius: 350 }, // (*)
+  taming: { points: 150, followDist: 90, guardRadius: 350, hp: 120, regenPerSec: 2 }, // (*) domado aguanta 10 mordiscos de tigre y se cura solo
   weaponDamage: { fist: 1, wood_sword: 2, stone_sword: 3, gold_sword: 4, diamond_sword: 6 }, // (*) oro: tigre 8, oveja 5, duende 2; diamante: tigre 5, oso 10
   recipes: [
     { id: 'wood_pickaxe', cost: { wood: 10 }, points: 25 },

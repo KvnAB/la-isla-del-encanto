@@ -156,7 +156,7 @@ export function hitCreature(state: WorldState, p: PlayerState, c: CreatureState,
 
 /**
  * Doma la criatura salvaje más cercana al alcance y en arco cuyo `tameWith` sea el objeto seleccionado:
- * gasta una unidad, la criatura pasa a seguir al jugador, suma `taming.points` y se encola una salvaje nueva
+ * gasta una unidad, la criatura pasa a seguir al jugador con `taming.hp` de vida, suma `taming.points` y se encola una salvaje nueva
  * (así la isla no se queda sin ellas). Devuelve false si no había ninguna.
  */
 export function tameCreature(state: WorldState, p: PlayerState, cfg: GameConfig, events: GameEvent[]): boolean {
@@ -167,6 +167,7 @@ export function tameCreature(state: WorldState, p: PlayerState, cfg: GameConfig,
   removeItem(p.inventory, slot.item, 1);
   c.owner = p.id;
   c.mode = 'follow';
+  c.hp = cfg.taming.hp;
   c.attackCooldown = 0;
   p.points += cfg.taming.points;
   events.push({ type: 'creatureTamed', playerId: p.id, entityId: c.id, kind: c.kind });
@@ -266,7 +267,8 @@ function biteCreature(state: WorldState, pet: CreatureState, amount: number, cfg
 
 /**
  * Criatura domada: `hunt` a la criatura salvaje agresiva más cercana a menos de `taming.guardRadius` del dueño
- * (el dueño cobra botín y puntos si la mata); si no hay, `follow` al dueño hasta `taming.followDist`.
+ * (el dueño cobra botín y puntos si la mata); si no hay, `follow` al dueño hasta `taming.followDist` y se cura
+ * `taming.regenPerSec` por segundo hasta `taming.hp`.
  * Pasa por debajo del jugador (no lo trata como sólido) para no quedarse atascada tras él.
  * Sin dueño vivo, pasea.
  */
@@ -306,6 +308,7 @@ function stepPet(state: WorldState, c: CreatureState, cfg: GameConfig, dt: numbe
     return;
   }
   c.mode = 'follow';
+  c.hp = Math.min(cfg.taming.hp, c.hp + cfg.taming.regenPerSec * dt);
   if (dist(c.x, c.y, owner.x, owner.y) > cfg.taming.followDist) moveToward(state, c, owner.x, owner.y, def.speed, dt, solids);
 }
 

@@ -174,3 +174,38 @@ describe('puma domado', () => {
 function c0(world: World): number {
   return world.cfg.creatures.defs.puma.radius + 4;
 }
+
+describe('resistencia del puma domado', () => {
+  it('al domarlo su vida sube a taming.hp', () => {
+    const { world, id, p } = fresh([{ item: 'bone', count: 1 }]);
+    const c = putCreature(world, 'puma', p.x + p.radius + 40, p.y);
+    c.hp = 10;
+    use(world, id);
+    expect(c.owner).toBe(id);
+    expect(c.hp).toBe(DEFAULT_CONFIG.taming.hp);
+    expect(DEFAULT_CONFIG.taming.hp).toBeGreaterThanOrEqual(100);
+  });
+
+  it('mientras sigue al dueño sin pelear se cura taming.regenPerSec por segundo hasta taming.hp', () => {
+    const { world, id, p } = fresh();
+    const c = putCreature(world, 'puma', p.x + 60, p.y);
+    c.owner = id;
+    c.hp = 50;
+    survive(world, id, 5);
+    expect(c.hp).toBeCloseTo(50 + 5 * DEFAULT_CONFIG.taming.regenPerSec, 0);
+    survive(world, id, 60);
+    expect(c.hp).toBe(DEFAULT_CONFIG.taming.hp);
+  });
+
+  it('mientras caza no se cura', () => {
+    const { world, id, p } = fresh();
+    const c = putCreature(world, 'puma', p.x + 60, p.y);
+    c.owner = id;
+    c.hp = 50;
+    const t = putCreature(world, 'tiger', p.x + 330, p.y); // dentro del radio que vigila el puma
+    t.hp = 9999; // no muere, la pelea dura
+    survive(world, id, 3);
+    expect(c.mode).toBe('hunt');
+    expect(c.hp).toBeLessThanOrEqual(50);
+  });
+});
