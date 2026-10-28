@@ -46,6 +46,11 @@
   overflow: auto;
 }
 
+/* `display: grid` del panel pisaría el atributo hidden: cerrado de verdad */
+.hud-book[hidden] {
+  display: none;
+}
+
 .book-close {
   position: absolute;
   top: 6px;
