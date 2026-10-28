@@ -96,7 +96,11 @@ export class Hud {
       list.appendChild(item);
     }
     this.bookDetail = el('div', 'book-detail', 'Elige algo de la lista para ver qué hace falta.');
-    this.book.append(list, this.bookDetail);
+    const close = el('button', 'book-close', '✕');
+    close.type = 'button';
+    close.title = 'Cerrar (R o Escape)';
+    close.addEventListener('click', () => this.toggleBook(false));
+    this.book.append(list, this.bookDetail, close);
     this.root.appendChild(this.book);
     window.addEventListener('keydown', this.onBookKey);
 

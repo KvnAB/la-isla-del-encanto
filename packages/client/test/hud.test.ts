@@ -267,6 +267,9 @@ describe('Hud: libro de recetas', () => {
     expect(root.querySelector<HTMLElement>('.hud-book')?.hidden).toBe(false);
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(root.querySelector<HTMLElement>('.hud-book')?.hidden).toBe(true);
+    open();
+    (root.querySelector('.book-close') as HTMLElement).click();
+    expect(root.querySelector<HTMLElement>('.hud-book')?.hidden).toBe(true);
   });
 
   it('al pulsar una receta muestra sus materiales con lo que tienes, en rojo lo que falta y en verde lo que ya hay', () => {
