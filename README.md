@@ -90,7 +90,7 @@ Todos los números del juego están en **`packages/core/src/config.ts`** (`DEFAU
 2. Añadir su entrada en `ITEM_META` (`packages/core/src/config.ts`): apilable, si es herramienta/arma/comida/colocable.
 3. Nombre en español en `packages/client/src/ui/names.ts` (`ITEM_NAMES`).
 4. Su dibujo en `drawItem` (`packages/client/src/render/sprites/vector-items.ts`); el icono del HUD y el objeto en el suelo salen de ahí.
-5. Si es comida, su efecto en `config.food`. Si es una herramienta, su rendimiento en `woodPerHit` / `stonePerHit` / `goldPerHit` / `diamondPerHit` (`ToolClass` en `types.ts`). Si es un arma, su daño en `weaponDamage` (`WeaponClass` en `types.ts`); el jugador la muestra en la mano automáticamente. Si se lleva en la mano sin ser herramienta ni arma (antorcha, caña), `held: true`; si el clic lo usa en vez de golpear (cantimplora, caña), `usable: true` y su rama en `useSelectedSlot` (`systems/consume.ts`). Si se cocina en la fogata, su par crudo → cocinado en `campfire.cooks`.
+5. Si es comida, su efecto en `config.food`. Si es una herramienta, su rendimiento en `woodPerHit` / `stonePerHit` / `goldPerHit` / `diamondPerHit` (`ToolClass` en `types.ts`). Si es un arma, su daño en `weaponDamage` (`WeaponClass` en `types.ts`) y, si golpea más rápido, su tiempo en `weaponHitCooldown`; el jugador la muestra en la mano automáticamente. Si se lleva en la mano sin ser herramienta ni arma (antorcha, caña), `held: true`; si el clic lo usa en vez de golpear (cantimplora, caña), `usable: true` y su rama en `useSelectedSlot` (`systems/consume.ts`). Si se cocina en la fogata, su par crudo → cocinado en `campfire.cooks`.
 
 **Un recurso nuevo** (como la roca de oro): id en `ResourceKind`, radio, cantidad y colisión en `config.resources` (y, si solo sale en un bioma o siempre del mismo tamaño, `resources.biome` / `resources.fixedSize`), qué da y con qué herramienta en `yieldFor` (`systems/resources.ts`) y su dibujo en `makeResourceVector` (`vector-resources.ts`, que recibe `snowy` si está sobre nieve) más su marcador en `ui/minimap.ts`.
 
@@ -99,6 +99,8 @@ Todos los números del juego están en **`packages/core/src/config.ts`** (`DEFAU
 **Mascotas con nombre**: al domar, `tameCreature` pone `name` ("Puma 1"…, `CreatureDef.petName`) y el HUD abre el cuadro del nombre (`askName`, comando `rename`). Debajo de las casillas hay una ficha por mascota (`updatePets`): el nombre la llama (`petCall`: modo `come`, corre a `riding.runSpeed`; si no avanza `taming.callStuckSeconds` aparece al lado) y el botón la duerme o despierta (`petSleep`: modo `sleep`, invulnerable, se cura `taming.sleepRegenPerSec`). El renderer pinta el nombre bajo la criatura (`syncCreatureLabel`).
 
 **Casillas del inventario**: se empieza con `player.inventorySlots` (12) y cada `slotReward.killsPerSlot` (3) pingüinos matados dan una más hasta `slotReward.maxSlots` (20). El HUD crea todas las posibles y oculta las que faltan; las 13–20 no tienen tecla (rueda o clic).
+
+**Muro de piedra**: `config.wall` (piedras, radio del anillo, radio de cada piedra, golpes). `placeWall` y `hitWall` en `systems/wall.ts`; `WorldState.walls` son sólidos solo para las criaturas salvajes (`wallSolids` en `stepCreatures`); el jugador y las domadas pasan. Se pica con cualquier pico (`resolveHit`, antes que los recursos).
 
 **Una receta nueva**: añadir una entrada en `config.recipes` (coste, `consumes`/`replaces` si sustituye a otra herramienta, `unique` si solo se puede tener una, puntos). El botón de fabricar aparece solo.
 
