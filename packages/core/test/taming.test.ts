@@ -117,7 +117,7 @@ describe('puma domado', () => {
     const tree = putResource(world, 'tree', 'small', p.x + p.radius + 60, p.y);
     world.enqueue({ playerId: id, type: 'hit' });
     world.step();
-    expect(c.hp).toBe(DEFAULT_CONFIG.creatures.defs.puma.hp);
+    expect(c.hp).toBeGreaterThanOrEqual(DEFAULT_CONFIG.creatures.defs.puma.hp); // no baja (sube un poco: se cura al seguir)
     const ev = world.drainEvents();
     expect(ev.some((e) => e.type === 'creatureHit')).toBe(false);
     expect(ev.some((e) => e.type === 'resourceHit' && e.entityId === tree.id)).toBe(true);
