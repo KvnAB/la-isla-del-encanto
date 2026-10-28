@@ -162,10 +162,10 @@ describe('golpear recursos', () => {
 });
 
 describe('spawnResources', () => {
-  it('coloca 333 recursos en terreno firme, lejos del spawn y sin solapar', () => {
+  it('coloca 339 recursos en terreno firme, lejos del spawn y sin solapar', () => {
     const world = new World(1);
     const s = world.getState();
-    expect(s.resources.length).toBe(333);
+    expect(s.resources.length).toBe(339);
     const kinds = { tree: 0, apple_tree: 0, rock: 0, gold_rock: 0, diamond_rock: 0, berry_bush: 0 };
     for (const r of s.resources) {
       kinds[r.kind]++;
@@ -198,7 +198,7 @@ describe('spawnResources', () => {
     const w = new World(3);
     w.getState().resources.length = 0;
     spawnResources(w.getState(), w.cfg, new Rng(1));
-    expect(w.getState().resources.length).toBe(333);
+    expect(w.getState().resources.length).toBe(339);
   });
 });
 

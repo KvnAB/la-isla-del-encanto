@@ -1,7 +1,7 @@
 import type { GameConfig } from '../config.js';
 import type { GameEvent, PlayerState, WorldState } from '../types.js';
 import { angleDiff, angleTo, dist } from '../vec.js';
-import { hitResource } from './resources.js';
+import { hitResource, weaponClassOf } from './resources.js';
 
 export interface HitTarget {
   x: number;
@@ -43,7 +43,7 @@ export interface HitHooks {
  */
 export function resolveHit(state: WorldState, p: PlayerState, cfg: GameConfig, events: GameEvent[], hooks: HitHooks = {}): void {
   if (p.hitCooldown > 0) return;
-  p.hitCooldown = cfg.player.hitCooldown;
+  p.hitCooldown = cfg.weaponHitCooldown[weaponClassOf(p.inventory[p.selectedSlot])] ?? cfg.player.hitCooldown;
   p.swing = 1;
 
   const groundTargets = state.groundItems.map((g) => ({ ...g, radius: cfg.groundItemRadius, ref: g }));

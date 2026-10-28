@@ -86,6 +86,7 @@ export interface GameConfig {
     capacity: Record<Size, number>;
     goldCapacity: Record<Size, number>;
     diamondCapacity: Record<Size, number>;
+    emeraldCapacity: Record<Size, number>;
     regenSeconds: Record<Size, number>;
     appleYield: Record<Size, number>;
     /** Bayas por arbusto (siempre pequeño). */
@@ -99,6 +100,7 @@ export interface GameConfig {
     stonePerHit: Record<ToolClass, number>;
     goldPerHit: Record<ToolClass, number>;
     diamondPerHit: Record<ToolClass, number>;
+    emeraldPerHit: Record<ToolClass, number>;
     counts: Record<ResourceKind, number>;
     /** Bioma obligatorio de un recurso; sin entrada, cualquier terreno firme. */
     biome: Partial<Record<ResourceKind, Biome>>;
@@ -141,6 +143,8 @@ export interface GameConfig {
   /** Cada `killsPerSlot` muertes de `creature` dan una casilla más al inventario, hasta `maxSlots`. */
   slotReward: { creature: CreatureKind; killsPerSlot: number; maxSlots: number };
   weaponDamage: Record<WeaponClass, number>;
+  /** Tiempo entre golpes de un arma; las que no aparecen usan `player.hitCooldown`. */
+  weaponHitCooldown: Partial<Record<WeaponClass, number>>;
   recipes: RecipeDef[];
   points: { gatherPerUnit: number; cook: number; dayPassed: number };
 }
@@ -185,6 +189,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     capacity: { small: 20, medium: 50, large: 100 },
     goldCapacity: { small: 6, medium: 12, large: 20 }, // (*)
     diamondCapacity: { small: 3, medium: 5, large: 8 }, // (*)
+    emeraldCapacity: { small: 2, medium: 4, large: 6 }, // (*)
     regenSeconds: { small: 60, medium: 120, large: 210 },
     appleYield: { small: 3, medium: 4, large: 6 },
     berryYield: 3, // (*)
@@ -194,18 +199,21 @@ export const DEFAULT_CONFIG: GameConfig = {
       rock: { small: 28, medium: 40, large: 56 },
       gold_rock: { small: 28, medium: 40, large: 56 },
       diamond_rock: { small: 28, medium: 40, large: 56 },
+      emerald_rock: { small: 28, medium: 40, large: 56 },
       berry_bush: { small: 24, medium: 24, large: 24 },
     }, // (*)
-    collision: { tree: 0.75, apple_tree: 0.85, rock: 0.9, gold_rock: 0.9, diamond_rock: 0.9, berry_bush: 0.6 }, // (*)
+    collision: { tree: 0.75, apple_tree: 0.85, rock: 0.9, gold_rock: 0.9, diamond_rock: 0.9, emerald_rock: 0.9, berry_bush: 0.6 }, // (*)
     brokenCollision: 0.5, // (*) el tocón se dibuja a la mitad del radio
-    woodPerHit: { hand: 1, wood_pickaxe: 2, stone_pickaxe: 3, gold_pickaxe: 4, diamond_pickaxe: 5 },
-    stonePerHit: { hand: 0, wood_pickaxe: 1, stone_pickaxe: 2, gold_pickaxe: 3, diamond_pickaxe: 4 },
+    woodPerHit: { hand: 1, wood_pickaxe: 2, stone_pickaxe: 3, gold_pickaxe: 4, diamond_pickaxe: 5, emerald_pickaxe: 6 },
+    stonePerHit: { hand: 0, wood_pickaxe: 1, stone_pickaxe: 2, gold_pickaxe: 3, diamond_pickaxe: 4, emerald_pickaxe: 5 },
     // El oro solo sale con pico de piedra (1 por golpe); el de oro saca 2; el de diamante 3.
-    goldPerHit: { hand: 0, wood_pickaxe: 0, stone_pickaxe: 1, gold_pickaxe: 2, diamond_pickaxe: 3 },
+    goldPerHit: { hand: 0, wood_pickaxe: 0, stone_pickaxe: 1, gold_pickaxe: 2, diamond_pickaxe: 3, emerald_pickaxe: 4 },
     // El diamante solo sale con pico de oro (1) o de diamante (2).
-    diamondPerHit: { hand: 0, wood_pickaxe: 0, stone_pickaxe: 0, gold_pickaxe: 1, diamond_pickaxe: 2 },
-    counts: { tree: 135, apple_tree: 40, rock: 90, gold_rock: 30, diamond_rock: 8, berry_bush: 30 }, // (*) ×2,25 al pasar de 3000 a 4500
-    biome: { apple_tree: 'grass', diamond_rock: 'snow', berry_bush: 'grass' }, // (*)
+    diamondPerHit: { hand: 0, wood_pickaxe: 0, stone_pickaxe: 0, gold_pickaxe: 1, diamond_pickaxe: 2, emerald_pickaxe: 3 },
+    // La esmeralda solo sale con pico de diamante (1) o de esmeralda (2).
+    emeraldPerHit: { hand: 0, wood_pickaxe: 0, stone_pickaxe: 0, gold_pickaxe: 0, diamond_pickaxe: 1, emerald_pickaxe: 2 },
+    counts: { tree: 135, apple_tree: 40, rock: 90, gold_rock: 30, diamond_rock: 8, emerald_rock: 6, berry_bush: 30 }, // (*) ×2,25 al pasar de 3000 a 4500
+    biome: { apple_tree: 'grass', diamond_rock: 'snow', emerald_rock: 'snow', berry_bush: 'grass' }, // (*)
     fixedSize: { berry_bush: 'small' }, // (*) regenera en 60 s
     minDistFromSpawn: 200, // (*)
   },
@@ -356,7 +364,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   taming: { points: 150, followDist: 90, guardRadius: 350, hp: 120, regenPerSec: 2, sleepRegenPerSec: 10, callStuckSeconds: 5, nameMaxLength: 16 }, // (*) domado aguanta 10 mordiscos de tigre y se cura solo
   slotReward: { creature: 'penguin', killsPerSlot: 3, maxSlots: 20 }, // 12 casillas de salida + 8 = 24 pingüinos
   riding: { mountDist: 70, walkSpeed: 160, runSpeed: 300, coldMult: 0.5 }, // (*) corriendo es lo más rápido del juego; el puma abriga como un abrigo 1
-  weaponDamage: { fist: 1, wood_sword: 2, stone_sword: 3, gold_sword: 4, diamond_sword: 6 }, // (*) oro: tigre 8, oveja 5, duende 2; diamante: tigre 5, oso 10
+  weaponDamage: { fist: 1, wood_sword: 2, stone_sword: 3, gold_sword: 4, diamond_sword: 6, emerald_sword: 9 }, // (*) oro: tigre 8, oveja 5, duende 2; diamante: tigre 5, oso 10; esmeralda: tigre 4, oso 7
+  weaponHitCooldown: { emerald_sword: 0.25 }, // (*) la de esmeralda golpea casi el doble de rápido
   recipes: [
     { id: 'wood_pickaxe', cost: { wood: 10 }, points: 25 },
     { id: 'wood_sword', cost: { wood: 30 }, points: 25 },
@@ -366,6 +375,9 @@ export const DEFAULT_CONFIG: GameConfig = {
     { id: 'gold_sword', cost: { gold: 20, stone: 30, wood: 60 }, consumes: 'stone_sword', replaces: 'stone_sword', points: 200 },
     { id: 'diamond_pickaxe', cost: { diamond: 15, gold: 20, stone: 30 }, consumes: 'gold_pickaxe', replaces: 'gold_pickaxe', points: 400 },
     { id: 'diamond_sword', cost: { diamond: 15, gold: 20, wood: 60 }, consumes: 'gold_sword', replaces: 'gold_sword', points: 400 },
+    { id: 'emerald_pickaxe', cost: { emerald: 10, diamond: 15, gold: 20 }, consumes: 'diamond_pickaxe', replaces: 'diamond_pickaxe', points: 800 },
+    { id: 'emerald_sword', cost: { emerald: 10, diamond: 15, wood: 60 }, consumes: 'diamond_sword', replaces: 'diamond_sword', points: 800 },
+    { id: 'stone_wall', cost: { emerald: 1, stone: 30 }, points: 100 },
     { id: 'campfire', cost: { wood: 15, stone: 5 }, points: 25 },
     { id: 'coat1', cost: { wool: 5, tiger_pelt: 5, needle: 1 }, unique: true, points: 100 },
     { id: 'torch', cost: { wood: 5, stone: 1 }, points: 25 },
@@ -421,4 +433,8 @@ export const ITEM_META: Record<ItemId, ItemMeta> = {
   fishing_rod: { stackable: false, usable: true, held: true },
   torch: { stackable: false, held: true },
   bone: { stackable: true, usable: true, held: true },
+  emerald: { stackable: true },
+  emerald_pickaxe: { stackable: false, tool: 'emerald_pickaxe' },
+  emerald_sword: { stackable: false, weapon: 'emerald_sword' },
+  stone_wall: { stackable: true, placeable: true },
 };

@@ -11,6 +11,7 @@ export function resourceCapacity(kind: ResourceKind, size: Size, cfg: GameConfig
   if (kind === 'apple_tree') return cfg.resources.appleYield[size];
   if (kind === 'gold_rock') return cfg.resources.goldCapacity[size];
   if (kind === 'diamond_rock') return cfg.resources.diamondCapacity[size];
+  if (kind === 'emerald_rock') return cfg.resources.emeraldCapacity[size];
   if (kind === 'berry_bush') return cfg.resources.berryYield;
   return cfg.resources.capacity[size];
 }
@@ -82,6 +83,8 @@ function yieldFor(kind: ResourceKind, tool: ToolClass, cfg: GameConfig): { item:
       return { item: 'gold', perHit: cfg.resources.goldPerHit[tool] };
     case 'diamond_rock':
       return { item: 'diamond', perHit: cfg.resources.diamondPerHit[tool] };
+    case 'emerald_rock':
+      return { item: 'emerald', perHit: cfg.resources.emeraldPerHit[tool] };
     case 'apple_tree':
       return { item: 'apple', perHit: Number.POSITIVE_INFINITY };
     case 'berry_bush':
