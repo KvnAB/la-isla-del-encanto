@@ -37,6 +37,8 @@ export interface CreatureDef {
   nightRaid?: number;
   /** Objeto que la doma al usarlo apuntándola de cerca (queda con `owner`). */
   tameWith?: ItemId;
+  /** Nombre por defecto al domarla ("Puma 1", "Puma 2"…). */
+  petName?: string;
 }
 
 export interface GameConfig {
@@ -121,7 +123,19 @@ export interface GameConfig {
     defs: Record<CreatureKind, CreatureDef>;
   };
   /** Criaturas domadas: puntos por domar, distancia a la que siguen al dueño, radio alrededor del dueño que vigilan, vida al domar y curación por segundo mientras no pelean. */
-  taming: { points: number; followDist: number; guardRadius: number; hp: number; regenPerSec: number };
+  taming: {
+    points: number;
+    followDist: number;
+    guardRadius: number;
+    hp: number;
+    regenPerSec: number;
+    /** Curación por segundo dormida. */
+    sleepRegenPerSec: number;
+    /** Viniendo al dueño, si no avanza durante este tiempo aparece a su lado. */
+    callStuckSeconds: number;
+    /** Letras máximas del nombre. */
+    nameMaxLength: number;
+  };
   /** Montar criaturas domadas: distancia (centro a centro) para subirse, velocidad andando y corriendo, y factor de frío montado. */
   riding: { mountDist: number; walkSpeed: number; runSpeed: number; coldMult: number };
   /** Cada `killsPerSlot` muertes de `creature` dan una casilla más al inventario, hasta `maxSlots`. */
@@ -321,6 +335,7 @@ export const DEFAULT_CONFIG: GameConfig = {
         initialCount: 2, // (*)
         biome: 'grass',
         tameWith: 'bone',
+        petName: 'Puma',
       },
       skeleton: {
         hp: 20,
@@ -338,7 +353,7 @@ export const DEFAULT_CONFIG: GameConfig = {
       },
     },
   },
-  taming: { points: 150, followDist: 90, guardRadius: 350, hp: 120, regenPerSec: 2 }, // (*) domado aguanta 10 mordiscos de tigre y se cura solo
+  taming: { points: 150, followDist: 90, guardRadius: 350, hp: 120, regenPerSec: 2, sleepRegenPerSec: 10, callStuckSeconds: 5, nameMaxLength: 16 }, // (*) domado aguanta 10 mordiscos de tigre y se cura solo
   slotReward: { creature: 'penguin', killsPerSlot: 3, maxSlots: 20 }, // 12 casillas de salida + 8 = 24 pingüinos
   riding: { mountDist: 70, walkSpeed: 160, runSpeed: 300, coldMult: 0.5 }, // (*) corriendo es lo más rápido del juego; el puma abriga como un abrigo 1
   weaponDamage: { fist: 1, wood_sword: 2, stone_sword: 3, gold_sword: 4, diamond_sword: 6 }, // (*) oro: tigre 8, oveja 5, duende 2; diamante: tigre 5, oso 10

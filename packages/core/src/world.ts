@@ -5,7 +5,7 @@ import { placeCampfire, stepCampfires } from './systems/campfire.js';
 import { dropSlot, useSelectedSlot } from './systems/consume.js';
 import { craft } from './systems/crafting.js';
 import { startFishing, stepFishing } from './systems/fishing.js';
-import { hitCreature, onDawn, onNightfall, spawnInitialCreatures, stepCreatures, stepRespawns, tameCreature, toggleMount } from './systems/creatures.js';
+import { hitCreature, onDawn, onNightfall, petCall, petRename, petSleep, spawnInitialCreatures, stepCreatures, stepRespawns, tameCreature, toggleMount } from './systems/creatures.js';
 import { stepDayCycle } from './systems/daycycle.js';
 import { stepGroundItems, tryPickup } from './systems/ground.js';
 import { resolveHit } from './systems/hit.js';
@@ -208,6 +208,15 @@ export class World {
         break;
       case 'run':
         p.running = cmd.on;
+        break;
+      case 'rename':
+        petRename(this.state, p, cmd.entityId, cmd.name, this.cfg, this.events);
+        break;
+      case 'petSleep':
+        petSleep(this.state, p, cmd.entityId);
+        break;
+      case 'petCall':
+        petCall(this.state, p, cmd.entityId);
         break;
       default:
         break;

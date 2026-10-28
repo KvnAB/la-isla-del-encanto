@@ -12,7 +12,7 @@ import { weaponClassOf } from './resources.js';
 
 function makeCreature(state: WorldState, kind: CreatureKind, x: number, y: number, cfg: GameConfig): CreatureState {
   const def = cfg.creatures.defs[kind];
-  return { id: nextId(state), kind, x, y, angle: 0, radius: def.radius, hp: def.hp, mode: 'wander', targetX: x, targetY: y, attackCooldown: 0, wanderTimer: 0, raid: false, owner: null };
+  return { id: nextId(state), kind, x, y, angle: 0, radius: def.radius, hp: def.hp, mode: 'wander', targetX: x, targetY: y, attackCooldown: 0, wanderTimer: 0, raid: false, owner: null, name: '', stuckFor: 0 };
 }
 
 function fitsOnLand(state: WorldState, x: number, y: number, r: number): boolean {
@@ -186,6 +186,8 @@ export function tameCreature(state: WorldState, p: PlayerState, cfg: GameConfig,
   c.mode = 'follow';
   c.hp = cfg.taming.hp;
   c.attackCooldown = 0;
+  const n = state.creatures.filter((o) => o.owner === p.id && o.kind === c.kind).length;
+  c.name = `${cfg.creatures.defs[c.kind].petName ?? 'Mascota'} ${n}`;
   p.points += cfg.taming.points;
   events.push({ type: 'creatureTamed', playerId: p.id, entityId: c.id, kind: c.kind });
   state.respawnQueue.push({ kind: c.kind, at: state.time + cfg.creatures.respawnSeconds });
@@ -220,10 +222,40 @@ export function toggleMount(state: WorldState, p: PlayerState, cfg: GameConfig, 
   }
   const c = mountable(state, p, cfg);
   if (!c) return;
+  if (c.mode === 'sleep' || c.mode === 'come') c.mode = 'follow'; // montar la despierta
   p.mount = c.id;
   p.x = c.x;
   p.y = c.y;
   events.push({ type: 'mounted', playerId: p.id, entityId: c.id });
+}
+
+function ownPet(state: WorldState, p: PlayerState, entityId: number): CreatureState | null {
+  const c = state.creatures.find((o) => o.id === entityId);
+  return c && c.owner === p.id ? c : null;
+}
+
+/** Nombre recortado a `taming.nameMaxLength`; vacío no cambia nada. */
+export function petRename(state: WorldState, p: PlayerState, entityId: number, name: string, cfg: GameConfig, events: GameEvent[]): void {
+  const c = ownPet(state, p, entityId);
+  const clean = name.trim().slice(0, cfg.taming.nameMaxLength);
+  if (!c || !clean) return;
+  c.name = clean;
+  events.push({ type: 'petRenamed', playerId: p.id, entityId: c.id, name: clean });
+}
+
+/** Se duerme donde está: no sigue, no caza, nadie la muerde y se cura rápido. No montada. */
+export function petSleep(state: WorldState, p: PlayerState, entityId: number): void {
+  const c = ownPet(state, p, entityId);
+  if (!c || p.mount === c.id) return;
+  c.mode = 'sleep';
+}
+
+/** La despierta y viene corriendo al dueño (`come`), sin distraerse con presas. */
+export function petCall(state: WorldState, p: PlayerState, entityId: number): void {
+  const c = ownPet(state, p, entityId);
+  if (!c || p.mount === c.id) return;
+  c.mode = 'come';
+  c.stuckFor = 0;
 }
 
 /** Al caer la noche: por cada criatura con `nightRaid`, una manada cerca del jugador (en cualquier bioma). */
@@ -268,7 +300,8 @@ function nearestTarget(state: WorldState, c: CreatureState): { t: Target; d: num
   };
   // un jugador montado no es objetivo: los mordiscos se los lleva su montura (que sí lo es)
   for (const p of state.players) if (p.alive && p.mount === null) consider({ x: p.x, y: p.y, radius: p.radius, player: p, pet: null });
-  for (const o of state.creatures) if (o !== c && o.owner !== null) consider({ x: o.x, y: o.y, radius: o.radius, player: null, pet: o });
+  // una mascota dormida no es objetivo (nadie puede hacerle daño)
+  for (const o of state.creatures) if (o !== c && o.owner !== null && o.mode !== 'sleep') consider({ x: o.x, y: o.y, radius: o.radius, player: null, pet: o });
   return best ? { t: best, d: bestD } : null;
 }
 
@@ -337,6 +370,27 @@ function stepPet(state: WorldState, c: CreatureState, cfg: GameConfig, dt: numbe
   if (!owner) {
     c.mode = 'wander';
     wanderStep(state, c, def.speed, dt, rng, solids);
+    return;
+  }
+  if (c.mode === 'sleep') {
+    c.hp = Math.min(cfg.taming.hp, c.hp + cfg.taming.sleepRegenPerSec * dt);
+    return;
+  }
+  if (c.mode === 'come') {
+    if (dist(c.x, c.y, owner.x, owner.y) <= cfg.taming.followDist) {
+      c.mode = 'follow';
+      return;
+    }
+    const before = { x: c.x, y: c.y };
+    moveToward(state, c, owner.x, owner.y, cfg.riding.runSpeed, dt, solids);
+    c.stuckFor = dist(before.x, before.y, c.x, c.y) < 0.5 ? c.stuckFor + dt : 0;
+    if (c.stuckFor >= cfg.taming.callStuckSeconds) {
+      // agua o mar por medio: aparece junto al dueño
+      c.x = owner.x;
+      c.y = owner.y;
+      c.stuckFor = 0;
+      c.mode = 'follow';
+    }
     return;
   }
   let target: CreatureState | null = null;

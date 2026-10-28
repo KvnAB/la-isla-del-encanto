@@ -61,6 +61,8 @@ export function putCreature(world: World, kind: CreatureKind, x: number, y: numb
     wanderTimer: 0,
     raid: false,
     owner: null,
+    name: '',
+    stuckFor: 0,
   };
   s.creatures.push(c);
   return c;

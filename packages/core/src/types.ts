@@ -59,6 +59,10 @@ export type Command = { playerId: EntityId } & (
   | { type: 'mount' }
   /** Correr (solo cambia algo montado). */
   | { type: 'run'; on: boolean }
+  /** Órdenes a una criatura domada propia: renombrar, dormir (invulnerable, se cura rápido) o llamar (viene corriendo). */
+  | { type: 'rename'; entityId: EntityId; name: string }
+  | { type: 'petSleep'; entityId: EntityId }
+  | { type: 'petCall'; entityId: EntityId }
 );
 
 export type GameEvent =
@@ -79,6 +83,7 @@ export type GameEvent =
   | { type: 'slotProgress'; playerId: EntityId; kills: number; needed: number }
   /** El inventario ganó una casilla; `slots` es el total nuevo. */
   | { type: 'slotUnlocked'; playerId: EntityId; slots: number }
+  | { type: 'petRenamed'; playerId: EntityId; entityId: EntityId; name: string }
   | { type: 'mounted'; playerId: EntityId; entityId: EntityId }
   | { type: 'dismounted'; playerId: EntityId }
   /** Murió una criatura domada de `playerId` (sin botín ni reaparición). */
@@ -152,8 +157,11 @@ export interface ResourceState {
   brokenAt: number | null;
 }
 
-/** `follow`, `hunt` y `ride` son solo de criaturas domadas: seguir al dueño, perseguir a una criatura o llevar al dueño encima. */
-export type CreatureMode = 'wander' | 'chase' | 'flee' | 'attack' | 'follow' | 'hunt' | 'ride';
+/**
+ * Solo de criaturas domadas: `follow` sigue al dueño, `hunt` persigue a una criatura, `ride` lleva al dueño encima,
+ * `sleep` duerme donde está (invulnerable, se cura rápido) y `come` viene corriendo al dueño tras llamarla.
+ */
+export type CreatureMode = 'wander' | 'chase' | 'flee' | 'attack' | 'follow' | 'hunt' | 'ride' | 'sleep' | 'come';
 
 export interface CreatureState {
   id: EntityId;
@@ -172,6 +180,10 @@ export interface CreatureState {
   raid: boolean;
   /** Jugador que la domó; null si es salvaje. */
   owner: EntityId | null;
+  /** Nombre que le puso el dueño (vacío si es salvaje). */
+  name: string;
+  /** Segundos sin avanzar mientras viene al dueño (`come`); pasado `taming.callStuckSeconds` aparece a su lado. */
+  stuckFor: number;
 }
 
 export interface GroundItemState {
