@@ -6,7 +6,7 @@
 /* Arriba izquierda: recetas como iconos cuadrados; nombre y coste aparecen al pasar el ratón */
 .hud-craft {
   position: absolute;
-  top: 16px;
+  top: 60px; /* debajo del botón del libro de recetas */
   left: 16px;
   display: grid;
   grid-template-columns: repeat(3, 56px);
@@ -17,7 +17,6 @@
   position: absolute;
   top: 16px;
   left: 16px;
-  transform: translateY(calc(56px * 2 + 8px * 2 + 12px));
   padding: 6px 12px;
   border-radius: 10px;
   border: 2px solid rgba(255, 255, 255, 0.35);
@@ -31,7 +30,7 @@
 
 .hud-book {
   position: absolute;
-  top: 16px;
+  top: 60px;
   left: 220px;
   display: grid;
   grid-template-columns: 180px 220px;
