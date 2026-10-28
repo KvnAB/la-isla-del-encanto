@@ -152,3 +152,15 @@ describe('montar y correr', () => {
     expect(input.drain()).toContainEqual({ playerId: 1, type: 'run', on: false });
   });
 });
+
+describe('escribiendo en un cuadro de texto', () => {
+  it('las teclas no mueven ni cambian de slot', () => {
+    const box = document.createElement('input');
+    document.body.appendChild(box);
+    box.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyW', bubbles: true }));
+    box.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit3', bubbles: true }));
+    box.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE', bubbles: true }));
+    expect(input.drain()).toEqual([]);
+    box.remove();
+  });
+});

@@ -338,6 +338,117 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
+.hud-pets {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pet-card {
+  display: grid;
+  grid-template-columns: auto 64px auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: rgba(10, 16, 24, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 13px;
+  pointer-events: auto;
+}
+
+.pet-name {
+  border: 0;
+  background: none;
+  color: #ffd34d;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.pet-name:hover {
+  text-decoration: underline;
+}
+
+.pet-hp {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.pet-hp-fill {
+  height: 100%;
+  background: #e04040;
+  border-radius: 4px;
+}
+
+.pet-state {
+  color: var(--hud-muted);
+  min-width: 64px;
+}
+
+.pet-sleep {
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.pet-sleep:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.hud-name {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: rgba(10, 16, 24, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  pointer-events: auto;
+}
+
+.hud-name-label {
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.hud-name-input {
+  font: inherit;
+  font-size: 18px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.hud-name-ok {
+  font: inherit;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 0;
+  background: #ffd34d;
+  color: #2b1708;
+  cursor: pointer;
+}
+
 .hud-slots {
   --slot-size: 58px;
   display: grid;

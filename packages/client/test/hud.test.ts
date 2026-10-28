@@ -13,6 +13,7 @@ import { Hud } from '../src/ui/hud';
 let root: HTMLElement;
 let onCraft: ReturnType<typeof vi.fn>;
 let onSelect: ReturnType<typeof vi.fn>;
+let onPet: ReturnType<typeof vi.fn>;
 let hud: Hud;
 let state: WorldState;
 let p: PlayerState;
@@ -22,7 +23,8 @@ beforeEach(() => {
   root = document.getElementById('root')!;
   onCraft = vi.fn();
   onSelect = vi.fn();
-  hud = new Hud(root, DEFAULT_CONFIG, onCraft, onSelect);
+  onPet = vi.fn();
+  hud = new Hud(root, DEFAULT_CONFIG, onCraft, onSelect, onPet);
   const w = new World(1);
   const id = w.addPlayer('Ana', 'wood_pickaxe');
   state = w.getState();
@@ -168,7 +170,7 @@ describe('Hud: montar', () => {
   const prompt = () => root.querySelector<HTMLElement>('.hud-prompt');
   const puma = (dx: number) => {
     const def = DEFAULT_CONFIG.creatures.defs.puma;
-    const c = { id: 900, kind: 'puma' as const, x: p.x + dx, y: p.y, angle: 0, radius: def.radius, hp: def.hp, mode: 'follow' as const, targetX: 0, targetY: 0, attackCooldown: 0, wanderTimer: 0, raid: false, owner: p.id };
+    const c = { id: 900, kind: 'puma' as const, x: p.x + dx, y: p.y, angle: 0, radius: def.radius, hp: def.hp, mode: 'follow' as const, targetX: 0, targetY: 0, attackCooldown: 0, wanderTimer: 0, raid: false, owner: p.id, name: 'Puma 1', stuckFor: 0 };
     state.creatures.push(c);
     return c;
   };
@@ -189,5 +191,61 @@ describe('Hud: montar', () => {
     p.mount = c.id;
     hud.update(p, state, []);
     expect(prompt()?.textContent).toBe('E · Bajar');
+  });
+});
+
+describe('Hud: fichas de mascotas', () => {
+  const tamed = (id: number, name: string, mode: 'follow' | 'sleep' | 'hunt' | 'come' | 'ride', hp = 120) => {
+    const def = DEFAULT_CONFIG.creatures.defs.puma;
+    state.creatures.push({ id, kind: 'puma', x: p.x + 500, y: p.y, angle: 0, radius: def.radius, hp, mode, targetX: 0, targetY: 0, attackCooldown: 0, wanderTimer: 0, raid: false, owner: p.id, name, stuckFor: 0 });
+  };
+
+  it('lista los pumas domados con nombre, vida y estado; los salvajes y ajenos no', () => {
+    tamed(901, 'Canela', 'follow', 60);
+    tamed(902, 'Trueno', 'sleep');
+    state.creatures.push({ ...state.creatures[0], id: 903, owner: 777, name: 'Ajeno' });
+    state.creatures.push({ ...state.creatures[0], id: 904, owner: null, name: '' });
+    hud.update(p, state, []);
+    const cards = root.querySelectorAll('.pet-card');
+    expect(cards).toHaveLength(2);
+    expect(cards[0].querySelector('.pet-name')?.textContent).toBe('Canela');
+    expect(cards[0].querySelector('.pet-state')?.textContent).toBe('Te sigue');
+    expect((cards[0].querySelector('.pet-hp-fill') as HTMLElement).style.width).toBe('50%');
+    expect(cards[1].querySelector('.pet-state')?.textContent).toBe('Durmiendo');
+    expect(cards[1].querySelector('.pet-sleep')?.textContent).toBe('Despertar');
+    expect(cards[0].querySelector('.pet-sleep')?.textContent).toBe('Dormir');
+  });
+
+  it('el nombre llama al puma y el botón lo duerme o lo despierta', () => {
+    tamed(901, 'Canela', 'follow');
+    tamed(902, 'Trueno', 'sleep');
+    hud.update(p, state, []);
+    const cards = root.querySelectorAll('.pet-card');
+    (cards[0].querySelector('.pet-name') as HTMLElement).click();
+    expect(onPet).toHaveBeenLastCalledWith({ type: 'petCall', entityId: 901 });
+    (cards[0].querySelector('.pet-sleep') as HTMLElement).click();
+    expect(onPet).toHaveBeenLastCalledWith({ type: 'petSleep', entityId: 901 });
+    (cards[1].querySelector('.pet-sleep') as HTMLElement).click();
+    expect(onPet).toHaveBeenLastCalledWith({ type: 'petCall', entityId: 902 });
+  });
+
+  it('al domar aparece el cuadro del nombre y al enviarlo manda rename', () => {
+    tamed(901, 'Puma 1', 'follow');
+    hud.onEvents([{ type: 'creatureTamed', playerId: p.id, entityId: 901, kind: 'puma' }]);
+    const form = root.querySelector<HTMLFormElement>('.hud-name');
+    expect(form).not.toBeNull();
+    const input = form!.querySelector<HTMLInputElement>('input')!;
+    input.value = 'Canela';
+    form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    expect(onPet).toHaveBeenLastCalledWith({ type: 'rename', entityId: 901, name: 'Canela' });
+    expect(root.querySelector('.hud-name')).toBeNull();
+  });
+
+  it('el cuadro del nombre se cierra sin renombrar con Escape', () => {
+    hud.onEvents([{ type: 'creatureTamed', playerId: p.id, entityId: 901, kind: 'puma' }]);
+    const input = root.querySelector<HTMLInputElement>('.hud-name input')!;
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(root.querySelector('.hud-name')).toBeNull();
+    expect(onPet).not.toHaveBeenCalled();
   });
 });

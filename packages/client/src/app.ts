@@ -81,6 +81,7 @@ export class App {
         const item = session.world.player(session.playerId).inventory[i]?.item;
         if (item && ITEM_META[item].equippable) session.world.enqueue({ playerId: session.playerId, type: 'useSlot' });
       },
+      (c) => session.world.enqueue({ playerId: session.playerId, ...c }),
     );
 
     const input = new InputController(renderer.app.canvas, {

@@ -1,4 +1,4 @@
-import type { CreatureKind, DeathCause, ItemId } from '@draycol/core';
+import type { CreatureKind, CreatureMode, DeathCause, ItemId } from '@draycol/core';
 
 export const ITEM_NAMES: Record<ItemId, string> = {
   wood: 'Madera',
@@ -31,6 +31,19 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   fishing_rod: 'Caña de pescar',
   torch: 'Antorcha',
   bone: 'Hueso',
+};
+
+/** Qué hace una criatura domada, para su ficha del HUD. */
+export const PET_STATE: Record<CreatureMode, string> = {
+  wander: 'Perdido',
+  chase: 'Perdido',
+  flee: 'Perdido',
+  attack: 'Perdido',
+  follow: 'Te sigue',
+  hunt: 'Cazando',
+  ride: 'Montado',
+  sleep: 'Durmiendo',
+  come: 'Viene',
 };
 
 export const CREATURE_NAMES: Record<CreatureKind, string> = {

@@ -1,4 +1,4 @@
-import { Application, Container, Graphics } from 'pixi.js';
+import { Application, Container, Graphics, Text } from 'pixi.js';
 import { resourceAvailable, resourceCapacity, terrainAt, type GameConfig, type GameEvent, type IslandMap, type ResourceState, type WorldState } from '@draycol/core';
 import { Camera } from './camera';
 import { FloatingNumbers } from './floating';
@@ -55,6 +55,9 @@ interface SimpleView {
   shadow: Graphics;
   /** Criaturas: el dibujo cambia al domarla (collar), así que se rehace. */
   tamed?: boolean;
+  /** Criaturas domadas: nombre bajo el cuerpo. */
+  label?: Text;
+  labelText?: string;
 }
 
 function lerpAngle(a: number, b: number, t: number): number {
@@ -361,14 +364,42 @@ export class Renderer {
       v.sprite.position.set(x, y);
       v.sprite.rotation = pc ? lerpAngle(pc.angle, c.angle, alpha) : c.angle;
       v.sprite.zIndex = y;
+      v.sprite.alpha = c.mode === 'sleep' ? 0.75 : 1; // dormida se atenúa
+      this.syncCreatureLabel(v, c, x, y);
       v.shadow.position.set(x, y + 4);
     }
     for (const [id, v] of this.creatures)
       if (!seen.has(id)) {
         v.sprite.destroy();
         v.shadow.destroy();
+        v.label?.destroy();
         this.creatures.delete(id);
       }
+  }
+
+  /** Nombre de la criatura domada debajo de ella (sin rotar con el cuerpo); se crea o actualiza solo cuando cambia. */
+  private syncCreatureLabel(v: SimpleView, c: WorldState['creatures'][number], x: number, y: number): void {
+    const text = c.owner !== null ? (c.mode === 'sleep' ? `${c.name} zz` : c.name) : '';
+    if (!text) {
+      if (v.label) {
+        v.label.destroy();
+        v.label = undefined;
+        v.labelText = undefined;
+      }
+      return;
+    }
+    if (!v.label) {
+      v.label = new Text({ text, style: { fontFamily: 'Nunito, sans-serif', fontSize: 13, fontWeight: '800', fill: 0xffd34d, stroke: { color: 0x1a1208, width: 3 } } });
+      v.label.anchor.set(0.5, 0);
+      v.label.resolution = 2;
+      this.layers.entities.addChild(v.label);
+    }
+    if (v.labelText !== text) {
+      v.labelText = text;
+      v.label.text = text;
+    }
+    v.label.position.set(x, y + c.radius + 10);
+    v.label.zIndex = y;
   }
 
   private syncGroundItems(state: WorldState): void {

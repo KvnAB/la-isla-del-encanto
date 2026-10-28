@@ -1,6 +1,12 @@
 import type { Command } from '@draycol/core';
 
-type CommandBody = Command extends infer C ? (C extends { playerId: number } ? Omit<C, 'playerId'> : never) : never;
+export type CommandBody = Command extends infer C ? (C extends { playerId: number } ? Omit<C, 'playerId'> : never) : never;
+
+/** Escribiendo en un cuadro de texto (nombre del puma) las teclas no son del juego. */
+function typing(e: Event): boolean {
+  const t = e.target as HTMLElement | null;
+  return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
+}
 
 export interface InputOptions {
   getPlayerId: () => number;
@@ -68,7 +74,7 @@ export class InputController {
   }
 
   private readonly onKeyDown = (e: KeyboardEvent): void => {
-    if (e.repeat) return;
+    if (e.repeat || typing(e)) return;
     if (e.code in MOVE_KEYS) {
       this.down.add(e.code);
       this.emitMove();
@@ -86,6 +92,7 @@ export class InputController {
   };
 
   private readonly onKeyUp = (e: KeyboardEvent): void => {
+    if (typing(e)) return;
     if (e.code in MOVE_KEYS) {
       this.down.delete(e.code);
       this.emitMove();

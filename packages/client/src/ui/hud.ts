@@ -1,8 +1,9 @@
-import { ITEM_META, mountable, type GameConfig, type GameEvent, type ItemId, type PlayerState, type WorldState } from '@draycol/core';
+import { ITEM_META, mountable, type CreatureState, type GameConfig, type GameEvent, type ItemId, type PlayerState, type WorldState } from '@draycol/core';
+import type { CommandBody } from '../game/input';
 import './hud.css';
 import { SLOT_KEY_LABELS } from '../game/input';
 import { itemIconDataUrl } from './icons';
-import { formatClock, formatPoints, ITEM_NAMES, ITEM_NAMES_LOWER } from './names';
+import { formatClock, formatPoints, ITEM_NAMES, ITEM_NAMES_LOWER, PET_STATE } from './names';
 import { Minimap } from './minimap';
 
 type BarKey = 'health' | 'hunger' | 'thirst' | 'warmth';
@@ -48,6 +49,11 @@ export class Hud {
   /** "E · Montar" / "E · Bajar" encima de las barras. */
   private readonly prompt: HTMLElement;
   private lastPrompt = '';
+  /** Fichas de las criaturas domadas, debajo de las casillas. */
+  private readonly petsBox: HTMLElement;
+  private lastPets = '';
+  /** Cuadro para ponerle nombre a la criatura recién domada. */
+  private nameForm: HTMLFormElement | null = null;
   readonly minimap = new Minimap();
   private last = { day: -1, points: -1, isNight: false, clock: '' };
 
@@ -56,6 +62,8 @@ export class Hud {
     private readonly cfg: GameConfig,
     private readonly onCraft: (id: ItemId) => void,
     private readonly onSelectSlot: (i: number) => void,
+    /** Órdenes a las mascotas desde las fichas: llamar, dormir, renombrar. */
+    private readonly onPet: (c: CommandBody) => void = () => {},
   ) {
     this.root = el('div', 'hud layer');
 
@@ -113,7 +121,8 @@ export class Hud {
       slotsRow.appendChild(s);
       this.slots.push({ el: s, img, count, lastItem: null, lastCount: -1, lastSelected: false });
     }
-    bottom.append(barsRow, slotsRow);
+    this.petsBox = el('div', 'hud-pets');
+    bottom.append(barsRow, slotsRow, this.petsBox);
     this.root.appendChild(bottom);
 
     parent.appendChild(this.root);
@@ -199,6 +208,8 @@ export class Hud {
       }
     }
 
+    this.updatePets(p, state);
+
     if (this.last.day !== state.day) {
       this.last.day = state.day;
       this.dayEl.textContent = `DÍA ${state.day}`;
@@ -220,9 +231,72 @@ export class Hud {
     }
   }
 
-  /** Eventos del paso: carteles de amanecer, anochecer y casilla nueva. */
+  /** Una ficha por criatura domada del jugador: nombre (clic: la llama), vida, estado y botón dormir/despertar. Solo se rehace si cambia algo. */
+  private updatePets(p: PlayerState, state: WorldState): void {
+    const pets = state.creatures.filter((c) => c.owner === p.id);
+    const key = pets.map((c) => `${c.id}:${c.name}:${c.mode}:${Math.round(c.hp)}`).join('|');
+    if (key === this.lastPets) return;
+    this.lastPets = key;
+    this.petsBox.replaceChildren(...pets.map((c) => this.petCard(c)));
+  }
+
+  private petCard(c: CreatureState): HTMLElement {
+    const card = el('div', 'pet-card');
+    const name = el('button', 'pet-name', c.name);
+    name.type = 'button';
+    name.title = 'Llamarlo: viene corriendo hacia ti';
+    name.addEventListener('click', () => this.onPet({ type: 'petCall', entityId: c.id }));
+    const hp = el('div', 'pet-hp');
+    const fill = el('div', 'pet-hp-fill');
+    fill.style.width = `${Math.round((100 * c.hp) / this.cfg.taming.hp)}%`;
+    hp.appendChild(fill);
+    const state = el('div', 'pet-state', PET_STATE[c.mode]);
+    const sleeping = c.mode === 'sleep';
+    const sleep = el('button', 'pet-sleep', sleeping ? 'Despertar' : 'Dormir');
+    sleep.type = 'button';
+    sleep.title = sleeping ? 'Se despierta y viene hacia ti' : 'Se queda dormido donde está: nadie le hace daño y se cura rápido';
+    sleep.disabled = c.mode === 'ride';
+    sleep.addEventListener('click', () => this.onPet(sleeping ? { type: 'petCall', entityId: c.id } : { type: 'petSleep', entityId: c.id }));
+    card.append(name, hp, state, sleep);
+    return card;
+  }
+
+  /** Cuadro con un campo de texto para nombrar la criatura recién domada; Enter guarda, Escape cierra. */
+  private askName(entityId: number): void {
+    this.closeName();
+    const form = el('form', 'hud-name');
+    const label = el('label', 'hud-name-label', '¿Cómo se llama tu puma?');
+    const input = el('input', 'hud-name-input');
+    input.type = 'text';
+    input.maxLength = this.cfg.taming.nameMaxLength;
+    input.placeholder = 'Nombre';
+    input.autocomplete = 'off';
+    const ok = el('button', 'hud-name-ok', 'Guardar');
+    ok.type = 'submit';
+    form.append(label, input, ok);
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = input.value.trim();
+      if (name) this.onPet({ type: 'rename', entityId, name });
+      this.closeName();
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.closeName();
+    });
+    this.root.appendChild(form);
+    this.nameForm = form;
+    input.focus();
+  }
+
+  private closeName(): void {
+    this.nameForm?.remove();
+    this.nameForm = null;
+  }
+
+  /** Eventos del paso: carteles de amanecer, anochecer y casilla nueva; cuadro del nombre al domar. */
   onEvents(events: GameEvent[]): void {
     for (const e of events) {
+      if (e.type === 'creatureTamed') this.askName(e.entityId);
       if (e.type === 'dayPassed') this.showBanner(`DÍA ${e.day + 1}`);
       else if (e.type === 'nightFell') this.showBanner('CAE LA NOCHE');
       else if (e.type === 'slotUnlocked') this.showBanner(`¡CASILLA NUEVA! ${e.slots} de ${this.cfg.slotReward.maxSlots}`);
@@ -246,6 +320,7 @@ export class Hud {
 
   destroy(): void {
     if (this.bannerTimer) clearTimeout(this.bannerTimer);
+    this.closeName();
     this.root.remove();
   }
 }

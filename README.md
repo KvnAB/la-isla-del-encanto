@@ -96,6 +96,8 @@ Todos los números del juego están en **`packages/core/src/config.ts`** (`DEFAU
 
 **Montar**: `config.riding` (distancia para montar, velocidad andando/corriendo, factor de frío). `toggleMount` y `mountable` en `systems/creatures.ts`; la montura lleva al jinete en `stepPet` (modos `ride` y `hunt`). Montado, el núcleo ignora `hit` y `craft`, y `useSelectedSlot` solo deja comer y beber; los bichos muerden a la montura, no al jinete.
 
+**Mascotas con nombre**: al domar, `tameCreature` pone `name` ("Puma 1"…, `CreatureDef.petName`) y el HUD abre el cuadro del nombre (`askName`, comando `rename`). Debajo de las casillas hay una ficha por mascota (`updatePets`): el nombre la llama (`petCall`: modo `come`, corre a `riding.runSpeed`; si no avanza `taming.callStuckSeconds` aparece al lado) y el botón la duerme o despierta (`petSleep`: modo `sleep`, invulnerable, se cura `taming.sleepRegenPerSec`). El renderer pinta el nombre bajo la criatura (`syncCreatureLabel`).
+
 **Casillas del inventario**: se empieza con `player.inventorySlots` (12) y cada `slotReward.killsPerSlot` (3) pingüinos matados dan una más hasta `slotReward.maxSlots` (20). El HUD crea todas las posibles y oculta las que faltan; las 13–20 no tienen tecla (rueda o clic).
 
 **Una receta nueva**: añadir una entrada en `config.recipes` (coste, `consumes`/`replaces` si sustituye a otra herramienta, `unique` si solo se puede tener una, puntos). El botón de fabricar aparece solo.
