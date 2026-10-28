@@ -27,12 +27,13 @@ export type ItemId =
   | 'canteen'
   | 'canteen_full'
   | 'fishing_rod'
-  | 'torch';
+  | 'torch'
+  | 'bone';
 
 export type Size = 'small' | 'medium' | 'large';
 /** `gold_rock` solo da oro con pico de piedra o mejor; `diamond_rock` (solo en nieve) solo con pico de oro o mejor. */
 export type ResourceKind = 'tree' | 'apple_tree' | 'rock' | 'gold_rock' | 'diamond_rock' | 'berry_bush';
-export type CreatureKind = 'tiger' | 'sheep' | 'goblin' | 'wolf' | 'polar_bear' | 'penguin';
+export type CreatureKind = 'tiger' | 'sheep' | 'goblin' | 'wolf' | 'polar_bear' | 'penguin' | 'puma' | 'skeleton';
 /** `water` son ríos y lagos (caminable, nadando). `sea` es el borde infranqueable. */
 export type Terrain = 'sea' | 'land' | 'sand' | 'water' | 'snow';
 /** Bioma de una celda firme: nieve o hierba (todo lo demás). */
@@ -66,6 +67,12 @@ export type GameEvent =
   | { type: 'creatureDied'; playerId: EntityId; entityId: EntityId; kind: CreatureKind }
   | { type: 'creatureSpawned'; entityId: EntityId; kind: CreatureKind }
   | { type: 'creatureDespawned'; entityId: EntityId; kind: CreatureKind }
+  /** El jugador domó una criatura (ahora `owner` es él). */
+  | { type: 'creatureTamed'; playerId: EntityId; entityId: EntityId; kind: CreatureKind }
+  /** Una criatura domada mordió a otra; `playerId` es su dueño. */
+  | { type: 'petHit'; playerId: EntityId; entityId: EntityId; amount: number }
+  /** Murió una criatura domada de `playerId` (sin botín ni reaparición). */
+  | { type: 'petDied'; playerId: EntityId; entityId: EntityId; kind: CreatureKind }
   | { type: 'crafted'; playerId: EntityId; recipeId: ItemId }
   | { type: 'campfirePlaced'; playerId: EntityId; entityId: EntityId }
   | { type: 'cooked'; playerId: EntityId }
@@ -129,7 +136,8 @@ export interface ResourceState {
   brokenAt: number | null;
 }
 
-export type CreatureMode = 'wander' | 'chase' | 'flee' | 'attack';
+/** `follow` y `hunt` son solo de criaturas domadas: seguir al dueño o perseguir a una criatura. */
+export type CreatureMode = 'wander' | 'chase' | 'flee' | 'attack' | 'follow' | 'hunt';
 
 export interface CreatureState {
   id: EntityId;
@@ -146,6 +154,8 @@ export interface CreatureState {
   wanderTimer: number;
   /** Miembro de una manada nocturna: desaparece al amanecer y no reaparece. */
   raid: boolean;
+  /** Jugador que la domó; null si es salvaje. */
+  owner: EntityId | null;
 }
 
 export interface GroundItemState {

@@ -17,7 +17,7 @@ export function inArc(p: PlayerState, t: HitTarget, cfg: GameConfig): boolean {
   return Math.abs(angleDiff(p.angle, angleTo(p.x, p.y, t.x, t.y))) <= cfg.player.hitArc / 2;
 }
 
-function nearest<T extends HitTarget>(p: PlayerState, list: T[], pred: (t: T) => boolean): T | null {
+export function nearest<T extends HitTarget>(p: PlayerState, list: T[], pred: (t: T) => boolean): T | null {
   let best: T | null = null;
   let bestD = Infinity;
   for (const t of list) {
@@ -50,7 +50,8 @@ export function resolveHit(state: WorldState, p: PlayerState, cfg: GameConfig, e
   const g = nearest(p, groundTargets, (t) => inReach(p, t, cfg));
   if (g && hooks.pickup && hooks.pickup(p, g.ref)) return;
 
-  const c = nearest(p, state.creatures, (t) => inReach(p, t, cfg) && inArc(p, t, cfg));
+  // las criaturas domadas no se golpean: el golpe pasa al recurso que haya detrás
+  const c = nearest(p, state.creatures, (t) => t.owner === null && inReach(p, t, cfg) && inArc(p, t, cfg));
   if (c && hooks.creature) {
     hooks.creature(p, c);
     return;

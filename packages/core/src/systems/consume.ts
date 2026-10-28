@@ -1,5 +1,5 @@
 import { ITEM_META, type GameConfig } from '../config.js';
-import type { GameEvent, PlayerState, Slot, WorldState } from '../types.js';
+import type { GameEvent, ItemId, PlayerState, Slot, WorldState } from '../types.js';
 import { clamp } from '../vec.js';
 import { aimedAtWater } from './fishing.js';
 import { dropToGround } from './ground.js';
@@ -8,9 +8,11 @@ import { removeItem } from './inventory.js';
 export interface UseHooks {
   placeCampfire?: (state: WorldState, p: PlayerState) => void;
   fish?: (state: WorldState, p: PlayerState) => void;
+  /** Devuelve true si domó a una criatura con el objeto seleccionado. */
+  tame?: (state: WorldState, p: PlayerState) => boolean;
 }
 
-/** Usa el slot seleccionado: comida → comer; fogata → colocar; abrigo → poner/quitar; cantimplora → llenar/beber; caña → pescar; herramientas → nada. */
+/** Usa el slot seleccionado: comida → comer; fogata → colocar; abrigo → poner/quitar; cantimplora → llenar/beber; caña → pescar; hueso → domar; herramientas → nada. */
 export function useSelectedSlot(state: WorldState, p: PlayerState, cfg: GameConfig, events: GameEvent[], hooks: UseHooks = {}): void {
   const slot = p.inventory[p.selectedSlot];
   if (!slot) return;
@@ -41,7 +43,16 @@ export function useSelectedSlot(state: WorldState, p: PlayerState, cfg: GameConf
     if (hooks.fish) hooks.fish(state, p);
     return;
   }
+  if (isTamingItem(slot.item, cfg)) {
+    if (hooks.tame) hooks.tame(state, p);
+    return;
+  }
   if (hooks.placeCampfire) hooks.placeCampfire(state, p);
+}
+
+/** Algún tipo de criatura se doma con este objeto. */
+export function isTamingItem(item: ItemId, cfg: GameConfig): boolean {
+  return Object.values(cfg.creatures.defs).some((d) => d.tameWith === item);
 }
 
 /**

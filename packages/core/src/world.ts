@@ -5,7 +5,7 @@ import { placeCampfire, stepCampfires } from './systems/campfire.js';
 import { dropSlot, useSelectedSlot } from './systems/consume.js';
 import { craft } from './systems/crafting.js';
 import { startFishing, stepFishing } from './systems/fishing.js';
-import { hitCreature, onDawn, onNightfall, spawnInitialCreatures, stepCreatures, stepRespawns } from './systems/creatures.js';
+import { hitCreature, onDawn, onNightfall, spawnInitialCreatures, stepCreatures, stepRespawns, tameCreature } from './systems/creatures.js';
 import { stepDayCycle } from './systems/daycycle.js';
 import { stepGroundItems, tryPickup } from './systems/ground.js';
 import { resolveHit } from './systems/hit.js';
@@ -187,6 +187,7 @@ export class World {
         useSelectedSlot(this.state, p, this.cfg, this.events, {
           placeCampfire: (st, pl) => placeCampfire(st, pl, this.cfg, this.events),
           fish: (st, pl) => startFishing(st, pl, this.cfg, this.events),
+          tame: (st, pl) => tameCreature(st, pl, this.cfg, this.events),
         });
         break;
       case 'dropSlot':

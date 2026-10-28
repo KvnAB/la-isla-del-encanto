@@ -1,16 +1,18 @@
 import type { GameConfig } from '../config.js';
 import { nextId } from '../entities.js';
-import { biomeAt, findLandSpot, isGround, terrainAt } from '../island.js';
+import { findLandSpot, isGround, terrainAt } from '../island.js';
 import type { Rng } from '../rng.js';
 import type { CreatureKind, CreatureState, GameEvent, PlayerState, WorldState } from '../types.js';
 import { angleTo, dist, norm } from '../vec.js';
 import { dropToGround } from './ground.js';
+import { inArc, inReach, nearest } from './hit.js';
+import { removeItem } from './inventory.js';
 import { moveCircle, resourceSolids, type Solid } from './movement.js';
 import { weaponClassOf } from './resources.js';
 
 function makeCreature(state: WorldState, kind: CreatureKind, x: number, y: number, cfg: GameConfig): CreatureState {
   const def = cfg.creatures.defs[kind];
-  return { id: nextId(state), kind, x, y, angle: 0, radius: def.radius, hp: def.hp, mode: 'wander', targetX: x, targetY: y, attackCooldown: 0, wanderTimer: 0, raid: false };
+  return { id: nextId(state), kind, x, y, angle: 0, radius: def.radius, hp: def.hp, mode: 'wander', targetX: x, targetY: y, attackCooldown: 0, wanderTimer: 0, raid: false, owner: null };
 }
 
 function fitsOnLand(state: WorldState, x: number, y: number, r: number): boolean {
@@ -117,25 +119,59 @@ function knockback(state: WorldState, cfg: GameConfig, body: { x: number; y: num
   body.y = ny;
 }
 
+/**
+ * Quita una criatura muerta del mundo. Salvaje: suelta el botín (con `max`, cantidad al azar), da sus puntos
+ * a `killer` y, si no es de manada, se encola su reaparición. Domada: solo avisa a su dueño con `petDied`.
+ */
+export function killCreature(state: WorldState, c: CreatureState, cfg: GameConfig, rng: Rng, events: GameEvent[], killer: PlayerState | null): void {
+  const i = state.creatures.indexOf(c);
+  if (i !== -1) state.creatures.splice(i, 1);
+  if (c.owner !== null) {
+    events.push({ type: 'petDied', playerId: c.owner, entityId: c.id, kind: c.kind });
+    return;
+  }
+  const def = cfg.creatures.defs[c.kind];
+  def.loot.forEach((l, k) => {
+    const a = (k / Math.max(1, def.loot.length)) * Math.PI * 2 + rng.next() * 0.5;
+    const d = def.loot.length > 1 ? 18 : 0;
+    const count = l.max !== undefined ? rng.int(l.count, l.max) : l.count;
+    dropToGround(state, l.item, count, c.x + Math.cos(a) * d, c.y + Math.sin(a) * d, cfg);
+  });
+  if (killer) {
+    killer.points += def.points;
+    events.push({ type: 'creatureDied', playerId: killer.id, entityId: c.id, kind: c.kind });
+  }
+  if (!c.raid) state.respawnQueue.push({ kind: c.kind, at: state.time + cfg.creatures.respawnSeconds });
+}
+
 export function hitCreature(state: WorldState, p: PlayerState, c: CreatureState, cfg: GameConfig, rng: Rng, events: GameEvent[]): void {
+  if (c.owner !== null) return; // a las domadas no se les pega
   const weapon = weaponClassOf(p.inventory[p.selectedSlot]);
   const amount = cfg.weaponDamage[weapon];
   c.hp -= amount;
   knockback(state, cfg, c, p, cfg.combat.creatureKnockback, false);
   events.push({ type: 'creatureHit', playerId: p.id, entityId: c.id, amount });
-  if (c.hp > 0) return;
+  if (c.hp <= 0) killCreature(state, c, cfg, rng, events, p);
+}
 
-  const def = cfg.creatures.defs[c.kind];
-  const i = state.creatures.indexOf(c);
-  if (i !== -1) state.creatures.splice(i, 1);
-  def.loot.forEach((l, k) => {
-    const a = (k / Math.max(1, def.loot.length)) * Math.PI * 2 + rng.next() * 0.5;
-    const d = def.loot.length > 1 ? 18 : 0;
-    dropToGround(state, l.item, l.count, c.x + Math.cos(a) * d, c.y + Math.sin(a) * d, cfg);
-  });
-  p.points += def.points;
-  events.push({ type: 'creatureDied', playerId: p.id, entityId: c.id, kind: c.kind });
-  if (!c.raid) state.respawnQueue.push({ kind: c.kind, at: state.time + cfg.creatures.respawnSeconds });
+/**
+ * Doma la criatura salvaje más cercana al alcance y en arco cuyo `tameWith` sea el objeto seleccionado:
+ * gasta una unidad, la criatura pasa a seguir al jugador, suma `taming.points` y se encola una salvaje nueva
+ * (así la isla no se queda sin ellas). Devuelve false si no había ninguna.
+ */
+export function tameCreature(state: WorldState, p: PlayerState, cfg: GameConfig, events: GameEvent[]): boolean {
+  const slot = p.inventory[p.selectedSlot];
+  if (!slot) return false;
+  const c = nearest(p, state.creatures, (t) => t.owner === null && cfg.creatures.defs[t.kind].tameWith === slot.item && inReach(p, t, cfg) && inArc(p, t, cfg));
+  if (!c) return false;
+  removeItem(p.inventory, slot.item, 1);
+  c.owner = p.id;
+  c.mode = 'follow';
+  c.attackCooldown = 0;
+  p.points += cfg.taming.points;
+  events.push({ type: 'creatureTamed', playerId: p.id, entityId: c.id, kind: c.kind });
+  state.respawnQueue.push({ kind: c.kind, at: state.time + cfg.creatures.respawnSeconds });
+  return true;
 }
 
 /** Al caer la noche: por cada criatura con `nightRaid`, una manada cerca del jugador (en cualquier bioma). */
@@ -159,18 +195,28 @@ export function onDawn(state: WorldState, events: GameEvent[]): void {
   }
 }
 
-function nearestPlayer(state: WorldState, c: CreatureState): { p: PlayerState; d: number } | null {
-  let best: PlayerState | null = null;
+/** Lo que una criatura salvaje puede perseguir y morder: un jugador vivo o una criatura domada. */
+interface Target {
+  x: number;
+  y: number;
+  radius: number;
+  player: PlayerState | null;
+  pet: CreatureState | null;
+}
+
+function nearestTarget(state: WorldState, c: CreatureState): { t: Target; d: number } | null {
+  let best: Target | null = null;
   let bestD = Infinity;
-  for (const p of state.players) {
-    if (!p.alive) continue;
-    const d = dist(c.x, c.y, p.x, p.y);
+  const consider = (t: Target) => {
+    const d = dist(c.x, c.y, t.x, t.y);
     if (d < bestD) {
       bestD = d;
-      best = p;
+      best = t;
     }
-  }
-  return best ? { p: best, d: bestD } : null;
+  };
+  for (const p of state.players) if (p.alive) consider({ x: p.x, y: p.y, radius: p.radius, player: p, pet: null });
+  for (const o of state.creatures) if (o !== c && o.owner !== null) consider({ x: o.x, y: o.y, radius: o.radius, player: null, pet: o });
+  return best ? { t: best, d: bestD } : null;
 }
 
 function pickWanderTarget(state: WorldState, c: CreatureState, rng: Rng): void {
@@ -203,13 +249,80 @@ function moveToward(state: WorldState, c: CreatureState, tx: number, ty: number,
   c.y = ny;
 }
 
+function wanderStep(state: WorldState, c: CreatureState, speed: number, dt: number, rng: Rng, solids: Solid[]): void {
+  c.wanderTimer -= dt;
+  if (c.wanderTimer <= 0) {
+    c.wanderTimer = 2 + rng.next() * 3;
+    pickWanderTarget(state, c, rng);
+  }
+  if (dist(c.x, c.y, c.targetX, c.targetY) > 4) moveToward(state, c, c.targetX, c.targetY, speed * 0.5, dt, solids);
+}
+
+/** Muerde a una criatura domada; si muere, desaparece sin botín. */
+function biteCreature(state: WorldState, pet: CreatureState, amount: number, cfg: GameConfig, rng: Rng, events: GameEvent[]): void {
+  pet.hp -= amount;
+  if (pet.hp <= 0) killCreature(state, pet, cfg, rng, events, null);
+}
+
+/**
+ * Criatura domada: `hunt` a la criatura salvaje agresiva más cercana a menos de `taming.guardRadius` del dueño
+ * (el dueño cobra botín y puntos si la mata); si no hay, `follow` al dueño hasta `taming.followDist`.
+ * Pasa por debajo del jugador (no lo trata como sólido) para no quedarse atascada tras él.
+ * Sin dueño vivo, pasea.
+ */
+function stepPet(state: WorldState, c: CreatureState, cfg: GameConfig, dt: number, rng: Rng, events: GameEvent[], solids: Solid[]): void {
+  const def = cfg.creatures.defs[c.kind];
+  const owner = state.players.find((p) => p.id === c.owner && p.alive);
+  if (!owner) {
+    c.mode = 'wander';
+    wanderStep(state, c, def.speed, dt, rng, solids);
+    return;
+  }
+  let target: CreatureState | null = null;
+  let bestD = Infinity;
+  for (const o of state.creatures) {
+    if (o === c || o.owner !== null || !cfg.creatures.defs[o.kind].aggressive) continue;
+    if (dist(owner.x, owner.y, o.x, o.y) > cfg.taming.guardRadius) continue;
+    const d = dist(c.x, c.y, o.x, o.y);
+    if (d < bestD) {
+      bestD = d;
+      target = o;
+    }
+  }
+  if (target) {
+    c.mode = 'hunt';
+    const range = c.radius + target.radius + 8;
+    if (bestD > range) {
+      moveToward(state, c, target.x, target.y, def.speed, dt, solids);
+      return;
+    }
+    c.angle = angleTo(c.x, c.y, target.x, target.y);
+    if (c.attackCooldown <= 0 && def.damage > 0) {
+      target.hp -= def.damage;
+      c.attackCooldown = def.attackCooldown;
+      events.push({ type: 'petHit', playerId: owner.id, entityId: target.id, amount: def.damage });
+      if (target.hp <= 0) killCreature(state, target, cfg, rng, events, owner);
+    }
+    return;
+  }
+  c.mode = 'follow';
+  if (dist(c.x, c.y, owner.x, owner.y) > cfg.taming.followDist) moveToward(state, c, owner.x, owner.y, def.speed, dt, solids);
+}
+
 export function stepCreatures(state: WorldState, cfg: GameConfig, dt: number, rng: Rng, events: GameEvent[]): void {
-  const solids: Solid[] = [...resourceSolids(state, cfg), ...state.players.filter((p) => p.alive)];
-  for (const c of state.creatures) {
+  const resourceOnly = resourceSolids(state, cfg);
+  const solids: Solid[] = [...resourceOnly, ...state.players.filter((p) => p.alive)];
+  // copia: una criatura puede morir (y salir de la lista) durante el paso de otra
+  for (const c of [...state.creatures]) {
+    if (!state.creatures.includes(c)) continue;
     const def = cfg.creatures.defs[c.kind];
     if (c.attackCooldown > 0) c.attackCooldown = Math.max(0, c.attackCooldown - dt);
-    const near = nearestPlayer(state, c);
-    const attackRange = near ? c.radius + near.p.radius + 8 : 0;
+    if (c.owner !== null) {
+      stepPet(state, c, cfg, dt, rng, events, resourceOnly);
+      continue;
+    }
+    const near = nearestTarget(state, c);
+    const attackRange = near ? c.radius + near.t.radius + 8 : 0;
 
     switch (c.mode) {
       case 'wander': {
@@ -221,12 +334,7 @@ export function stepCreatures(state: WorldState, cfg: GameConfig, dt: number, rn
           c.mode = 'flee';
           break;
         }
-        c.wanderTimer -= dt;
-        if (c.wanderTimer <= 0) {
-          c.wanderTimer = 2 + rng.next() * 3;
-          pickWanderTarget(state, c, rng);
-        }
-        if (dist(c.x, c.y, c.targetX, c.targetY) > 4) moveToward(state, c, c.targetX, c.targetY, def.speed * 0.5, dt, solids);
+        wanderStep(state, c, def.speed, dt, rng, solids);
         break;
       }
       case 'chase': {
@@ -238,7 +346,7 @@ export function stepCreatures(state: WorldState, cfg: GameConfig, dt: number, rn
           c.mode = 'attack';
           break;
         }
-        moveToward(state, c, near.p.x, near.p.y, def.speed, dt, solids);
+        moveToward(state, c, near.t.x, near.t.y, def.speed, dt, solids);
         break;
       }
       case 'attack': {
@@ -250,15 +358,20 @@ export function stepCreatures(state: WorldState, cfg: GameConfig, dt: number, rn
           c.mode = 'chase';
           break;
         }
-        c.angle = angleTo(c.x, c.y, near.p.x, near.p.y);
+        c.angle = angleTo(c.x, c.y, near.t.x, near.t.y);
         if (c.attackCooldown <= 0 && def.damage > 0) {
-          near.p.health -= def.damage;
-          near.p.noRegenUntil = state.time + cfg.vitals.regenDelayAfterDamage;
-          near.p.lastHitBy = c.kind;
-          near.p.lastHitAt = state.time;
-          knockback(state, cfg, near.p, c, cfg.combat.playerKnockback, true);
           c.attackCooldown = def.attackCooldown;
-          events.push({ type: 'playerDamaged', playerId: near.p.id, amount: def.damage, byEntityId: c.id });
+          if (near.t.player) {
+            const p = near.t.player;
+            p.health -= def.damage;
+            p.noRegenUntil = state.time + cfg.vitals.regenDelayAfterDamage;
+            p.lastHitBy = c.kind;
+            p.lastHitAt = state.time;
+            knockback(state, cfg, p, c, cfg.combat.playerKnockback, true);
+            events.push({ type: 'playerDamaged', playerId: p.id, amount: def.damage, byEntityId: c.id });
+          } else if (near.t.pet) {
+            biteCreature(state, near.t.pet, def.damage, cfg, rng, events);
+          }
         }
         break;
       }
@@ -267,17 +380,21 @@ export function stepCreatures(state: WorldState, cfg: GameConfig, dt: number, rn
           c.mode = 'wander';
           break;
         }
-        const ax = c.x + (c.x - near.p.x);
-        const ay = c.y + (c.y - near.p.y);
+        const ax = c.x + (c.x - near.t.x);
+        const ay = c.y + (c.y - near.t.y);
         const before = { x: c.x, y: c.y };
         moveToward(state, c, ax, ay, def.speed, dt, solids);
         // bloqueado contra agua/mar: intentar un desvío lateral
         if (dist(before.x, before.y, c.x, c.y) < 1e-3) {
-          const a = angleTo(near.p.x, near.p.y, c.x, c.y) + (rng.next() < 0.5 ? 1 : -1) * Math.PI * 0.5;
+          const a = angleTo(near.t.x, near.t.y, c.x, c.y) + (rng.next() < 0.5 ? 1 : -1) * Math.PI * 0.5;
           moveToward(state, c, c.x + Math.cos(a) * 100, c.y + Math.sin(a) * 100, def.speed, dt, solids);
         }
         break;
       }
+      default:
+        // `follow`/`hunt` solo tienen sentido domada; si perdió el dueño vuelve a pasear
+        c.mode = 'wander';
+        break;
     }
   }
 }

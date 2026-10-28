@@ -24,7 +24,8 @@ export interface CreatureDef {
   aggroRadius: number;
   fleeRadius: number;
   attackCooldown: number;
-  loot: { item: ItemId; count: number }[];
+  /** `max`: la cantidad se sortea entre `count` y `max` (ambos incluidos). */
+  loot: { item: ItemId; count: number; max?: number }[];
   points: number;
   aggressive: boolean;
   initialCount: number;
@@ -34,6 +35,8 @@ export interface CreatureDef {
   packSize?: number;
   /** Cuántos aparecen cerca del jugador al caer la noche (manada nocturna). */
   nightRaid?: number;
+  /** Objeto que la doma al usarlo apuntándola de cerca (queda con `owner`). */
+  tameWith?: ItemId;
 }
 
 export interface GameConfig {
@@ -117,6 +120,8 @@ export interface GameConfig {
     nightRaidFromDay: number;
     defs: Record<CreatureKind, CreatureDef>;
   };
+  /** Criaturas domadas: puntos por domar, distancia a la que siguen al dueño y radio alrededor del dueño que vigilan. */
+  taming: { points: number; followDist: number; guardRadius: number };
   weaponDamage: Record<WeaponClass, number>;
   recipes: RecipeDef[];
   points: { gatherPerUnit: number; cook: number; dayPassed: number };
@@ -298,8 +303,38 @@ export const DEFAULT_CONFIG: GameConfig = {
         initialCount: 4, // (*)
         biome: 'snow',
       },
+      puma: {
+        hp: 35,
+        damage: 12, // (*) mata en 9
+        speed: 210, // (*) más rápido que el lobo, casi como el jugador
+        radius: 28, // (*)
+        aggroRadius: 380, // (*)
+        fleeRadius: 0,
+        attackCooldown: 1, // (*)
+        loot: [{ item: 'raw_steak', count: 1 }],
+        points: 120,
+        aggressive: true,
+        initialCount: 2, // (*)
+        biome: 'grass',
+        tameWith: 'bone',
+      },
+      skeleton: {
+        hp: 20,
+        damage: 8, // (*) mata en 13
+        speed: 160, // (*) más lento que el jugador
+        radius: 24, // (*)
+        aggroRadius: 300, // (*)
+        fleeRadius: 0,
+        attackCooldown: 1, // (*)
+        loot: [{ item: 'bone', count: 1, max: 2 }],
+        points: 70,
+        aggressive: true,
+        initialCount: 3, // (*)
+        biome: 'grass',
+      },
     },
   },
+  taming: { points: 150, followDist: 90, guardRadius: 350 }, // (*)
   weaponDamage: { fist: 1, wood_sword: 2, stone_sword: 3, gold_sword: 4, diamond_sword: 6 }, // (*) oro: tigre 8, oveja 5, duende 2; diamante: tigre 5, oso 10
   recipes: [
     { id: 'wood_pickaxe', cost: { wood: 10 }, points: 25 },
@@ -364,4 +399,5 @@ export const ITEM_META: Record<ItemId, ItemMeta> = {
   canteen_full: { stackable: false, usable: true, held: true },
   fishing_rod: { stackable: false, usable: true, held: true },
   torch: { stackable: false, held: true },
+  bone: { stackable: true, usable: true, held: true },
 };
