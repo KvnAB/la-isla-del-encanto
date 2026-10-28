@@ -166,14 +166,14 @@ describe('spawnResources', () => {
     const world = new World(1);
     const s = world.getState();
     expect(s.resources.length).toBe(339);
-    const kinds = { tree: 0, apple_tree: 0, rock: 0, gold_rock: 0, diamond_rock: 0, berry_bush: 0 };
+    const kinds = { tree: 0, apple_tree: 0, rock: 0, gold_rock: 0, diamond_rock: 0, emerald_rock: 0, berry_bush: 0 };
     for (const r of s.resources) {
       kinds[r.kind]++;
       expect(['land', 'sand', 'snow']).toContain(terrainAt(s.map, r.x, r.y));
       expect(Math.hypot(r.x - s.map.spawnX, r.y - s.map.spawnY)).toBeGreaterThanOrEqual(200);
       expect(r.remaining).toBe(resourceCapacity(r.kind, r.size, DEFAULT_CONFIG));
     }
-    expect(kinds).toEqual({ tree: 135, apple_tree: 40, rock: 90, gold_rock: 30, diamond_rock: 8, berry_bush: 30 });
+    expect(kinds).toEqual({ tree: 135, apple_tree: 40, rock: 90, gold_rock: 30, diamond_rock: 8, emerald_rock: 6, berry_bush: 30 });
     for (let i = 0; i < s.resources.length; i++)
       for (let j = i + 1; j < s.resources.length; j++) {
         const a = s.resources[i];
