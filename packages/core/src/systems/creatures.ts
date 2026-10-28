@@ -140,8 +140,23 @@ export function killCreature(state: WorldState, c: CreatureState, cfg: GameConfi
   if (killer) {
     killer.points += def.points;
     events.push({ type: 'creatureDied', playerId: killer.id, entityId: c.id, kind: c.kind });
+    rewardSlot(killer, c.kind, cfg, events);
   }
   if (!c.raid) state.respawnQueue.push({ kind: c.kind, at: state.time + cfg.creatures.respawnSeconds });
+}
+
+/** Cada `slotReward.killsPerSlot` muertes de la criatura premiada, una casilla más (hasta `maxSlots`). */
+function rewardSlot(p: PlayerState, kind: CreatureKind, cfg: GameConfig, events: GameEvent[]): void {
+  const r = cfg.slotReward;
+  if (kind !== r.creature || p.inventory.length >= r.maxSlots) return;
+  p.slotKills += 1;
+  if (p.slotKills < r.killsPerSlot) {
+    events.push({ type: 'slotProgress', playerId: p.id, kills: p.slotKills, needed: r.killsPerSlot });
+    return;
+  }
+  p.slotKills = 0;
+  p.inventory.push(null);
+  events.push({ type: 'slotUnlocked', playerId: p.id, slots: p.inventory.length });
 }
 
 export function hitCreature(state: WorldState, p: PlayerState, c: CreatureState, cfg: GameConfig, rng: Rng, events: GameEvent[]): void {
@@ -341,7 +356,8 @@ export function stepCreatures(state: WorldState, cfg: GameConfig, dt: number, rn
         break;
       }
       case 'chase': {
-        if (!near || near.d > def.aggroRadius * 1.5) {
+        // la manada nocturna nace a 500–800 px, más allá de aggro×1,5: no abandona la persecución por distancia
+        if (!near || (near.d > def.aggroRadius * 1.5 && !c.raid)) {
           c.mode = 'wander';
           break;
         }

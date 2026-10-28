@@ -36,6 +36,9 @@ export class Hud {
   private banner: HTMLElement | null = null;
   private bannerTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly slots: { el: HTMLElement; img: HTMLImageElement; count: HTMLElement; lastItem: ItemId | null; lastCount: number; lastSelected: boolean }[] = [];
+  private readonly slotsRow: HTMLElement;
+  /** Casillas visibles la última vez (el inventario crece al matar pingüinos). */
+  private lastSlotCount = -1;
   private readonly craftBox: HTMLElement;
   private lastRecipes = '';
   private readonly dayEl: HTMLElement;
@@ -88,9 +91,10 @@ export class Hud {
       barsRow.appendChild(bar);
       this.bars.set(b.key, { el: bar, fill, label, last: -1, low: false });
     }
+    // se crean todas las casillas posibles; las que el jugador aún no tiene van ocultas
     const slotsRow = el('div', 'hud-slots');
-    slotsRow.style.gridTemplateColumns = `repeat(${cfg.player.inventorySlots}, var(--slot-size))`;
-    for (let i = 0; i < cfg.player.inventorySlots; i++) {
+    this.slotsRow = slotsRow;
+    for (let i = 0; i < cfg.slotReward.maxSlots; i++) {
       const s = el('div', 'slot');
       const idx = el('span', 'slot-index', SLOT_KEY_LABELS[i] ?? String(i + 1));
       const img = el('img', 'slot-icon');
@@ -110,6 +114,12 @@ export class Hud {
   }
 
   update(p: PlayerState, state: WorldState, recipes: ItemId[]): void {
+    if (p.inventory.length !== this.lastSlotCount) {
+      this.lastSlotCount = p.inventory.length;
+      this.slotsRow.style.gridTemplateColumns = `repeat(${p.inventory.length}, var(--slot-size))`;
+      this.slotsRow.classList.toggle('many', p.inventory.length > 14);
+      this.slots.forEach((s, i) => (s.el.hidden = i >= p.inventory.length));
+    }
     for (const b of BARS) {
       const v = Math.round(p[b.key]);
       const entry = this.bars.get(b.key)!;
@@ -198,11 +208,12 @@ export class Hud {
     }
   }
 
-  /** Eventos del paso: carteles de amanecer y anochecer. */
+  /** Eventos del paso: carteles de amanecer, anochecer y casilla nueva. */
   onEvents(events: GameEvent[]): void {
     for (const e of events) {
       if (e.type === 'dayPassed') this.showBanner(`DÍA ${e.day + 1}`);
       else if (e.type === 'nightFell') this.showBanner('CAE LA NOCHE');
+      else if (e.type === 'slotUnlocked') this.showBanner(`¡CASILLA NUEVA! ${e.slots} de ${this.cfg.slotReward.maxSlots}`);
     }
   }
 

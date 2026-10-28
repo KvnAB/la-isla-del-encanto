@@ -9,7 +9,7 @@ beforeEach(() => {
   el = document.createElement('div');
   document.body.appendChild(el);
   selected = 2;
-  input = new InputController(el, { getPlayerId: () => 1, getSelectedSlot: () => selected, slotCount: 12, aimAngle: (mx, my) => Math.atan2(my, mx) });
+  input = new InputController(el, { getPlayerId: () => 1, getSelectedSlot: () => selected, slotCount: () => 12, aimAngle: (mx, my) => Math.atan2(my, mx) });
   input.attach();
 });
 afterEach(() => {
@@ -115,5 +115,20 @@ describe('InputController', () => {
     key('keydown', 'KeyW');
     expect(input.drain()).toEqual([]);
     input.attach();
+  });
+});
+
+describe('rueda con inventario que crece', () => {
+  it('la rueda da la vuelta según el número de casillas actual', () => {
+    const el2 = document.createElement('div');
+    let count = 12;
+    const inp = new InputController(el2, { getPlayerId: () => 1, getSelectedSlot: () => 11, slotCount: () => count, aimAngle: () => 0 });
+    inp.attach();
+    el2.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true }));
+    expect(inp.drain()).toContainEqual({ playerId: 1, type: 'selectSlot', slot: 0 });
+    count = 13;
+    el2.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true }));
+    expect(inp.drain()).toContainEqual({ playerId: 1, type: 'selectSlot', slot: 12 });
+    inp.detach();
   });
 });

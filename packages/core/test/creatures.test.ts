@@ -188,7 +188,7 @@ describe('colisiones entre criaturas y jugador', () => {
 });
 
 describe('aparición y reaparición', () => {
-  it('spawnInitialCreatures crea 3 tigres, 4 ovejas, 3 duendes, 2 lobos, 3 osos, 4 pingüinos, 2 pumas y 3 esqueletos en tierra lejos del spawn', () => {
+  it('spawnInitialCreatures crea 3 tigres, 4 ovejas, 3 duendes, 2 lobos, 3 osos, 6 pingüinos, 2 pumas y 3 esqueletos en tierra lejos del spawn', () => {
     const world = new World(1);
     const s = world.getState();
     const counts = { tiger: 0, sheep: 0, goblin: 0, wolf: 0, polar_bear: 0, penguin: 0, puma: 0, skeleton: 0 };
@@ -197,7 +197,7 @@ describe('aparición y reaparición', () => {
       expect(['land', 'sand', 'snow']).toContain(terrainAt(s.map, c.x, c.y));
       expect(Math.hypot(c.x - s.map.spawnX, c.y - s.map.spawnY)).toBeGreaterThanOrEqual(600);
     }
-    expect(counts).toEqual({ tiger: 3, sheep: 4, goblin: 3, wolf: 2, polar_bear: 3, penguin: 4, puma: 2, skeleton: 3 });
+    expect(counts).toEqual({ tiger: 3, sheep: 4, goblin: 3, wolf: 2, polar_bear: 3, penguin: 6, puma: 2, skeleton: 3 });
   });
 
   it('un tigre muerto reaparece a los 45 s lejos del jugador', () => {

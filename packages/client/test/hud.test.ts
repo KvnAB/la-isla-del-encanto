@@ -49,7 +49,8 @@ describe('Hud', () => {
     p.selectedSlot = 1;
     hud.update(p, state, []);
     const slots = root.querySelectorAll('.slot');
-    expect(slots).toHaveLength(12);
+    expect(slots).toHaveLength(20); // todas las posibles, pero solo 12 visibles
+    expect([...slots].filter((el) => !(el as HTMLElement).hidden)).toHaveLength(12);
     expect(slots[9].querySelector('.slot-index')?.textContent).toBe('0');
     expect(slots[11].querySelector('.slot-index')?.textContent).toBe('=');
     expect(slots[1].classList.contains('selected')).toBe(true);
@@ -142,5 +143,23 @@ describe('Hud: hueso', () => {
     hud.update(p, state, []);
     const slot = root.querySelectorAll('.slot')[1];
     expect(slot.querySelector<HTMLImageElement>('img')?.title).toBe('Hueso · úsalo apuntando a un puma para domarlo');
+  });
+});
+
+describe('Hud: casillas ganadas con pingüinos', () => {
+  it('muestra solo las casillas que tiene el jugador y crece cuando gana una', () => {
+    hud.update(p, state, []);
+    const visible = () => [...root.querySelectorAll('.slot')].filter((s) => !(s as HTMLElement).hidden).length;
+    expect(visible()).toBe(12);
+    p.inventory.push(null);
+    hud.update(p, state, []);
+    expect(visible()).toBe(13);
+    const slots = root.querySelectorAll('.slot');
+    expect(slots[12].querySelector('.slot-index')?.textContent).toBe('13');
+  });
+
+  it('el cartel avisa de la casilla nueva', () => {
+    hud.onEvents([{ type: 'slotUnlocked', playerId: p.id, slots: 13 }]);
+    expect(root.querySelector('.hud-banner')?.textContent).toBe('¡CASILLA NUEVA! 13 de 20');
   });
 });

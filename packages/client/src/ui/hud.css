@@ -332,6 +332,17 @@
   gap: 6px;
 }
 
+/* casillas que el jugador aún no ha ganado */
+.slot[hidden] {
+  display: none;
+}
+
+/* con más de 14 casillas (ganadas con pingüinos) se encogen para caber */
+.hud-slots.many {
+  --slot-size: 46px;
+  gap: 4px;
+}
+
 .slot {
   position: relative;
   width: var(--slot-size);

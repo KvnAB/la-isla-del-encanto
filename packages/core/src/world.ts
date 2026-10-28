@@ -76,6 +76,7 @@ export class World {
       lastHitBy: null,
       lastHitAt: -1000,
       fishingUntil: 0,
+      slotKills: 0,
     });
     return id;
   }

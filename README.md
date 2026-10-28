@@ -92,6 +92,8 @@ Todos los números del juego están en **`packages/core/src/config.ts`** (`DEFAU
 
 **Un recurso nuevo** (como la roca de oro): id en `ResourceKind`, radio, cantidad y colisión en `config.resources` (y, si solo sale en un bioma o siempre del mismo tamaño, `resources.biome` / `resources.fixedSize`), qué da y con qué herramienta en `yieldFor` (`systems/resources.ts`) y su dibujo en `makeResourceVector` (`vector-resources.ts`, que recibe `snowy` si está sobre nieve) más su marcador en `ui/minimap.ts`.
 
+**Casillas del inventario**: se empieza con `player.inventorySlots` (12) y cada `slotReward.killsPerSlot` (3) pingüinos matados dan una más hasta `slotReward.maxSlots` (20). El HUD crea todas las posibles y oculta las que faltan; las 13–20 no tienen tecla (rueda o clic).
+
 **Una receta nueva**: añadir una entrada en `config.recipes` (coste, `consumes`/`replaces` si sustituye a otra herramienta, `unique` si solo se puede tener una, puntos). El botón de fabricar aparece solo.
 
 **Una criatura nueva**

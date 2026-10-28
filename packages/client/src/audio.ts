@@ -111,6 +111,12 @@ export class GameAudio {
         case 'creatureTamed':
           if (e.playerId === localPlayerId) this.play('tame', () => this.blip([523, 659, 784, 1047], 0.09));
           break;
+        case 'slotProgress':
+          if (e.playerId === localPlayerId) this.play('slotstep', () => this.blip([659, 784], 0.07));
+          break;
+        case 'slotUnlocked':
+          if (e.playerId === localPlayerId) this.play('slot', () => this.blip([523, 659, 784, 1047, 1319], 0.08));
+          break;
         case 'petDied':
           if (e.playerId === localPlayerId) this.play('petdie', () => this.thud(60, 0.5));
           break;

@@ -173,6 +173,12 @@ export class Renderer {
       } else if (e.type === 'creatureTamed' && e.playerId === localPlayerId) {
         const target = this.creatures.get(e.entityId)?.sprite;
         if (target) this.floating.spawn(target.x, target.y - 40, '¡Domado!', PET_COLOR);
+      } else if (e.type === 'slotProgress' && e.playerId === localPlayerId) {
+        const me = this.players.get(e.playerId)?.view;
+        if (me) this.floating.spawn(me.x, me.y - me.r - 24, `Pingüino ${e.kills}/${e.needed}`, PET_COLOR);
+      } else if (e.type === 'slotUnlocked' && e.playerId === localPlayerId) {
+        const me = this.players.get(e.playerId)?.view;
+        if (me) this.floating.spawn(me.x, me.y - me.r - 24, '+1 casilla', PET_COLOR);
       } else if (e.type === 'petDied' && e.playerId === localPlayerId) {
         const me = this.players.get(e.playerId)?.view;
         if (me) this.floating.spawn(me.x, me.y - me.r - 24, 'Tu puma ha muerto', DAMAGE_COLOR);

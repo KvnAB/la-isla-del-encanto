@@ -71,6 +71,10 @@ export type GameEvent =
   | { type: 'creatureTamed'; playerId: EntityId; entityId: EntityId; kind: CreatureKind }
   /** Una criatura domada mordió a otra; `playerId` es su dueño. */
   | { type: 'petHit'; playerId: EntityId; entityId: EntityId; amount: number }
+  /** Progreso hacia la siguiente casilla del inventario (`kills` de `needed`). */
+  | { type: 'slotProgress'; playerId: EntityId; kills: number; needed: number }
+  /** El inventario ganó una casilla; `slots` es el total nuevo. */
+  | { type: 'slotUnlocked'; playerId: EntityId; slots: number }
   /** Murió una criatura domada de `playerId` (sin botín ni reaparición). */
   | { type: 'petDied'; playerId: EntityId; entityId: EntityId; kind: CreatureKind }
   | { type: 'crafted'; playerId: EntityId; recipeId: ItemId }
@@ -123,6 +127,8 @@ export interface PlayerState {
   lastHitAt: number;
   /** Instante en que sale el pez (0 = no está pescando). */
   fishingUntil: number;
+  /** Pingüinos matados desde la última casilla ganada (ver `config.slotReward`). */
+  slotKills: number;
 }
 
 export interface ResourceState {

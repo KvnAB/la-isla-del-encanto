@@ -86,7 +86,7 @@ export class App {
     const input = new InputController(renderer.app.canvas, {
       getPlayerId: () => session.playerId,
       getSelectedSlot: () => session.world.player(session.playerId).selectedSlot,
-      slotCount: DEFAULT_CONFIG.player.inventorySlots,
+      slotCount: () => session.world.player(session.playerId).inventory.length,
       aimAngle: (mx, my) => {
         const p = session.world.player(session.playerId);
         return renderer.toWorldAngle(p.x, p.y, mx, my);

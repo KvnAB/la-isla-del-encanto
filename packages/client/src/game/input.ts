@@ -5,8 +5,8 @@ type CommandBody = Command extends infer C ? (C extends { playerId: number } ? O
 export interface InputOptions {
   getPlayerId: () => number;
   getSelectedSlot: () => number;
-  /** Número de slots del inventario (para la rueda). */
-  slotCount: number;
+  /** Número de slots del inventario ahora mismo (crece al matar pingüinos); para la rueda y las teclas. */
+  slotCount: () => number;
   /** Ángulo de apuntado a partir de la posición del ratón relativa al elemento. */
   aimAngle: (mouseX: number, mouseY: number) => number;
 }
@@ -76,7 +76,7 @@ export class InputController {
       return;
     }
     const slot = SLOT_KEYS[e.code];
-    if (slot !== undefined && slot < this.opts.slotCount) {
+    if (slot !== undefined && slot < this.opts.slotCount()) {
       this.push({ type: 'selectSlot', slot });
       return;
     }
@@ -98,7 +98,7 @@ export class InputController {
 
   private readonly onWheel = (e: WheelEvent): void => {
     const dir = e.deltaY > 0 ? 1 : -1;
-    const n = this.opts.slotCount;
+    const n = this.opts.slotCount();
     this.push({ type: 'selectSlot', slot: (this.opts.getSelectedSlot() + dir + n) % n });
     e.preventDefault();
   };

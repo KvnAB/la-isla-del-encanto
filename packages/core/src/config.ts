@@ -122,6 +122,8 @@ export interface GameConfig {
   };
   /** Criaturas domadas: puntos por domar, distancia a la que siguen al dueño, radio alrededor del dueño que vigilan, vida al domar y curación por segundo mientras no pelean. */
   taming: { points: number; followDist: number; guardRadius: number; hp: number; regenPerSec: number };
+  /** Cada `killsPerSlot` muertes de `creature` dan una casilla más al inventario, hasta `maxSlots`. */
+  slotReward: { creature: CreatureKind; killsPerSlot: number; maxSlots: number };
   weaponDamage: Record<WeaponClass, number>;
   recipes: RecipeDef[];
   points: { gatherPerUnit: number; cook: number; dayPassed: number };
@@ -205,7 +207,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   groundItemSeconds: 60,
   groundItemRadius: 14, // (*)
   creatures: {
-    maxActive: 26, // (*)
+    maxActive: 30, // (*) 26 iniciales + margen para manadas nocturnas y reapariciones
     respawnSeconds: 45,
     minSpawnDistFromPlayer: 600, // (*)
     nightRaidDist: { min: 500, max: 800 }, // (*)
@@ -292,7 +294,7 @@ export const DEFAULT_CONFIG: GameConfig = {
       penguin: {
         hp: 10,
         damage: 0,
-        speed: 120, // (*) huye despacio
+        speed: 200, // (*) casi tan rápido como el jugador: hay que perseguirlo
         radius: 18, // (*)
         aggroRadius: 0,
         fleeRadius: 200, // (*)
@@ -300,7 +302,7 @@ export const DEFAULT_CONFIG: GameConfig = {
         loot: [{ item: 'raw_fish', count: 1 }],
         points: 30,
         aggressive: false,
-        initialCount: 4, // (*)
+        initialCount: 6, // (*) dan casillas, así que hay más
         biome: 'snow',
       },
       puma: {
@@ -335,6 +337,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     },
   },
   taming: { points: 150, followDist: 90, guardRadius: 350, hp: 120, regenPerSec: 2 }, // (*) domado aguanta 10 mordiscos de tigre y se cura solo
+  slotReward: { creature: 'penguin', killsPerSlot: 3, maxSlots: 20 }, // 12 casillas de salida + 8 = 24 pingüinos
   weaponDamage: { fist: 1, wood_sword: 2, stone_sword: 3, gold_sword: 4, diamond_sword: 6 }, // (*) oro: tigre 8, oveja 5, duende 2; diamante: tigre 5, oso 10
   recipes: [
     { id: 'wood_pickaxe', cost: { wood: 10 }, points: 25 },
