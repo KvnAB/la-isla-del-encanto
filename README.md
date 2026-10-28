@@ -96,9 +96,9 @@ Todos los números del juego están en **`packages/core/src/config.ts`** (`DEFAU
 
 **Una criatura nueva**
 1. Añadir el id a `CreatureKind` en `types.ts`.
-2. Su definición en `config.creatures.defs` (vida, velocidad, radio, daño, radios de detección/huida, botín, puntos, agresiva o no, cantidad inicial; opcionalmente `biome` para que solo aparezca en hierba o nieve, `packSize` para que aparezca en grupo y `nightRaid` para que una manada aparezca junto al jugador al caer la noche).
+2. Su definición en `config.creatures.defs` (vida, velocidad, radio, daño, radios de detección/huida, botín, puntos, agresiva o no, cantidad inicial; opcionalmente `biome` para que solo aparezca en hierba o nieve, `packSize` para que aparezca en grupo y `nightRaid` para que una manada aparezca junto al jugador al caer la noche). En el botín, `max` sortea la cantidad entre `count` y `max` (el esqueleto suelta 1–2 huesos). `tameWith` la hace domable con ese objeto (el puma con el hueso).
 3. Su dibujo en `packages/client/src/render/sprites/vector-creatures.ts` y el caso en `makeCreatureVector`; su nombre en `CREATURE_NAMES` (`ui/names.ts`) para la pantalla de muerte.
-Si necesita un comportamiento que no sea deambular/perseguir/atacar/huir, ampliar la máquina de estados de `packages/core/src/systems/creatures.ts`.
+Si necesita un comportamiento que no sea deambular/perseguir/atacar/huir, ampliar la máquina de estados de `packages/core/src/systems/creatures.ts`. Las criaturas domadas (`owner` ≠ null) van por `stepPet`: siguen al dueño (`follow`) y cazan (`hunt`) a cualquier criatura agresiva a menos de `taming.guardRadius` del dueño; las salvajes persiguen y muerden tanto a jugadores como a criaturas domadas. Al domar, `makeCreatureVector(kind, r, tamed)` rehace el dibujo (collar).
 
 ## Despliegue con Docker
 
