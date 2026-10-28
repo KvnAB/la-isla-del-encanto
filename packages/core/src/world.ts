@@ -5,7 +5,7 @@ import { placeCampfire, stepCampfires } from './systems/campfire.js';
 import { dropSlot, useSelectedSlot } from './systems/consume.js';
 import { craft } from './systems/crafting.js';
 import { startFishing, stepFishing } from './systems/fishing.js';
-import { hitCreature, onDawn, onNightfall, spawnInitialCreatures, stepCreatures, stepRespawns, tameCreature } from './systems/creatures.js';
+import { hitCreature, onDawn, onNightfall, spawnInitialCreatures, stepCreatures, stepRespawns, tameCreature, toggleMount } from './systems/creatures.js';
 import { stepDayCycle } from './systems/daycycle.js';
 import { stepGroundItems, tryPickup } from './systems/ground.js';
 import { resolveHit } from './systems/hit.js';
@@ -77,6 +77,8 @@ export class World {
       lastHitAt: -1000,
       fishingUntil: 0,
       slotKills: 0,
+      mount: null,
+      running: false,
     });
     return id;
   }
@@ -125,7 +127,9 @@ export class World {
     const playerSolids: Solid[] = resourceSolids(s, cfg);
     for (const p of s.players) {
       if (!p.alive) continue;
-      stepPlayerMovement(s, p, cfg, dt, playerSolids);
+      // montado, lo mueve su montura (stepCreatures) y nunca está en el agua
+      if (p.mount === null) stepPlayerMovement(s, p, cfg, dt, playerSolids);
+      else p.inWater = false;
       if (p.hitCooldown > 0) p.hitCooldown = Math.max(0, p.hitCooldown - dt);
       if (p.swing > 0) p.swing = Math.max(0, p.swing - dt / cfg.player.hitCooldown);
       stepFishing(s, p, cfg, this.events);
@@ -176,6 +180,7 @@ export class World {
         p.angle = cmd.angle;
         break;
       case 'hit':
+        if (p.mount !== null) break; // montado no se golpea ni se recoge: hay que bajarse
         resolveHit(this.state, p, this.cfg, this.events, {
           pickup: (pl, g) => tryPickup(this.state, pl, g, this.events),
           creature: (pl, c) => hitCreature(this.state, pl, c, this.cfg, this.rng, this.events),
@@ -195,7 +200,14 @@ export class World {
         if (Number.isInteger(cmd.slot) && cmd.slot >= 0 && cmd.slot < p.inventory.length) dropSlot(this.state, p, cmd.slot, this.cfg, this.events);
         break;
       case 'craft':
+        if (p.mount !== null) break;
         craft(p, cmd.recipeId, this.cfg, this.events);
+        break;
+      case 'mount':
+        toggleMount(this.state, p, this.cfg, this.events);
+        break;
+      case 'run':
+        p.running = cmd.on;
         break;
       default:
         break;

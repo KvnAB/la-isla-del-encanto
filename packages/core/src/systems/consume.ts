@@ -18,6 +18,8 @@ export function useSelectedSlot(state: WorldState, p: PlayerState, cfg: GameConf
   if (!slot) return;
   const meta = ITEM_META[slot.item];
   if (!meta.food && !meta.placeable && !meta.equippable && !meta.usable) return;
+  // Montado solo se come y se bebe de la cantimplora; para lo demás hay que bajarse.
+  if (p.mount !== null && !meta.food && slot.item !== 'canteen_full') return;
   // Mismo cooldown que el golpe: un clic mantenido no consume varias unidades por paso.
   if (p.hitCooldown > 0) return;
   p.hitCooldown = cfg.player.hitCooldown;

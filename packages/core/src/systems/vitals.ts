@@ -31,6 +31,7 @@ export function stepVitals(state: WorldState, p: PlayerState, cfg: GameConfig, d
     if (p.inWater) mult *= v.waterColdMult;
     const coat = coatWorn(p);
     if (coat) mult *= v.coatColdMult[coat];
+    if (p.mount !== null) mult *= cfg.riding.coldMult; // la montura abriga
     p.warmth -= rate * mult * dt;
   }
 

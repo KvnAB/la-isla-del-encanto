@@ -128,6 +128,8 @@ export function killCreature(state: WorldState, c: CreatureState, cfg: GameConfi
   if (i !== -1) state.creatures.splice(i, 1);
   if (c.owner !== null) {
     events.push({ type: 'petDied', playerId: c.owner, entityId: c.id, kind: c.kind });
+    const rider = state.players.find((p) => p.mount === c.id);
+    if (rider) dismount(rider, events); // cae al suelo donde estaba, sin daño
     return;
   }
   const def = cfg.creatures.defs[c.kind];
@@ -190,6 +192,40 @@ export function tameCreature(state: WorldState, p: PlayerState, cfg: GameConfig,
   return true;
 }
 
+function dismount(p: PlayerState, events: GameEvent[]): void {
+  p.mount = null;
+  events.push({ type: 'dismounted', playerId: p.id });
+}
+
+/** Criatura domada propia más cercana a menos de `riding.mountDist` (centro a centro), o null. */
+export function mountable(state: WorldState, p: PlayerState, cfg: GameConfig): CreatureState | null {
+  let best: CreatureState | null = null;
+  let bestD = cfg.riding.mountDist;
+  for (const c of state.creatures) {
+    if (c.owner !== p.id) continue;
+    const d = dist(p.x, p.y, c.x, c.y);
+    if (d <= bestD) {
+      bestD = d;
+      best = c;
+    }
+  }
+  return best;
+}
+
+/** Montado → se baja. A pie → monta su criatura domada más cercana si la hay (evento `mounted`). */
+export function toggleMount(state: WorldState, p: PlayerState, cfg: GameConfig, events: GameEvent[]): void {
+  if (p.mount !== null) {
+    dismount(p, events);
+    return;
+  }
+  const c = mountable(state, p, cfg);
+  if (!c) return;
+  p.mount = c.id;
+  p.x = c.x;
+  p.y = c.y;
+  events.push({ type: 'mounted', playerId: p.id, entityId: c.id });
+}
+
 /** Al caer la noche: por cada criatura con `nightRaid`, una manada cerca del jugador (en cualquier bioma). */
 export function onNightfall(state: WorldState, cfg: GameConfig, rng: Rng, events: GameEvent[]): void {
   const p = state.players.find((x) => x.alive);
@@ -230,7 +266,8 @@ function nearestTarget(state: WorldState, c: CreatureState): { t: Target; d: num
       best = t;
     }
   };
-  for (const p of state.players) if (p.alive) consider({ x: p.x, y: p.y, radius: p.radius, player: p, pet: null });
+  // un jugador montado no es objetivo: los mordiscos se los lleva su montura (que sí lo es)
+  for (const p of state.players) if (p.alive && p.mount === null) consider({ x: p.x, y: p.y, radius: p.radius, player: p, pet: null });
   for (const o of state.creatures) if (o !== c && o.owner !== null) consider({ x: o.x, y: o.y, radius: o.radius, player: null, pet: o });
   return best ? { t: best, d: bestD } : null;
 }
@@ -274,6 +311,12 @@ function wanderStep(state: WorldState, c: CreatureState, speed: number, dt: numb
   if (dist(c.x, c.y, c.targetX, c.targetY) > 4) moveToward(state, c, c.targetX, c.targetY, speed * 0.5, dt, solids);
 }
 
+/** El jinete va donde va su montura. */
+function carry(rider: PlayerState, c: CreatureState): void {
+  rider.x = c.x;
+  rider.y = c.y;
+}
+
 /** Muerde a una criatura domada; si muere, desaparece sin botín. */
 function biteCreature(state: WorldState, pet: CreatureState, amount: number, cfg: GameConfig, rng: Rng, events: GameEvent[]): void {
   pet.hp -= amount;
@@ -283,7 +326,8 @@ function biteCreature(state: WorldState, pet: CreatureState, amount: number, cfg
 /**
  * Criatura domada: `hunt` a la criatura salvaje agresiva más cercana a menos de `taming.guardRadius` del dueño
  * (el dueño cobra botín y puntos si la mata); si no hay, `follow` al dueño hasta `taming.followDist` y se cura
- * `taming.regenPerSec` por segundo hasta `taming.hp`.
+ * `taming.regenPerSec` por segundo hasta `taming.hp`. Si el dueño va montado y no hay presa, `ride`: se mueve con
+ * el WASD del dueño a `riding.walkSpeed` o `runSpeed`. Montado o cazando con jinete, el dueño va donde va ella.
  * Pasa por debajo del jugador (no lo trata como sólido) para no quedarse atascada tras él.
  * Sin dueño vivo, pasea.
  */
@@ -306,11 +350,13 @@ function stepPet(state: WorldState, c: CreatureState, cfg: GameConfig, dt: numbe
       target = o;
     }
   }
+  const ridden = owner.mount === c.id;
   if (target) {
     c.mode = 'hunt';
     const range = c.radius + target.radius + 8;
     if (bestD > range) {
       moveToward(state, c, target.x, target.y, def.speed, dt, solids);
+      if (ridden) carry(owner, c);
       return;
     }
     c.angle = angleTo(c.x, c.y, target.x, target.y);
@@ -320,6 +366,17 @@ function stepPet(state: WorldState, c: CreatureState, cfg: GameConfig, dt: numbe
       events.push({ type: 'petHit', playerId: owner.id, entityId: target.id, amount: def.damage });
       if (target.hp <= 0) killCreature(state, target, cfg, rng, events, owner);
     }
+    if (ridden) carry(owner, c);
+    return;
+  }
+  if (ridden) {
+    c.mode = 'ride';
+    c.hp = Math.min(cfg.taming.hp, c.hp + cfg.taming.regenPerSec * dt);
+    if (owner.moveDx !== 0 || owner.moveDy !== 0) {
+      const speed = owner.running ? cfg.riding.runSpeed : cfg.riding.walkSpeed;
+      moveToward(state, c, c.x + owner.moveDx * speed, c.y + owner.moveDy * speed, speed, dt, solids);
+    }
+    carry(owner, c);
     return;
   }
   c.mode = 'follow';

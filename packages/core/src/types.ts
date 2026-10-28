@@ -55,6 +55,10 @@ export type Command = { playerId: EntityId } & (
   | { type: 'useSlot' }
   | { type: 'dropSlot'; slot: number }
   | { type: 'craft'; recipeId: ItemId }
+  /** Montar la criatura domada propia más cercana, o bajarse si ya va montado. */
+  | { type: 'mount' }
+  /** Correr (solo cambia algo montado). */
+  | { type: 'run'; on: boolean }
 );
 
 export type GameEvent =
@@ -75,6 +79,8 @@ export type GameEvent =
   | { type: 'slotProgress'; playerId: EntityId; kills: number; needed: number }
   /** El inventario ganó una casilla; `slots` es el total nuevo. */
   | { type: 'slotUnlocked'; playerId: EntityId; slots: number }
+  | { type: 'mounted'; playerId: EntityId; entityId: EntityId }
+  | { type: 'dismounted'; playerId: EntityId }
   /** Murió una criatura domada de `playerId` (sin botín ni reaparición). */
   | { type: 'petDied'; playerId: EntityId; entityId: EntityId; kind: CreatureKind }
   | { type: 'crafted'; playerId: EntityId; recipeId: ItemId }
@@ -129,6 +135,10 @@ export interface PlayerState {
   fishingUntil: number;
   /** Pingüinos matados desde la última casilla ganada (ver `config.slotReward`). */
   slotKills: number;
+  /** Criatura domada que monta (null = a pie). Montado va donde va ella y no puede golpear ni fabricar. */
+  mount: EntityId | null;
+  /** Corriendo (Shift): montado usa `riding.runSpeed`. */
+  running: boolean;
 }
 
 export interface ResourceState {
@@ -142,8 +152,8 @@ export interface ResourceState {
   brokenAt: number | null;
 }
 
-/** `follow` y `hunt` son solo de criaturas domadas: seguir al dueño o perseguir a una criatura. */
-export type CreatureMode = 'wander' | 'chase' | 'flee' | 'attack' | 'follow' | 'hunt';
+/** `follow`, `hunt` y `ride` son solo de criaturas domadas: seguir al dueño, perseguir a una criatura o llevar al dueño encima. */
+export type CreatureMode = 'wander' | 'chase' | 'flee' | 'attack' | 'follow' | 'hunt' | 'ride';
 
 export interface CreatureState {
   id: EntityId;
