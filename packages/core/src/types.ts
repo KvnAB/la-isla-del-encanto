@@ -89,6 +89,9 @@ export type GameEvent =
   /** El inventario ganó una casilla; `slots` es el total nuevo. */
   | { type: 'slotUnlocked'; playerId: EntityId; slots: number }
   | { type: 'petRenamed'; playerId: EntityId; entityId: EntityId; name: string }
+  | { type: 'wallPlaced'; playerId: EntityId }
+  | { type: 'wallHit'; playerId: EntityId; entityId: EntityId; hp: number }
+  | { type: 'wallBroken'; entityId: EntityId }
   | { type: 'mounted'; playerId: EntityId; entityId: EntityId }
   | { type: 'dismounted'; playerId: EntityId }
   /** Murió una criatura domada de `playerId` (sin botín ni reaparición). */
@@ -200,6 +203,15 @@ export interface GroundItemState {
   expiresAt: number;
 }
 
+/** Piedra de un muro: bloquea a las criaturas salvajes, no al jugador ni a las domadas. Se rompe a golpes de pico. */
+export interface WallState {
+  id: EntityId;
+  x: number;
+  y: number;
+  radius: number;
+  hp: number;
+}
+
 export interface CampfireState {
   id: EntityId;
   x: number;
@@ -230,6 +242,7 @@ export interface WorldState {
   creatures: CreatureState[];
   groundItems: GroundItemState[];
   campfires: CampfireState[];
+  walls: WallState[];
   respawnQueue: { kind: CreatureKind; at: number }[];
   nextEntityId: number;
 }

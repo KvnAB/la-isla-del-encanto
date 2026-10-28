@@ -9,6 +9,7 @@ import { inArc, inReach, nearest } from './hit.js';
 import { removeItem } from './inventory.js';
 import { moveCircle, resourceSolids, type Solid } from './movement.js';
 import { weaponClassOf } from './resources.js';
+import { wallSolids } from './wall.js';
 
 function makeCreature(state: WorldState, kind: CreatureKind, x: number, y: number, cfg: GameConfig): CreatureState {
   const def = cfg.creatures.defs[kind];
@@ -440,7 +441,8 @@ function stepPet(state: WorldState, c: CreatureState, cfg: GameConfig, dt: numbe
 
 export function stepCreatures(state: WorldState, cfg: GameConfig, dt: number, rng: Rng, events: GameEvent[]): void {
   const resourceOnly = resourceSolids(state, cfg);
-  const solids: Solid[] = [...resourceOnly, ...state.players.filter((p) => p.alive)];
+  // las salvajes chocan además con los muros de piedra y con los jugadores; las domadas pasan ambos
+  const solids: Solid[] = [...resourceOnly, ...wallSolids(state), ...state.players.filter((p) => p.alive)];
   // copia: una criatura puede morir (y salir de la lista) durante el paso de otra
   for (const c of [...state.creatures]) {
     if (!state.creatures.includes(c)) continue;

@@ -7,6 +7,7 @@ import { removeItem } from './inventory.js';
 
 export interface UseHooks {
   placeCampfire?: (state: WorldState, p: PlayerState) => void;
+  placeWall?: (state: WorldState, p: PlayerState) => void;
   fish?: (state: WorldState, p: PlayerState) => void;
   /** Devuelve true si domó a una criatura con el objeto seleccionado. */
   tame?: (state: WorldState, p: PlayerState) => boolean;
@@ -47,6 +48,10 @@ export function useSelectedSlot(state: WorldState, p: PlayerState, cfg: GameConf
   }
   if (isTamingItem(slot.item, cfg)) {
     if (hooks.tame) hooks.tame(state, p);
+    return;
+  }
+  if (slot.item === 'stone_wall') {
+    if (hooks.placeWall) hooks.placeWall(state, p);
     return;
   }
   if (hooks.placeCampfire) hooks.placeCampfire(state, p);

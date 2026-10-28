@@ -2,6 +2,7 @@ import { DEFAULT_CONFIG, type GameConfig } from './config.js';
 import { generateIsland } from './island.js';
 import { Rng } from './rng.js';
 import { placeCampfire, stepCampfires } from './systems/campfire.js';
+import { placeWall } from './systems/wall.js';
 import { dropSlot, useSelectedSlot } from './systems/consume.js';
 import { craft } from './systems/crafting.js';
 import { startFishing, stepFishing } from './systems/fishing.js';
@@ -39,6 +40,7 @@ export class World {
       creatures: [],
       groundItems: [],
       campfires: [],
+      walls: [],
       respawnQueue: [],
       nextEntityId: 1,
     };
@@ -192,6 +194,7 @@ export class World {
       case 'useSlot':
         useSelectedSlot(this.state, p, this.cfg, this.events, {
           placeCampfire: (st, pl) => placeCampfire(st, pl, this.cfg, this.events),
+          placeWall: (st, pl) => placeWall(st, pl, this.cfg, this.events),
           fish: (st, pl) => startFishing(st, pl, this.cfg, this.events),
           tame: (st, pl) => tameCreature(st, pl, this.cfg, this.events),
         });

@@ -82,6 +82,7 @@ export function clearWorld(world: World): void {
   s.creatures.length = 0;
   s.groundItems.length = 0;
   s.campfires.length = 0;
+  s.walls.length = 0;
   s.respawnQueue.length = 0;
 }
 

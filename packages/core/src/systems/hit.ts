@@ -1,7 +1,8 @@
 import type { GameConfig } from '../config.js';
 import type { GameEvent, PlayerState, WorldState } from '../types.js';
 import { angleDiff, angleTo, dist } from '../vec.js';
-import { hitResource, weaponClassOf } from './resources.js';
+import { hitResource, toolClassOf, weaponClassOf } from './resources.js';
+import { hitWall } from './wall.js';
 
 export interface HitTarget {
   x: number;
@@ -39,7 +40,7 @@ export interface HitHooks {
 
 /**
  * Resuelve un golpe: 1) objeto del suelo al alcance → recoger; 2) criatura al alcance y en arco → golpear;
- * 3) recurso al alcance y en arco → recolectar. Aplica cooldown y animación.
+ * 3) piedra de muro al alcance y en arco, con pico → picarla; 4) recurso al alcance y en arco → recolectar. Aplica cooldown y animación.
  */
 export function resolveHit(state: WorldState, p: PlayerState, cfg: GameConfig, events: GameEvent[], hooks: HitHooks = {}): void {
   if (p.hitCooldown > 0) return;
@@ -55,6 +56,14 @@ export function resolveHit(state: WorldState, p: PlayerState, cfg: GameConfig, e
   if (c && hooks.creature) {
     hooks.creature(p, c);
     return;
+  }
+
+  if (toolClassOf(p.inventory[p.selectedSlot]) !== 'hand') {
+    const w = nearest(p, state.walls, (t) => inReach(p, t, cfg) && inArc(p, t, cfg));
+    if (w) {
+      hitWall(state, p, w, events);
+      return;
+    }
   }
 
   const r = nearest(p, state.resources, (t) => inReach(p, t, cfg) && inArc(p, t, cfg));

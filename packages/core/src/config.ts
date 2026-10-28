@@ -140,6 +140,8 @@ export interface GameConfig {
   };
   /** Montar criaturas domadas: distancia (centro a centro) para subirse, velocidad andando y corriendo, y factor de frío montado. */
   riding: { mountDist: number; walkSpeed: number; runSpeed: number; coldMult: number };
+  /** Muro de piedra: `stones` piedras de radio `stoneRadius` en un anillo de `ringRadius` alrededor del jugador, cada una con `hp` golpes de pico. */
+  wall: { stones: number; ringRadius: number; stoneRadius: number; hp: number };
   /** Cada `killsPerSlot` muertes de `creature` dan una casilla más al inventario, hasta `maxSlots`. */
   slotReward: { creature: CreatureKind; killsPerSlot: number; maxSlots: number };
   weaponDamage: Record<WeaponClass, number>;
@@ -363,6 +365,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   },
   taming: { points: 150, followDist: 90, guardRadius: 350, hp: 120, regenPerSec: 2, sleepRegenPerSec: 10, callStuckSeconds: 5, nameMaxLength: 16 }, // (*) domado aguanta 10 mordiscos de tigre y se cura solo
   slotReward: { creature: 'penguin', killsPerSlot: 3, maxSlots: 20 }, // 12 casillas de salida + 8 = 24 pingüinos
+  wall: { stones: 10, ringRadius: 100, stoneRadius: 20, hp: 5 }, // (*) huecos de ~23 px: ningún animal salvaje cabe
   riding: { mountDist: 70, walkSpeed: 160, runSpeed: 300, coldMult: 0.5 }, // (*) corriendo es lo más rápido del juego; el puma abriga como un abrigo 1
   weaponDamage: { fist: 1, wood_sword: 2, stone_sword: 3, gold_sword: 4, diamond_sword: 6, emerald_sword: 9 }, // (*) oro: tigre 8, oveja 5, duende 2; diamante: tigre 5, oso 10; esmeralda: tigre 4, oso 7
   weaponHitCooldown: { emerald_sword: 0.25 }, // (*) la de esmeralda golpea casi el doble de rápido
