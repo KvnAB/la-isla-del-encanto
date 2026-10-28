@@ -30,6 +30,7 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   canteen_full: 'Cantimplora',
   fishing_rod: 'Caña de pescar',
   torch: 'Antorcha',
+  bone: 'Hueso',
 };
 
 export const CREATURE_NAMES: Record<CreatureKind, string> = {
@@ -39,6 +40,8 @@ export const CREATURE_NAMES: Record<CreatureKind, string> = {
   wolf: 'Lobo',
   polar_bear: 'Oso polar',
   penguin: 'Pingüino',
+  puma: 'Puma',
+  skeleton: 'Esqueleto',
 };
 
 /** "un tigre", "una oveja mala": artículo según el género del nombre. */
@@ -49,6 +52,8 @@ const CREATURE_WITH_ARTICLE: Record<CreatureKind, string> = {
   wolf: 'un lobo',
   polar_bear: 'un oso polar',
   penguin: 'un pingüino',
+  puma: 'un puma',
+  skeleton: 'un esqueleto',
 };
 
 /** Frase de la pantalla de muerte. */

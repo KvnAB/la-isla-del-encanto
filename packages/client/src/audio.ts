@@ -105,6 +105,15 @@ export class GameAudio {
         case 'creatureDied':
           if (e.playerId === localPlayerId) this.play('kill', () => this.thud(90, 0.25));
           break;
+        case 'petHit':
+          if (e.playerId === localPlayerId) this.play('thud', () => this.thud(160, 0.1));
+          break;
+        case 'creatureTamed':
+          if (e.playerId === localPlayerId) this.play('tame', () => this.blip([523, 659, 784, 1047], 0.09));
+          break;
+        case 'petDied':
+          if (e.playerId === localPlayerId) this.play('petdie', () => this.thud(60, 0.5));
+          break;
         case 'dayPassed':
           this.play('day', () => this.blip([523, 659, 784, 1047], 0.12));
           break;

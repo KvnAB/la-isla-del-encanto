@@ -120,6 +120,22 @@ export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
       g.circle(-s * 0.6, -s * 0.18, s * 0.1).fill(MEAT.bone).stroke({ width: 1, color: OL });
       break;
     }
+    case 'bone': {
+      // hueso clásico: caña inclinada con dos nudillos en cada punta
+      const a = -Math.PI / 5;
+      const ex = Math.cos(a) * s * 0.62;
+      const ey = Math.sin(a) * s * 0.62;
+      g.moveTo(-ex, -ey).lineTo(ex, ey).stroke({ width: s * 0.34 + o * 2, color: OL, cap: 'round' });
+      for (const sg of [-1, 1]) {
+        const kx = sg * ex;
+        const ky = sg * ey;
+        for (const t of [-1, 1]) g.circle(kx - Math.sin(a) * t * s * 0.22, ky + Math.cos(a) * t * s * 0.22, s * 0.26).fill(MEAT.bone).stroke({ width: o, color: OL });
+      }
+      g.moveTo(-ex, -ey).lineTo(ex, ey).stroke({ width: s * 0.34, color: MEAT.bone, cap: 'round' });
+      for (const sg of [-1, 1]) for (const t of [-1, 1]) g.circle(sg * ex - Math.sin(a) * t * s * 0.22, sg * ey + Math.cos(a) * t * s * 0.22, s * 0.26).fill(MEAT.bone);
+      g.moveTo(-ex * 0.6, -ey * 0.6 - s * 0.08).lineTo(ex * 0.6, ey * 0.6 - s * 0.08).stroke({ width: Math.max(1.5, o * 0.5), color: 0xffffff, cap: 'round', alpha: 0.7 });
+      break;
+    }
     case 'berry': {
       // racimo de bayas moradas con dos hojas
       g.ellipse(s * 0.3, -s * 0.62, s * 0.35, s * 0.16).fill(PALETTE.treeLight).stroke({ width: Math.max(1.5, o * 0.6), color: PALETTE.treeOutline });

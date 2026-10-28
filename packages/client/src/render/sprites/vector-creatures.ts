@@ -197,7 +197,92 @@ export function makePenguinVector(r: number): Container {
   return c;
 }
 
-export function makeCreatureVector(kind: CreatureKind, r: number): Container {
+/** Puma: felino leonado alargado, orejas redondas, hocico claro con lágrimas oscuras, ojos verdes y cola con punta negra. Domado: collar rojo. */
+export function makePumaVector(r: number, tamed = false): Container {
+  const c = new Container();
+  const g = new Graphics();
+  const o = ow(r);
+  const bw = r * 1.6;
+  const bh = r * 0.92;
+  // cola larga y baja con punta oscura
+  g.moveTo(-bw * 0.9, 0).quadraticCurveTo(-bw * 1.5, r * 0.3, -bw * 1.55, -r * 0.6).stroke({ width: r * 0.24 + o * 2, color: OL, cap: 'round' });
+  g.moveTo(-bw * 0.9, 0).quadraticCurveTo(-bw * 1.5, r * 0.3, -bw * 1.55, -r * 0.6).stroke({ width: r * 0.24, color: PALETTE.puma, cap: 'round' });
+  g.circle(-bw * 1.55, -r * 0.6, r * 0.16).fill(PALETTE.pumaDark);
+  // patas
+  for (const [sx, sy] of [[0.55, -1], [0.55, 1], [-0.5, -1], [-0.5, 1]] as const) g.ellipse(bw * sx, sy * bh * 0.98, r * 0.28, r * 0.23).fill(PALETTE.puma).stroke({ width: o, color: OL });
+  // cuerpo con lomo algo más oscuro
+  g.ellipse(0, 0, bw, bh).fill(PALETTE.puma).stroke({ width: o, color: OL });
+  g.ellipse(-bw * 0.08, 0, bw * 0.72, bh * 0.38).fill(PALETTE.pumaDark, 0.35);
+  // cabeza redonda con orejas redondas
+  const hx = bw * 0.82;
+  const hr = r * 0.82;
+  for (const s of [-1, 1]) {
+    g.circle(hx - hr * 0.35, s * hr * 0.85, hr * 0.32).fill(PALETTE.puma).stroke({ width: o, color: OL });
+    g.circle(hx - hr * 0.35, s * hr * 0.85, hr * 0.16).fill(PALETTE.pumaDark);
+  }
+  g.circle(hx, 0, hr).fill(PALETTE.puma).stroke({ width: o, color: OL });
+  // hocico claro, nariz y lágrimas oscuras bajo los ojos
+  g.ellipse(hx + hr * 0.5, 0, hr * 0.46, hr * 0.5).fill(PALETTE.pumaBelly);
+  g.ellipse(hx + hr * 0.82, 0, hr * 0.17, hr * 0.12).fill(PALETTE.pumaDark);
+  for (const s of [-1, 1]) {
+    g.moveTo(hx + hr * 0.3, s * hr * 0.35).lineTo(hx + hr * 0.62, s * hr * 0.22).stroke({ width: r * 0.09, color: PALETTE.pumaDark, cap: 'round' });
+    g.moveTo(hx + hr * 0.5, s * hr * 0.2).lineTo(hx + hr * 0.95, s * hr * 0.3).stroke({ width: Math.max(1.5, o * 0.5), color: OL, cap: 'round' }); // bigotes
+  }
+  // ojos verdes entornados con ceja
+  for (const s of [-1, 1]) {
+    g.ellipse(hx + hr * 0.12, s * hr * 0.45, hr * 0.17, hr * 0.12).fill(0x9be05a).stroke({ width: Math.max(1.5, o * 0.5), color: OL });
+    g.circle(hx + hr * 0.16, s * hr * 0.43, hr * 0.06).fill(OL);
+    g.moveTo(hx - hr * 0.12, s * hr * 0.2).lineTo(hx + hr * 0.34, s * hr * 0.62).stroke({ width: r * 0.1, color: OL, cap: 'round' });
+  }
+  c.addChild(g);
+  if (tamed) {
+    // collar rojo en el cuello (entre cuerpo y cabeza) con chapa dorada
+    const k = new Graphics();
+    const cx = hx - hr * 0.95;
+    k.ellipse(cx, 0, r * 0.16, hr * 0.98).fill(PALETTE.collar).stroke({ width: Math.max(1.5, o * 0.7), color: OL });
+    k.circle(cx + r * 0.12, hr * 0.55, r * 0.14).fill(PALETTE.gold).stroke({ width: 1.5, color: PALETTE.goldOutline });
+    c.addChild(k);
+  }
+  return c;
+}
+
+/** Esqueleto: calavera con cuencas negras y dientes, brazos de hueso con codos y pelvis asomando detrás. */
+export function makeSkeletonVector(r: number): Container {
+  const c = new Container();
+  const g = new Graphics();
+  const o = ow(r);
+  const bone = PALETTE.bone;
+  const w = Math.max(2, r * 0.22);
+  // pelvis y columna detrás de la calavera
+  g.ellipse(-r * 0.75, 0, r * 0.45, r * 0.7).fill(PALETTE.boneShade).stroke({ width: o, color: OL });
+  g.moveTo(-r * 0.3, 0).lineTo(-r * 1.1, 0).stroke({ width: w, color: bone, cap: 'round' });
+  // brazos: hombro → codo → mano, extendidos hacia delante
+  for (const s of [-1, 1]) {
+    const pts = [[-r * 0.1, s * r * 0.75], [r * 0.35, s * r * 1.15], [r * 1.0, s * r * 0.95]] as const;
+    g.moveTo(pts[0][0], pts[0][1]).lineTo(pts[1][0], pts[1][1]).lineTo(pts[2][0], pts[2][1]).stroke({ width: w + o * 2, color: OL, cap: 'round', join: 'round' });
+    g.moveTo(pts[0][0], pts[0][1]).lineTo(pts[1][0], pts[1][1]).lineTo(pts[2][0], pts[2][1]).stroke({ width: w, color: bone, cap: 'round', join: 'round' });
+    for (const [x, y] of pts) g.circle(x, y, w * 0.62).fill(bone).stroke({ width: Math.max(1, o * 0.5), color: OL });
+    // dedos
+    for (const k of [-1, 0, 1]) g.moveTo(pts[2][0], pts[2][1]).lineTo(pts[2][0] + r * 0.28, pts[2][1] + k * r * 0.14 - s * r * 0.08).stroke({ width: Math.max(1.5, w * 0.4), color: bone, cap: 'round' });
+  }
+  // calavera
+  g.circle(0, 0, r).fill(bone).stroke({ width: o, color: OL });
+  g.ellipse(-r * 0.2, 0, r * 0.65, r * 0.78).fill(0xffffff, 0.35);
+  g.moveTo(-r * 0.55, -r * 0.25).lineTo(-r * 0.25, -r * 0.05).lineTo(-r * 0.5, r * 0.2).stroke({ width: Math.max(1.5, o * 0.5), color: PALETTE.boneShade, cap: 'round', join: 'round' }); // grieta
+  // cuencas, nariz y dientes
+  for (const s of [-1, 1]) {
+    g.ellipse(r * 0.42, s * r * 0.36, r * 0.24, r * 0.2).fill(OL);
+    g.circle(r * 0.5, s * r * 0.33, r * 0.07).fill(0xff3b3b);
+  }
+  g.poly([r * 0.62, -r * 0.08, r * 0.78, 0, r * 0.62, r * 0.08], true).fill(OL);
+  g.moveTo(r * 0.72, -r * 0.4).quadraticCurveTo(r * 1.05, 0, r * 0.72, r * 0.4).stroke({ width: Math.max(2, o * 0.7), color: OL, cap: 'round' });
+  for (const k of [-0.28, -0.1, 0.1, 0.28]) g.moveTo(r * 0.8, k * r).lineTo(r * 0.95, k * r).stroke({ width: Math.max(1.5, o * 0.5), color: OL });
+  c.addChild(g);
+  return c;
+}
+
+/** `tamed`: dibujo de criatura domada (collar); solo cambia en las que se pueden domar. */
+export function makeCreatureVector(kind: CreatureKind, r: number, tamed = false): Container {
   switch (kind) {
     case 'tiger':
       return makeTigerVector(r);
@@ -211,5 +296,9 @@ export function makeCreatureVector(kind: CreatureKind, r: number): Container {
       return makePolarBearVector(r);
     case 'penguin':
       return makePenguinVector(r);
+    case 'puma':
+      return makePumaVector(r, tamed);
+    case 'skeleton':
+      return makeSkeletonVector(r);
   }
 }

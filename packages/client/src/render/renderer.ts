@@ -12,6 +12,8 @@ import { buildTerrain } from './terrain';
 
 const HIT_FX_SECONDS = 0.18;
 const DAMAGE_COLOR = 0xff5a4a;
+/** Números y avisos del puma domado. */
+const PET_COLOR = 0xffd34d;
 
 /** 14.285… → "14"; 12.5 → "12.5". */
 function formatDamage(n: number): string {
@@ -51,6 +53,8 @@ interface ResourceView {
 interface SimpleView {
   sprite: Container;
   shadow: Graphics;
+  /** Criaturas: el dibujo cambia al domarla (collar), así que se rehace. */
+  tamed?: boolean;
 }
 
 function lerpAngle(a: number, b: number, t: number): number {
@@ -162,6 +166,16 @@ export class Renderer {
       } else if (e.type === 'resourceHit' && e.playerId === localPlayerId) {
         this.fx.hitShake();
         this.hitFx.set(e.entityId, { t: HIT_FX_SECONDS, kind: 'hit', dx: 0, dy: 0 });
+      } else if (e.type === 'petHit' && e.playerId === localPlayerId) {
+        const target = this.creatures.get(e.entityId)?.sprite;
+        this.hitFx.set(e.entityId, { t: HIT_FX_SECONDS, kind: 'hit', dx: 0, dy: 0 });
+        if (target) this.floating.spawn(target.x, target.y - 30, `-${formatDamage(e.amount)}`, PET_COLOR);
+      } else if (e.type === 'creatureTamed' && e.playerId === localPlayerId) {
+        const target = this.creatures.get(e.entityId)?.sprite;
+        if (target) this.floating.spawn(target.x, target.y - 40, '¡Domado!', PET_COLOR);
+      } else if (e.type === 'petDied' && e.playerId === localPlayerId) {
+        const me = this.players.get(e.playerId)?.view;
+        if (me) this.floating.spawn(me.x, me.y - me.r - 24, 'Tu puma ha muerto', DAMAGE_COLOR);
       }
     }
   }
@@ -322,8 +336,14 @@ export class Renderer {
     for (const c of state.creatures) {
       seen.add(c.id);
       let v = this.creatures.get(c.id);
+      const tamed = c.owner !== null;
+      if (v && v.tamed !== tamed) {
+        v.sprite.destroy();
+        v.shadow.destroy();
+        v = undefined;
+      }
       if (!v) {
-        v = { sprite: makeCreatureVector(c.kind, c.radius), shadow: makeShadow(c.radius * 1.3) };
+        v = { sprite: makeCreatureVector(c.kind, c.radius, tamed), shadow: makeShadow(c.radius * 1.3), tamed };
         this.layers.entities.addChild(v.sprite);
         this.layers.shadows.addChild(v.shadow);
         this.creatures.set(c.id, v);

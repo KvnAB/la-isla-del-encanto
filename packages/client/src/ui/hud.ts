@@ -227,9 +227,10 @@ export class Hud {
   }
 }
 
-/** Tooltip de un slot: el abrigo explica el clic y la cantimplora llena dice cuántos tragos quedan. */
+/** Tooltip de un slot: el abrigo explica el clic, la cantimplora llena dice cuántos tragos quedan y el hueso cómo domar. */
 function slotTitle(item: ItemId, count: number): string {
   if (ITEM_META[item].equippable) return `${ITEM_NAMES[item]} · clic para poner o quitar`;
+  if (item === 'bone') return `${ITEM_NAMES[item]} · úsalo apuntando a un puma para domarlo`;
   if (item === 'canteen_full') return `${ITEM_NAMES[item]} · ${count} ${count === 1 ? 'trago' : 'tragos'}`;
   return ITEM_NAMES[item];
 }

@@ -135,3 +135,12 @@ describe('Hud: cantimplora', () => {
     expect(slot.querySelector<HTMLImageElement>('img')?.title).toBe('Cantimplora · 1 trago');
   });
 });
+
+describe('Hud: hueso', () => {
+  it('el tooltip del hueso explica cómo domar', () => {
+    p.inventory[1] = { item: 'bone', count: 2 };
+    hud.update(p, state, []);
+    const slot = root.querySelectorAll('.slot')[1];
+    expect(slot.querySelector<HTMLImageElement>('img')?.title).toBe('Hueso · úsalo apuntando a un puma para domarlo');
+  });
+});
