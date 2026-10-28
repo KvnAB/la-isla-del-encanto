@@ -322,16 +322,18 @@ function pickWanderTarget(state: WorldState, c: CreatureState, rng: Rng): void {
   c.targetY = c.y;
 }
 
-function moveToward(state: WorldState, c: CreatureState, tx: number, ty: number, speed: number, dt: number, solids: Solid[]): void {
+/** `swim`: puede entrar en ríos y lagos (solo las domadas), a `player.waterSpeedMult` de velocidad dentro del agua. */
+function moveToward(state: WorldState, c: CreatureState, tx: number, ty: number, speed: number, dt: number, solids: Solid[], swim = false, waterMult = 1): void {
   const d = dist(c.x, c.y, tx, ty);
   if (d < 1e-3) return;
+  if (swim && terrainAt(state.map, c.x, c.y) === 'water') speed *= waterMult;
   const step = Math.min(d, speed * dt);
   const dx = ((tx - c.x) / d) * step;
   const dy = ((ty - c.y) / d) * step;
   c.angle = Math.atan2(dy, dx);
   const [nx, ny] = moveCircle(state.map, c.x, c.y, c.radius, dx, dy, solids);
-  // las criaturas no nadan: si el destino es agua, no se mueven
-  if (terrainAt(state.map, nx, ny) === 'water') return;
+  // las criaturas salvajes no nadan: si el destino es agua, no se mueven
+  if (!swim && terrainAt(state.map, nx, ny) === 'water') return;
   c.x = nx;
   c.y = ny;
 }
@@ -383,7 +385,7 @@ function stepPet(state: WorldState, c: CreatureState, cfg: GameConfig, dt: numbe
       return;
     }
     const before = { x: c.x, y: c.y };
-    moveToward(state, c, owner.x, owner.y, cfg.riding.runSpeed, dt, solids);
+    moveToward(state, c, owner.x, owner.y, cfg.riding.runSpeed, dt, solids, true, cfg.player.waterSpeedMult);
     c.stuckFor = dist(before.x, before.y, c.x, c.y) < 0.5 ? c.stuckFor + dt : 0;
     if (c.stuckFor >= cfg.taming.callStuckSeconds) {
       // agua o mar por medio: aparece junto al dueño
@@ -406,11 +408,14 @@ function stepPet(state: WorldState, c: CreatureState, cfg: GameConfig, dt: numbe
     }
   }
   const ridden = owner.mount === c.id;
+  const steering = ridden && (owner.moveDx !== 0 || owner.moveDy !== 0);
+  // con el jinete conduciendo, la montura no se va a cazar: solo muerde lo que tenga al alcance
+  if (target && steering && bestD > c.radius + target.radius + 8) target = null;
   if (target) {
     c.mode = 'hunt';
     const range = c.radius + target.radius + 8;
     if (bestD > range) {
-      moveToward(state, c, target.x, target.y, def.speed, dt, solids);
+      moveToward(state, c, target.x, target.y, def.speed, dt, solids, true, cfg.player.waterSpeedMult);
       if (ridden) carry(owner, c);
       return;
     }
@@ -429,14 +434,14 @@ function stepPet(state: WorldState, c: CreatureState, cfg: GameConfig, dt: numbe
     c.hp = Math.min(cfg.taming.hp, c.hp + cfg.taming.regenPerSec * dt);
     if (owner.moveDx !== 0 || owner.moveDy !== 0) {
       const speed = owner.running ? cfg.riding.runSpeed : cfg.riding.walkSpeed;
-      moveToward(state, c, c.x + owner.moveDx * speed, c.y + owner.moveDy * speed, speed, dt, solids);
+      moveToward(state, c, c.x + owner.moveDx * speed, c.y + owner.moveDy * speed, speed, dt, solids, true, cfg.player.waterSpeedMult);
     }
     carry(owner, c);
     return;
   }
   c.mode = 'follow';
   c.hp = Math.min(cfg.taming.hp, c.hp + cfg.taming.regenPerSec * dt);
-  if (dist(c.x, c.y, owner.x, owner.y) > cfg.taming.followDist) moveToward(state, c, owner.x, owner.y, def.speed, dt, solids);
+  if (dist(c.x, c.y, owner.x, owner.y) > cfg.taming.followDist) moveToward(state, c, owner.x, owner.y, def.speed, dt, solids, true, cfg.player.waterSpeedMult);
 }
 
 export function stepCreatures(state: WorldState, cfg: GameConfig, dt: number, rng: Rng, events: GameEvent[]): void {

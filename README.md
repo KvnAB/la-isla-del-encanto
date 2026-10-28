@@ -15,7 +15,7 @@ Juego survival 2D top-down en una isla (nombre interno del proyecto: Draycol Sur
 | clic izquierdo | golpear, o usar el objeto seleccionado (comer, colocar fogata, ponerse/quitarse el abrigo, llenar/beber la cantimplora, lanzar la caña al agua) |
 | `1`–`9`, `0`, `-`, `=` o rueda | elegir slot (los 13–20, ganados con pingüinos, solo con rueda o clic) |
 | `Q` | tirar el slot seleccionado |
-| `E` | montar tu puma domado si está al lado, o bajarte |
+| `E` | montar tu puma domado si está al lado, o bajarte (montado nada contigo y cruza el agua) |
 | `Shift` | correr (solo montado) |
 | `R` | libro de recetas: todo lo fabricable y qué te falta |
 | `M` | silenciar o activar el sonido |

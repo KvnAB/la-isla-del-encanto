@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from '../src/config.js';
 import { terrainAt } from '../src/island.js';
 import type { World } from '../src/world.js';
-import { clearWorld, findLandNextTo, makeWorld, placePlayerAt, putCreature, putResource, setInventory } from './helpers.js';
+import { clearWorld, findLandNextTo, findTerrainCell, makeWorld, placePlayerAt, putCreature, putResource, setInventory } from './helpers.js';
 import type { Slot } from '../src/types.js';
 
 function fresh(slots: (Slot | null)[] = []) {
@@ -92,19 +92,6 @@ describe('montar el puma domado', () => {
     expect(p.x - x0).toBeCloseTo(DEFAULT_CONFIG.player.speed, -1);
   });
 
-  it('montado no entra en el agua: se para en la orilla', () => {
-    const { world, id, p, s } = fresh();
-    const spot = findLandNextTo(world, 'water', 120);
-    placePlayerAt(world, id, spot.x, spot.y);
-    pet(world, id, 10);
-    cmd(world, id, { type: 'mount' });
-    world.enqueue({ playerId: id, type: 'move', dx: 1, dy: 0 });
-    survive(world, id, 3);
-    expect(terrainAt(s.map, p.x, p.y)).not.toBe('water');
-    expect(p.inWater).toBe(false);
-    expect(p.mount).not.toBeNull();
-  });
-
   it('montado no golpea, no fabrica ni pone fogatas, pero sí come', () => {
     const { world, id, p, s } = fresh([{ item: 'campfire', count: 1 }, { item: 'apple', count: 1 }, { item: 'wood', count: 40 }]);
     pet(world, id, 10);
@@ -151,6 +138,21 @@ describe('montar el puma domado', () => {
     expect(p.y).toBeCloseTo(c.y, 0);
   });
 
+  it('montado y moviéndote, mandas tú: el puma no se va a cazar un tigre lejano, solo muerde lo que tenga al lado', () => {
+    const { world, id, p } = fresh();
+    const c = pet(world, id, 10);
+    cmd(world, id, { type: 'mount' });
+    putCreature(world, 'tiger', p.x + 100, p.y + 300); // a 316 px del dueño: dentro del radio de guardia
+    const x0 = p.x;
+    const y0 = p.y;
+    world.enqueue({ playerId: id, type: 'move', dx: 1, dy: 0 });
+    survive(world, id, 1);
+    expect(p.x - x0).toBeGreaterThan(120);
+    expect(Math.abs(p.y - y0)).toBeLessThan(40);
+    expect(c.mode).toBe('ride');
+    expect(p.mount).toBe(c.id);
+  });
+
   it('si matan al puma montado, el jugador cae al suelo sin daño', () => {
     const { world, id, p } = fresh();
     const c = pet(world, id, 10);
@@ -165,5 +167,41 @@ describe('montar el puma domado', () => {
     const ev = world.drainEvents();
     expect(ev).toContainEqual({ type: 'petDied', playerId: id, entityId: c.id, kind: 'puma' });
     expect(ev).toContainEqual({ type: 'dismounted', playerId: id });
+  });
+});
+
+describe('el puma domado nada', () => {
+  it('sigue al dueño dentro del agua; uno salvaje se queda parado', () => {
+    // seguimiento corto para obligarlo a nadar dentro de la celda de agua (3×3 celdas = ±60 px)
+    const { world, id } = makeWorld(7, { ...DEFAULT_CONFIG, taming: { ...DEFAULT_CONFIG.taming, followDist: 20 } });
+    clearWorld(world);
+    const s = world.getState();
+    const p = world.player(id);
+    const w = findTerrainCell(world, 'water');
+    placePlayerAt(world, id, w.x, w.y);
+    const mine = putCreature(world, 'puma', w.x + 50, w.y);
+    mine.owner = id;
+    mine.hp = DEFAULT_CONFIG.taming.hp;
+    const wild = putCreature(world, 'puma', w.x - 50, w.y);
+    wild.wanderTimer = 99;
+    wild.mode = 'chase';
+    survive(world, id, 2);
+    expect(terrainAt(s.map, mine.x, mine.y)).toBe('water');
+    expect(Math.hypot(mine.x - p.x, mine.y - p.y)).toBeLessThanOrEqual(20 + 5);
+    expect(Math.hypot(wild.x - (w.x - 50), wild.y - w.y)).toBeLessThan(1);
+  });
+
+  it('montado cruza el agua a la mitad de velocidad y el jugador cuenta como nadando', () => {
+    const { world, id, p, s } = fresh();
+    const w = findTerrainCell(world, 'water');
+    placePlayerAt(world, id, w.x, w.y);
+    pet(world, id, 10);
+    cmd(world, id, { type: 'mount' });
+    const x0 = p.x;
+    world.enqueue({ playerId: id, type: 'move', dx: 1, dy: 0 });
+    world.stepSeconds(0.5);
+    expect(p.x - x0).toBeCloseTo(DEFAULT_CONFIG.riding.walkSpeed * DEFAULT_CONFIG.player.waterSpeedMult * 0.5, -1);
+    expect(p.inWater).toBe(true);
+    expect(terrainAt(s.map, p.x, p.y)).toBe('water');
   });
 });

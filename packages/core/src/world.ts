@@ -1,5 +1,5 @@
 import { DEFAULT_CONFIG, type GameConfig } from './config.js';
-import { generateIsland } from './island.js';
+import { generateIsland, terrainAt } from './island.js';
 import { Rng } from './rng.js';
 import { placeCampfire, stepCampfires } from './systems/campfire.js';
 import { placeWall } from './systems/wall.js';
@@ -129,9 +129,9 @@ export class World {
     const playerSolids: Solid[] = resourceSolids(s, cfg);
     for (const p of s.players) {
       if (!p.alive) continue;
-      // montado, lo mueve su montura (stepCreatures) y nunca está en el agua
+      // montado, lo mueve su montura (stepCreatures); la montura domada nada, así que puede estar en el agua
       if (p.mount === null) stepPlayerMovement(s, p, cfg, dt, playerSolids);
-      else p.inWater = false;
+      else p.inWater = terrainAt(s.map, p.x, p.y) === 'water';
       if (p.hitCooldown > 0) p.hitCooldown = Math.max(0, p.hitCooldown - dt);
       if (p.swing > 0) p.swing = Math.max(0, p.swing - dt / cfg.player.hitCooldown);
       stepFishing(s, p, cfg, this.events);
