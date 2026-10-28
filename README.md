@@ -17,6 +17,7 @@ Juego survival 2D top-down en una isla (nombre interno del proyecto: Draycol Sur
 | `Q` | tirar el slot seleccionado |
 | `E` | montar tu puma domado si está al lado, o bajarte |
 | `Shift` | correr (solo montado) |
+| `R` | libro de recetas: todo lo fabricable y qué te falta |
 | `M` | silenciar o activar el sonido |
 
 La isla es siempre la misma (semilla fija `island.seed` en la configuración), así todos los jugadores aprenden el mismo mapa y en fase 2 compartirán la misma isla. El tercio norte es **nieve**: allí el frío baja el doble de día y el triple de noche, viven osos polares, pingüinos y lobos, y están las rocas de diamante (solo se pican con pico de oro o mejor). El minimapa de arriba a la derecha muestra la silueta de la isla, la nieve, los árboles, arbustos, rocas, oro y diamante, y dónde estás; no muestra animales.

@@ -30,9 +30,9 @@ function survive(world: World, id: number, seconds: number) {
 }
 
 describe('muro de piedra', () => {
-  it('receta 1 esmeralda + 30 piedra, colocable y apilable; anillo de 10 piedras a 100 px con 5 de vida', () => {
+  it('receta 1 esmeralda + 50 piedra, colocable y apilable; anillo de 10 piedras a 100 px con 5 de vida', () => {
     const r = DEFAULT_CONFIG.recipes.find((x) => x.id === 'stone_wall')!;
-    expect(r.cost).toEqual({ emerald: 1, stone: 30 });
+    expect(r.cost).toEqual({ emerald: 1, stone: 50 });
     expect(ITEM_META.stone_wall).toEqual({ stackable: true, placeable: true });
     expect(DEFAULT_CONFIG.wall).toEqual({ stones: 10, ringRadius: 100, stoneRadius: 20, hp: 5 });
   });

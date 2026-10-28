@@ -380,7 +380,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     { id: 'diamond_sword', cost: { diamond: 15, gold: 20, wood: 60 }, consumes: 'gold_sword', replaces: 'gold_sword', points: 400 },
     { id: 'emerald_pickaxe', cost: { emerald: 10, diamond: 15, gold: 20 }, consumes: 'diamond_pickaxe', replaces: 'diamond_pickaxe', points: 800 },
     { id: 'emerald_sword', cost: { emerald: 10, diamond: 15, wood: 60 }, consumes: 'diamond_sword', replaces: 'diamond_sword', points: 800 },
-    { id: 'stone_wall', cost: { emerald: 1, stone: 30 }, points: 100 },
+    { id: 'stone_wall', cost: { emerald: 1, stone: 50 }, points: 100 },
     { id: 'campfire', cost: { wood: 15, stone: 5 }, points: 25 },
     { id: 'coat1', cost: { wool: 5, tiger_pelt: 5, needle: 1 }, unique: true, points: 100 },
     { id: 'torch', cost: { wood: 5, stone: 1 }, points: 25 },

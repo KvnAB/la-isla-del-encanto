@@ -48,6 +48,7 @@ export class App {
     window.addEventListener('keydown', (e) => {
       unlock();
       if (e.code === 'KeyM' && !(e.target instanceof HTMLInputElement)) this.audio.setMuted(!this.audio.muted);
+      if (e.code === 'KeyR' && !(e.target instanceof HTMLInputElement) && this.running) this.running.hud.toggleBook();
       // Solo en desarrollo: H muestra los círculos de colisión para ajustar `resources.collision`.
       if (import.meta.env.DEV && e.code === 'KeyH' && this.running) this.running.renderer.showHitboxes = !this.running.renderer.showHitboxes;
     });

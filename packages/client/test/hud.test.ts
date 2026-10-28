@@ -249,3 +249,57 @@ describe('Hud: fichas de mascotas', () => {
     expect(onPet).not.toHaveBeenCalled();
   });
 });
+
+describe('Hud: libro de recetas', () => {
+  const open = () => (root.querySelector('.hud-book-btn') as HTMLElement).click();
+  const items = () => [...root.querySelectorAll<HTMLElement>('.book-item')];
+
+  it('el botón abre el libro con todas las recetas y se cierra con el botón, con R o con Escape', () => {
+    hud.update(p, state, []);
+    expect(root.querySelector<HTMLElement>('.hud-book')?.hidden).toBe(true);
+    open();
+    expect(root.querySelector<HTMLElement>('.hud-book')?.hidden).toBe(false);
+    expect(items()).toHaveLength(DEFAULT_CONFIG.recipes.length);
+    expect(items().map((e) => e.textContent)).toContain('Pico de oro');
+    open();
+    expect(root.querySelector<HTMLElement>('.hud-book')?.hidden).toBe(true);
+    hud.toggleBook();
+    expect(root.querySelector<HTMLElement>('.hud-book')?.hidden).toBe(false);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(root.querySelector<HTMLElement>('.hud-book')?.hidden).toBe(true);
+  });
+
+  it('al pulsar una receta muestra sus materiales con lo que tienes, en rojo lo que falta y en verde lo que ya hay', () => {
+    p.inventory[0] = { item: 'gold', count: 3 };
+    p.inventory[1] = { item: 'stone', count: 10 };
+    hud.update(p, state, []);
+    open();
+    items().find((e) => e.textContent === 'Pico de oro')!.click();
+    const rows = [...root.querySelectorAll<HTMLElement>('.book-cost')];
+    expect(rows.map((r) => r.textContent)).toEqual(['Oro 3/20', 'Piedra 10/10', 'Madera 0/30']);
+    expect(rows[0].classList.contains('missing')).toBe(true);
+    expect(rows[1].classList.contains('ok')).toBe(true);
+    expect(rows[2].classList.contains('missing')).toBe(true);
+    expect(root.querySelector('.book-consumes')?.textContent).toBe('Gasta: Pico de piedra (no lo tienes)');
+    expect(root.querySelector<HTMLButtonElement>('.book-craft')?.disabled).toBe(true);
+  });
+
+  it('con todo lo necesario, Fabricar está activo y fabrica; los números se actualizan al cambiar el inventario', () => {
+    p.inventory[0] = { item: 'gold', count: 20 };
+    p.inventory[1] = { item: 'stone', count: 30 };
+    p.inventory[2] = { item: 'wood', count: 60 };
+    p.inventory[3] = { item: 'stone_pickaxe', count: 1 };
+    hud.update(p, state, ['gold_pickaxe']);
+    open();
+    items().find((e) => e.textContent === 'Pico de oro')!.click();
+    expect(root.querySelector('.book-consumes')?.textContent).toBe('Gasta: Pico de piedra');
+    const btn = root.querySelector<HTMLButtonElement>('.book-craft')!;
+    expect(btn.disabled).toBe(false);
+    btn.click();
+    expect(onCraft).toHaveBeenCalledWith('gold_pickaxe');
+    p.inventory[0] = { item: 'gold', count: 5 };
+    hud.update(p, state, []);
+    expect(root.querySelector('.book-cost')?.textContent).toBe('Oro 5/20');
+    expect(root.querySelector<HTMLButtonElement>('.book-craft')?.disabled).toBe(true);
+  });
+});

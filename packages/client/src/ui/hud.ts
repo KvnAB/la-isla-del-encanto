@@ -1,4 +1,4 @@
-import { ITEM_META, mountable, type CreatureState, type GameConfig, type GameEvent, type ItemId, type PlayerState, type WorldState } from '@draycol/core';
+import { countItem, findSlot, ITEM_META, mountable, type CreatureState, type GameConfig, type GameEvent, type ItemId, type PlayerState, type RecipeDef, type WorldState } from '@draycol/core';
 import type { CommandBody } from '../game/input';
 import './hud.css';
 import { SLOT_KEY_LABELS } from '../game/input';
@@ -54,6 +54,12 @@ export class Hud {
   private lastPets = '';
   /** Cuadro para ponerle nombre a la criatura recién domada. */
   private nameForm: HTMLFormElement | null = null;
+  /** Libro de recetas: lista de todo lo fabricable y, al elegir una, sus materiales frente a lo que se tiene. */
+  private readonly book: HTMLElement;
+  private readonly bookDetail: HTMLElement;
+  private bookRecipe: ItemId | null = null;
+  private lastBookDetail = '';
+  private lastInventory: (import('@draycol/core').Slot | null)[] = [];
   readonly minimap = new Minimap();
   private last = { day: -1, points: -1, isNight: false, clock: '' };
 
@@ -67,9 +73,32 @@ export class Hud {
   ) {
     this.root = el('div', 'hud layer');
 
-    // Arriba izquierda: recetas
+    // Arriba izquierda: recetas disponibles y, debajo, el botón del libro de recetas
     this.craftBox = el('div', 'hud-craft');
     this.root.appendChild(this.craftBox);
+    const bookBtn = el('button', 'hud-book-btn', 'Recetas (R)');
+    bookBtn.type = 'button';
+    bookBtn.title = 'Qué se puede fabricar y qué hace falta';
+    bookBtn.addEventListener('click', () => this.toggleBook());
+    this.root.appendChild(bookBtn);
+    this.book = el('div', 'hud-book');
+    this.book.hidden = true;
+    const list = el('div', 'book-list');
+    for (const r of cfg.recipes) {
+      const item = el('button', 'book-item', ITEM_NAMES[r.id]);
+      item.type = 'button';
+      item.dataset.id = r.id;
+      item.addEventListener('click', () => {
+        this.bookRecipe = r.id;
+        for (const b of list.children) b.classList.toggle('selected', (b as HTMLElement).dataset.id === r.id);
+        this.renderBookDetail();
+      });
+      list.appendChild(item);
+    }
+    this.bookDetail = el('div', 'book-detail', 'Elige algo de la lista para ver qué hace falta.');
+    this.book.append(list, this.bookDetail);
+    this.root.appendChild(this.book);
+    window.addEventListener('keydown', this.onBookKey);
 
     // Arriba derecha: día y puntos, y debajo el minimapa
     const topRight = el('div', 'hud-topright');
@@ -129,6 +158,8 @@ export class Hud {
   }
 
   update(p: PlayerState, state: WorldState, recipes: ItemId[]): void {
+    this.lastInventory = p.inventory;
+    if (!this.book.hidden) this.renderBookDetail();
     const promptText = p.mount !== null ? 'E · Bajar' : mountable(state, p, this.cfg) ? 'E · Montar' : '';
     if (promptText !== this.lastPrompt) {
       this.lastPrompt = promptText;
@@ -293,6 +324,41 @@ export class Hud {
     this.nameForm = null;
   }
 
+  /** Abre o cierra el libro de recetas (botón, tecla R o Escape para cerrar). El juego sigue mientras está abierto. */
+  toggleBook(open = this.book.hidden): void {
+    this.book.hidden = !open;
+    if (open) this.renderBookDetail();
+  }
+
+  private readonly onBookKey = (e: KeyboardEvent): void => {
+    if (e.key === 'Escape' && !this.book.hidden) this.toggleBook(false);
+  };
+
+  /** Materiales de la receta elegida frente al inventario; solo toca el DOM si cambia el texto. */
+  private renderBookDetail(): void {
+    const r = this.cfg.recipes.find((x) => x.id === this.bookRecipe);
+    if (!r) return;
+    const inv = this.lastInventory;
+    const rows = (Object.entries(r.cost) as [ItemId, number][]).map(([item, n]) => ({ text: `${ITEM_NAMES[item]} ${countItem(inv, item)}/${n}`, ok: countItem(inv, item) >= n }));
+    const hasTool = !r.consumes || findSlot(inv, r.consumes) !== -1;
+    const consumes = r.consumes ? `Gasta: ${ITEM_NAMES[r.consumes]}${hasTool ? '' : ' (no lo tienes)'}` : '';
+    const unique = r.unique && findSlot(inv, r.id) !== -1 ? 'Ya tienes uno (solo puede haber uno)' : '';
+    const can = rows.every((x) => x.ok) && hasTool && !unique;
+    const key = [r.id, ...rows.map((x) => `${x.text}${x.ok}`), consumes, unique, can].join('|');
+    if (key === this.lastBookDetail) return;
+    this.lastBookDetail = key;
+    this.bookDetail.replaceChildren(el('div', 'book-title', ITEM_NAMES[r.id]));
+    for (const x of rows) this.bookDetail.appendChild(el('div', `book-cost ${x.ok ? 'ok' : 'missing'}`, x.text));
+    if (consumes) this.bookDetail.appendChild(el('div', `book-consumes ${hasTool ? 'ok' : 'missing'}`, consumes));
+    if (unique) this.bookDetail.appendChild(el('div', 'book-consumes missing', unique));
+    this.bookDetail.appendChild(el('div', 'book-points', `${r.points} puntos`));
+    const btn = el('button', 'book-craft', 'Fabricar');
+    btn.type = 'button';
+    btn.disabled = !can;
+    btn.addEventListener('click', () => this.onCraft(r.id));
+    this.bookDetail.appendChild(btn);
+  }
+
   /** Eventos del paso: carteles de amanecer, anochecer y casilla nueva; cuadro del nombre al domar. */
   onEvents(events: GameEvent[]): void {
     for (const e of events) {
@@ -321,6 +387,7 @@ export class Hud {
   destroy(): void {
     if (this.bannerTimer) clearTimeout(this.bannerTimer);
     this.closeName();
+    window.removeEventListener('keydown', this.onBookKey);
     this.root.remove();
   }
 }
