@@ -112,7 +112,7 @@ export class StartScreen {
     panel.appendChild(play);
 
     const hint = el('div', 'controls-hint');
-    for (const [key, what] of [['WASD', 'moverte'], ['Ratón', 'apuntar'], ['Clic', 'golpear o usar'], ['1–9 0 - =', 'cambiar objeto'], ['Q', 'tirar']] as const) {
+    for (const [key, what] of [['WASD', 'moverte'], ['Ratón', 'apuntar'], ['Clic', 'golpear o usar'], ['1–9 0 - =', 'cambiar objeto'], ['Q', 'tirar'], ['E', 'montar el puma'], ['Shift', 'correr montado']] as const) {
       const item = el('span', 'control');
       item.append(el('kbd', undefined, key), el('span', undefined, what));
       hint.appendChild(item);

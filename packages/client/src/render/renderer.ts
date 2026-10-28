@@ -261,10 +261,11 @@ export class Renderer {
       const x = pp ? pp.x + (p.x - pp.x) * alpha : p.x;
       const y = pp ? pp.y + (p.y - pp.y) * alpha : p.y;
       v.view.update(p, x, y);
-      v.view.zIndex = y;
+      // montado va encima de su montura (misma y): por delante y sin sombra propia
+      v.view.zIndex = p.mount !== null ? y + 1 : y;
       v.view.visible = p.alive;
       v.shadow.position.set(x, y + 4);
-      v.shadow.visible = p.alive;
+      v.shadow.visible = p.alive && p.mount === null;
       if (p === state.players[0]) this.camera.follow(x, y);
     }
     for (const [id, v] of this.players)

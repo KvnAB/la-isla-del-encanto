@@ -117,6 +117,12 @@ export class GameAudio {
         case 'slotUnlocked':
           if (e.playerId === localPlayerId) this.play('slot', () => this.blip([523, 659, 784, 1047, 1319], 0.08));
           break;
+        case 'mounted':
+          if (e.playerId === localPlayerId) this.play('mount', () => this.blip([392, 523], 0.07));
+          break;
+        case 'dismounted':
+          if (e.playerId === localPlayerId) this.play('dismount', () => this.blip([523, 392], 0.07));
+          break;
         case 'petDied':
           if (e.playerId === localPlayerId) this.play('petdie', () => this.thud(60, 0.5));
           break;

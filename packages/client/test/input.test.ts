@@ -132,3 +132,23 @@ describe('rueda con inventario que crece', () => {
     inp.detach();
   });
 });
+
+describe('montar y correr', () => {
+  it('E manda mount una vez por pulsación', () => {
+    key('keydown', 'KeyE');
+    expect(input.drain()).toEqual([{ playerId: 1, type: 'mount' }]);
+    key('keyup', 'KeyE');
+    expect(input.drain()).toEqual([]);
+  });
+
+  it('Shift enciende y apaga correr, y perder el foco lo apaga', () => {
+    key('keydown', 'ShiftLeft');
+    expect(input.drain()).toContainEqual({ playerId: 1, type: 'run', on: true });
+    key('keyup', 'ShiftLeft');
+    expect(input.drain()).toContainEqual({ playerId: 1, type: 'run', on: false });
+    key('keydown', 'ShiftRight');
+    input.drain();
+    window.dispatchEvent(new Event('blur'));
+    expect(input.drain()).toContainEqual({ playerId: 1, type: 'run', on: false });
+  });
+});

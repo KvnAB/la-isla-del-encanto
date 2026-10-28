@@ -81,6 +81,8 @@ export class InputController {
       return;
     }
     if (e.code === 'KeyQ') this.push({ type: 'dropSlot', slot: this.opts.getSelectedSlot() });
+    if (e.code === 'KeyE') this.push({ type: 'mount' });
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.setRunning(true);
   };
 
   private readonly onKeyUp = (e: KeyboardEvent): void => {
@@ -88,12 +90,23 @@ export class InputController {
       this.down.delete(e.code);
       this.emitMove();
     }
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.setRunning(false);
   };
+
+  private running = false;
+
+  /** Shift: correr (solo cambia algo montado). Un comando por cambio. */
+  private setRunning(on: boolean): void {
+    if (this.running === on) return;
+    this.running = on;
+    this.push({ type: 'run', on });
+  }
 
   private readonly onBlur = (): void => {
     this.down.clear();
     this._primaryDown = false;
     this.emitMove();
+    this.setRunning(false);
   };
 
   private readonly onWheel = (e: WheelEvent): void => {

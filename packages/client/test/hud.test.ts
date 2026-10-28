@@ -163,3 +163,31 @@ describe('Hud: casillas ganadas con pingüinos', () => {
     expect(root.querySelector('.hud-banner')?.textContent).toBe('¡CASILLA NUEVA! 13 de 20');
   });
 });
+
+describe('Hud: montar', () => {
+  const prompt = () => root.querySelector<HTMLElement>('.hud-prompt');
+  const puma = (dx: number) => {
+    const def = DEFAULT_CONFIG.creatures.defs.puma;
+    const c = { id: 900, kind: 'puma' as const, x: p.x + dx, y: p.y, angle: 0, radius: def.radius, hp: def.hp, mode: 'follow' as const, targetX: 0, targetY: 0, attackCooldown: 0, wanderTimer: 0, raid: false, owner: p.id };
+    state.creatures.push(c);
+    return c;
+  };
+
+  it('sin puma domado cerca no hay cartel', () => {
+    hud.update(p, state, []);
+    expect(prompt()?.hidden ?? true).toBe(true);
+    puma(300);
+    hud.update(p, state, []);
+    expect(prompt()?.hidden ?? true).toBe(true);
+  });
+
+  it('con el puma domado al lado dice "E · Montar" y montado "E · Bajar"', () => {
+    const c = puma(40);
+    hud.update(p, state, []);
+    expect(prompt()?.hidden).toBe(false);
+    expect(prompt()?.textContent).toBe('E · Montar');
+    p.mount = c.id;
+    hud.update(p, state, []);
+    expect(prompt()?.textContent).toBe('E · Bajar');
+  });
+});

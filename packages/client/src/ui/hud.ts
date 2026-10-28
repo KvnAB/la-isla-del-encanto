@@ -1,4 +1,4 @@
-import { ITEM_META, type GameConfig, type GameEvent, type ItemId, type PlayerState, type WorldState } from '@draycol/core';
+import { ITEM_META, mountable, type GameConfig, type GameEvent, type ItemId, type PlayerState, type WorldState } from '@draycol/core';
 import './hud.css';
 import { SLOT_KEY_LABELS } from '../game/input';
 import { itemIconDataUrl } from './icons';
@@ -45,6 +45,9 @@ export class Hud {
   private readonly pointsEl: HTMLElement;
   private readonly phaseIcon: HTMLElement;
   private readonly phaseTime: HTMLElement;
+  /** "E · Montar" / "E · Bajar" encima de las barras. */
+  private readonly prompt: HTMLElement;
+  private lastPrompt = '';
   readonly minimap = new Minimap();
   private last = { day: -1, points: -1, isNight: false, clock: '' };
 
@@ -75,8 +78,11 @@ export class Hud {
     topRight.append(top, this.minimap.el);
     this.root.appendChild(topRight);
 
-    // Abajo centro: barras + slots
+    // Abajo centro: aviso de montar, barras + slots
     const bottom = el('div', 'hud-bottom');
+    this.prompt = el('div', 'hud-prompt');
+    this.prompt.hidden = true;
+    bottom.appendChild(this.prompt);
     const barsRow = el('div', 'hud-bars');
     for (const b of BARS) {
       const bar = el('div', `bar bar-${b.key}`);
@@ -114,6 +120,12 @@ export class Hud {
   }
 
   update(p: PlayerState, state: WorldState, recipes: ItemId[]): void {
+    const promptText = p.mount !== null ? 'E · Bajar' : mountable(state, p, this.cfg) ? 'E · Montar' : '';
+    if (promptText !== this.lastPrompt) {
+      this.lastPrompt = promptText;
+      this.prompt.textContent = promptText;
+      this.prompt.hidden = promptText === '';
+    }
     if (p.inventory.length !== this.lastSlotCount) {
       this.lastSlotCount = p.inventory.length;
       this.slotsRow.style.gridTemplateColumns = `repeat(${p.inventory.length}, var(--slot-size))`;

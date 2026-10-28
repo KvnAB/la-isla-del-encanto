@@ -13,8 +13,10 @@ Juego survival 2D top-down en una isla (nombre interno del proyecto: Draycol Sur
 | `WASD` / flechas | moverse |
 | ratón | apuntar |
 | clic izquierdo | golpear, o usar el objeto seleccionado (comer, colocar fogata, ponerse/quitarse el abrigo, llenar/beber la cantimplora, lanzar la caña al agua) |
-| `1`–`9`, `0`, `-`, `=` o rueda | elegir uno de los 12 slots |
+| `1`–`9`, `0`, `-`, `=` o rueda | elegir slot (los 13–20, ganados con pingüinos, solo con rueda o clic) |
 | `Q` | tirar el slot seleccionado |
+| `E` | montar tu puma domado si está al lado, o bajarte |
+| `Shift` | correr (solo montado) |
 | `M` | silenciar o activar el sonido |
 
 La isla es siempre la misma (semilla fija `island.seed` en la configuración), así todos los jugadores aprenden el mismo mapa y en fase 2 compartirán la misma isla. El tercio norte es **nieve**: allí el frío baja el doble de día y el triple de noche, viven osos polares, pingüinos y lobos, y están las rocas de diamante (solo se pican con pico de oro o mejor). El minimapa de arriba a la derecha muestra la silueta de la isla, la nieve, los árboles, arbustos, rocas, oro y diamante, y dónde estás; no muestra animales.
@@ -91,6 +93,8 @@ Todos los números del juego están en **`packages/core/src/config.ts`** (`DEFAU
 5. Si es comida, su efecto en `config.food`. Si es una herramienta, su rendimiento en `woodPerHit` / `stonePerHit` / `goldPerHit` / `diamondPerHit` (`ToolClass` en `types.ts`). Si es un arma, su daño en `weaponDamage` (`WeaponClass` en `types.ts`); el jugador la muestra en la mano automáticamente. Si se lleva en la mano sin ser herramienta ni arma (antorcha, caña), `held: true`; si el clic lo usa en vez de golpear (cantimplora, caña), `usable: true` y su rama en `useSelectedSlot` (`systems/consume.ts`). Si se cocina en la fogata, su par crudo → cocinado en `campfire.cooks`.
 
 **Un recurso nuevo** (como la roca de oro): id en `ResourceKind`, radio, cantidad y colisión en `config.resources` (y, si solo sale en un bioma o siempre del mismo tamaño, `resources.biome` / `resources.fixedSize`), qué da y con qué herramienta en `yieldFor` (`systems/resources.ts`) y su dibujo en `makeResourceVector` (`vector-resources.ts`, que recibe `snowy` si está sobre nieve) más su marcador en `ui/minimap.ts`.
+
+**Montar**: `config.riding` (distancia para montar, velocidad andando/corriendo, factor de frío). `toggleMount` y `mountable` en `systems/creatures.ts`; la montura lleva al jinete en `stepPet` (modos `ride` y `hunt`). Montado, el núcleo ignora `hit` y `craft`, y `useSelectedSlot` solo deja comer y beber; los bichos muerden a la montura, no al jinete.
 
 **Casillas del inventario**: se empieza con `player.inventorySlots` (12) y cada `slotReward.killsPerSlot` (3) pingüinos matados dan una más hasta `slotReward.maxSlots` (20). El HUD crea todas las posibles y oculta las que faltan; las 13–20 no tienen tecla (rueda o clic).
 

@@ -217,6 +217,19 @@
 }
 
 /* Abajo centro: barras con icono + slots cuadrados (12) */
+.hud-prompt {
+  padding: 6px 16px;
+  border-radius: 10px;
+  background: rgba(10, 16, 24, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
 .hud-bottom {
   position: absolute;
   left: 50%;
