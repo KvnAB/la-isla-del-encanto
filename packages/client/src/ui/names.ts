@@ -31,6 +31,10 @@ export const ITEM_NAMES: Record<ItemId, string> = {
   fishing_rod: 'Caña de pescar',
   torch: 'Antorcha',
   bone: 'Hueso',
+  emerald: 'Esmeralda',
+  emerald_pickaxe: 'Pico de esmeralda',
+  emerald_sword: 'Espada de esmeralda',
+  stone_wall: 'Muro de piedra',
 };
 
 /** Qué hace una criatura domada, para su ficha del HUD. */

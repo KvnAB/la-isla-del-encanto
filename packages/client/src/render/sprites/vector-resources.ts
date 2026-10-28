@@ -215,6 +215,43 @@ export function makeDiamondRock(r: number, seed: number, snowy = false): Contain
   return c;
 }
 
+/** Gema de esmeralda: hexágono alargado verde con cara clara arriba. */
+export function drawEmerald(g: Graphics, x: number, y: number, s: number, o: number): void {
+  g.poly([x - s * 0.45, y - s, x + s * 0.45, y - s, x + s * 0.75, y - s * 0.4, x + s * 0.45, y + s, x - s * 0.45, y + s, x - s * 0.75, y - s * 0.4], true).fill(PALETTE.emerald).stroke({ width: o, color: PALETTE.emeraldOutline, join: 'round' });
+  g.poly([x - s * 0.45, y - s, x + s * 0.45, y - s, x + s * 0.75, y - s * 0.4, x - s * 0.75, y - s * 0.4], true).fill(PALETTE.emeraldLight, 0.7);
+  g.poly([x - s * 0.75, y - s * 0.4, x + s * 0.75, y - s * 0.4, x + s * 0.45, y + s, x - s * 0.45, y + s], true).fill(PALETTE.emeraldDark, 0.45);
+  g.rect(x - s * 0.2, y - s * 0.15, s * 0.4, s * 0.5).fill(PALETTE.emeraldLight, 0.35);
+}
+
+/** Roca gris con esmeraldas incrustadas (solo en nieve). */
+export function makeEmeraldRock(r: number, seed: number, snowy = false): Container {
+  const rng = new Rng(seed);
+  const c = new Container();
+  const g = new Graphics();
+  const ow = outlineWidth(r);
+  drawFlatRock(g, 0, 0, r, rng, ow);
+  if (snowy) snowCap(g, 0, 0, r * 0.82);
+  const n = 3 + rng.int(0, 1);
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + rng.range(-0.4, 0.4);
+    const d = r * rng.range(0.2, 0.55);
+    drawEmerald(g, Math.cos(a) * d, Math.sin(a) * d, r * rng.range(0.18, 0.26), Math.max(1.5, ow * 0.6));
+  }
+  c.addChild(g);
+  return c;
+}
+
+/** Piedra de un muro: roca pequeña y redondeada; `hp` 0..1 la agrieta al bajar. */
+export function makeWallStone(r: number, seed: number): Container {
+  const rng = new Rng(seed);
+  const c = new Container();
+  const g = new Graphics();
+  drawFlatRock(g, 0, 0, r, rng, outlineWidth(r), 6);
+  g.circle(-r * 0.25, -r * 0.25, r * 0.28).fill(0xffffff, 0.18);
+  c.addChild(g);
+  return c;
+}
+
 /** Roca agrietada (recurso vaciado). */
 export function makeRubble(r: number, seed: number): Container {
   const rng = new Rng(seed);
@@ -263,9 +300,10 @@ export function makeBerryBush(r: number, broken: boolean, seed: number): Contain
 /** `snowy`: el recurso está sobre nieve y lleva gorro blanco. */
 export function makeResourceVector(kind: ResourceKind, size: Size, r: number, broken: boolean, seed: number, snowy = false): Container {
   if (kind === 'berry_bush') return makeBerryBush(r, broken, seed);
-  if (broken) return kind === 'rock' || kind === 'gold_rock' || kind === 'diamond_rock' ? makeRubble(r, seed) : makeStump(r, seed);
+  if (broken) return kind === 'rock' || kind === 'gold_rock' || kind === 'diamond_rock' || kind === 'emerald_rock' ? makeRubble(r, seed) : makeStump(r, seed);
   if (kind === 'rock') return makeRock(size, r, seed, snowy);
   if (kind === 'gold_rock') return makeGoldRock(r, seed, snowy);
   if (kind === 'diamond_rock') return makeDiamondRock(r, seed, snowy);
+  if (kind === 'emerald_rock') return makeEmeraldRock(r, seed, snowy);
   return makeTree(kind, size, r, seed, snowy);
 }

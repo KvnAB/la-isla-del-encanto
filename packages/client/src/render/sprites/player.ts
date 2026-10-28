@@ -128,7 +128,7 @@ export class PlayerView extends Container {
       if (shown) {
         const g = new Graphics();
         const s = r * 1.2;
-        const material = shown.startsWith('diamond') ? 'diamond' : shown.startsWith('gold') ? 'gold' : shown.startsWith('stone') ? 'stone' : 'wood';
+        const material = shown.startsWith('emerald') ? 'emerald' : shown.startsWith('diamond') ? 'diamond' : shown.startsWith('gold') ? 'gold' : shown.startsWith('stone') ? 'stone' : 'wood';
         if (meta?.tool) drawPickaxe(g, s, material);
         else if (meta?.weapon) drawSword(g, s, material);
         else drawItem(g, shown, s * 0.8); // objetos que se llevan en la mano (antorcha, etc.)

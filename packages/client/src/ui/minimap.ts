@@ -12,6 +12,7 @@ const C = {
   snow: '#e9eef3',
   snowEdge: '#c9d6e1',
   diamond: '#7fe7ff',
+  emerald: '#3fd97a',
   berry: '#9b5bc4',
   water: '#5fa0d2',
   waterEdge: '#2a5e8f',
@@ -207,10 +208,10 @@ export class Minimap {
       ctx.fill();
       ctx.strokeStyle = C.rockDark;
       ctx.stroke();
-      if (m.kind === 'gold_rock' || m.kind === 'diamond_rock') {
+      if (m.kind === 'gold_rock' || m.kind === 'diamond_rock' || m.kind === 'emerald_rock') {
         ctx.beginPath();
         ctx.arc(0, 0, Math.max(0.9, m.r * 0.45), 0, Math.PI * 2);
-        ctx.fillStyle = m.kind === 'gold_rock' ? C.gold : C.diamond;
+        ctx.fillStyle = m.kind === 'gold_rock' ? C.gold : m.kind === 'diamond_rock' ? C.diamond : C.emerald;
         ctx.fill();
       }
     }

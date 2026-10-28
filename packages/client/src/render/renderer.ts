@@ -7,7 +7,7 @@ import { lightsFor } from './lights';
 import { nightAmount, NightLayer } from './night';
 import { drawHitboxes, hitboxCircles } from './debug';
 import { PALETTE } from './palette';
-import { animateCampfireVector, makeCampfireVector, makeCreatureVector, makeGroundItemVector, makeRegenRing, makeResourceVector, makeShadow, PlayerView, updateRegenRing, type CampfireVectorView } from './sprites';
+import { animateCampfireVector, makeCampfireVector, makeCreatureVector, makeGroundItemVector, makeRegenRing, makeResourceVector, makeShadow, makeWallStone, PlayerView, updateRegenRing, type CampfireVectorView } from './sprites';
 import { buildTerrain } from './terrain';
 
 const HIT_FX_SECONDS = 0.18;
@@ -87,6 +87,7 @@ export class Renderer {
   private readonly creatures = new Map<number, SimpleView>();
   private readonly groundItems = new Map<number, SimpleView>();
   private readonly campfires = new Map<number, { view: CampfireVectorView; shadow: Graphics }>();
+  private readonly walls = new Map<number, SimpleView & { hp: number }>();
   private time = 0;
   private lastRenderTime = 0;
   /** Efectos de golpe activos por entidad: tiempo restante y tipo. */
@@ -166,6 +167,9 @@ export class Renderer {
         const l = Math.hypot(dx, dy) || 1;
         this.hitFx.set(e.entityId, { t: HIT_FX_SECONDS, kind: 'hit', dx: dx / l, dy: dy / l });
         if (target) this.floating.spawn(target.x, target.y - 30, `-${formatDamage(e.amount)}`, 0xffffff);
+      } else if (e.type === 'wallHit' && e.playerId === localPlayerId) {
+        this.fx.hitShake();
+        this.hitFx.set(e.entityId, { t: HIT_FX_SECONDS, kind: 'hit', dx: 0, dy: 0 });
       } else if (e.type === 'resourceHit' && e.playerId === localPlayerId) {
         this.fx.hitShake();
         this.hitFx.set(e.entityId, { t: HIT_FX_SECONDS, kind: 'hit', dx: 0, dy: 0 });
@@ -195,7 +199,7 @@ export class Renderer {
       fx.t -= dt;
       const k = Math.max(0, fx.t / HIT_FX_SECONDS); // 1 → 0
       // En el jugador se tiñe solo el cuerpo (no el nombre).
-      const target = this.creatures.get(id)?.sprite ?? this.resources.get(id)?.sprite ?? this.players.get(id)?.view.body;
+      const target = this.creatures.get(id)?.sprite ?? this.resources.get(id)?.sprite ?? this.walls.get(id)?.sprite ?? this.players.get(id)?.view.body;
       if (!target) {
         this.hitFx.delete(id);
         continue;
@@ -238,6 +242,7 @@ export class Renderer {
     this.syncCreatures(state, alpha, prev);
     this.syncGroundItems(state);
     this.syncCampfires(state);
+    this.syncWalls(state);
     this.hitboxGfx.visible = this.showHitboxes;
     if (this.showHitboxes) drawHitboxes(this.hitboxGfx, hitboxCircles(state, this.cfg));
     this.camera.apply(this.world, this.viewW, this.viewH);
@@ -424,6 +429,34 @@ export class Renderer {
         v.sprite.destroy();
         v.shadow.destroy();
         this.groundItems.delete(id);
+      }
+  }
+
+  /** Piedras de los muros: se crean al aparecer y se atenúan según la vida que les queda. */
+  private syncWalls(state: WorldState): void {
+    const seen = new Set<number>();
+    for (const w of state.walls) {
+      seen.add(w.id);
+      let v = this.walls.get(w.id);
+      if (!v) {
+        v = { sprite: makeWallStone(w.radius, w.id * 31), shadow: makeShadow(w.radius * 1.1), hp: -1 };
+        v.sprite.position.set(w.x, w.y);
+        v.sprite.zIndex = w.y;
+        v.shadow.position.set(w.x, w.y + 3);
+        this.layers.entities.addChild(v.sprite);
+        this.layers.shadows.addChild(v.shadow);
+        this.walls.set(w.id, v);
+      }
+      if (v.hp !== w.hp) {
+        v.hp = w.hp;
+        v.sprite.alpha = 0.55 + 0.45 * (w.hp / this.cfg.wall.hp);
+      }
+    }
+    for (const [id, v] of this.walls)
+      if (!seen.has(id)) {
+        v.sprite.destroy();
+        v.shadow.destroy();
+        this.walls.delete(id);
       }
   }
 

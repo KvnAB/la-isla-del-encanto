@@ -1,7 +1,7 @@
 import { Container, Graphics } from 'pixi.js';
 import { Rng, type ItemId } from '@draycol/core';
 import { OUTLINE_WIDTH, PALETTE } from '../palette';
-import { drawDiamond, drawFlatRock, drawGoldNugget } from './vector-resources';
+import { drawDiamond, drawFlatRock, drawGoldNugget, drawEmerald } from './vector-resources';
 
 /**
  * Objetos y fogata en estilo plano. `drawItem` dibuja dentro de un cuadrado de lado 2*s centrado en (0,0).
@@ -16,22 +16,23 @@ const FUR = { orange: PALETTE.tiger, stripe: PALETTE.tigerStripe, wool: PALETTE.
 const METAL = { base: 0xcfd6dc, light: 0xf2f5f7, dark: 0x8c969e };
 const GOLD = { base: PALETTE.gold, light: PALETTE.goldLight, dark: PALETTE.goldDark };
 const DIAMOND = { base: PALETTE.diamond, light: PALETTE.diamondLight, dark: PALETTE.diamondDark };
+const EMERALD = { base: PALETTE.emerald, light: PALETTE.emeraldLight, dark: PALETTE.emeraldDark };
 
-export type PickaxeMaterial = 'wood' | 'stone' | 'gold' | 'diamond';
+export type PickaxeMaterial = 'wood' | 'stone' | 'gold' | 'diamond' | 'emerald';
 export type SwordMaterial = PickaxeMaterial;
 const ow = (s: number): number => Math.max(OUTLINE_WIDTH, s * 0.12);
 
 /** Pico apuntando hacia arriba (-y). */
 export function drawPickaxe(g: Graphics, s: number, material: PickaxeMaterial): void {
   const o = ow(s) * 0.8;
-  const head = material === 'gold' ? GOLD : material === 'diamond' ? DIAMOND : STONE;
+  const head = material === 'gold' ? GOLD : material === 'diamond' ? DIAMOND : material === 'emerald' ? EMERALD : STONE;
   g.moveTo(-s * 0.1, s * 0.95).lineTo(s * 0.1, -s * 0.55).stroke({ width: s * 0.2 + o * 2, color: OL, cap: 'round' });
   g.moveTo(-s * 0.1, s * 0.95).lineTo(s * 0.1, -s * 0.55).stroke({ width: s * 0.2, color: WOOD.base, cap: 'round' });
   if (material !== 'wood') {
     g.moveTo(-s * 0.9, -s * 0.3).quadraticCurveTo(0, -s * 1.0, s * 0.95, -s * 0.35).lineTo(s * 0.7, -s * 0.55).quadraticCurveTo(0, -s * 0.75, -s * 0.65, -s * 0.5).closePath().fill(head.base).stroke({ width: o * 1.4, color: OL, join: 'round' });
     g.moveTo(-s * 0.5, -s * 0.5).quadraticCurveTo(0, -s * 0.88, s * 0.6, -s * 0.5).quadraticCurveTo(0, -s * 0.7, -s * 0.5, -s * 0.5).fill(head.light);
-    if (material === 'gold' || material === 'diamond') g.circle(s * 0.55, -s * 0.42, s * 0.07).fill(0xffffff, 0.85);
-    if (material === 'diamond') g.moveTo(-s * 0.6, -s * 0.48).lineTo(-s * 0.3, -s * 0.62).lineTo(0, -s * 0.5).stroke({ width: Math.max(1.5, o * 0.5), color: 0xffffff, alpha: 0.7 });
+    if (material === 'gold' || material === 'diamond' || material === 'emerald') g.circle(s * 0.55, -s * 0.42, s * 0.07).fill(0xffffff, 0.85);
+    if (material === 'diamond' || material === 'emerald') g.moveTo(-s * 0.6, -s * 0.48).lineTo(-s * 0.3, -s * 0.62).lineTo(0, -s * 0.5).stroke({ width: Math.max(1.5, o * 0.5), color: 0xffffff, alpha: 0.7 });
   } else {
     g.moveTo(-s * 0.9, -s * 0.3).quadraticCurveTo(0, -s * 1.05, s * 0.95, -s * 0.35).stroke({ width: s * 0.22 + o * 2, color: OL, cap: 'round' });
     g.moveTo(-s * 0.9, -s * 0.3).quadraticCurveTo(0, -s * 1.05, s * 0.95, -s * 0.35).stroke({ width: s * 0.22, color: WOOD.base, cap: 'round' });
@@ -43,12 +44,13 @@ export function drawPickaxe(g: Graphics, s: number, material: PickaxeMaterial): 
 export function drawSword(g: Graphics, s: number, material: SwordMaterial): void {
   const o = ow(s) * 0.8;
   const gold = material === 'gold';
-  const diamond = material === 'diamond';
+  const diamond = material === 'diamond' || material === 'emerald';
+  const GEM = material === 'emerald' ? EMERALD : DIAMOND;
   g.roundRect(-s * 0.1, s * 0.25, s * 0.2, s * 0.7, s * 0.07).fill(WOOD.dark).stroke({ width: o * 1.2, color: OL });
   // la guarda de las espadas de oro y diamante también es de su material
-  g.roundRect(-s * 0.42, s * 0.15, s * 0.84, s * 0.17, s * 0.06).fill(gold ? GOLD.dark : diamond ? DIAMOND.dark : WOOD.base).stroke({ width: o * 1.2, color: OL });
-  const blade = gold ? GOLD.base : diamond ? DIAMOND.base : material === 'stone' ? METAL.base : WOOD.light;
-  const edge = gold ? GOLD.light : diamond ? DIAMOND.light : material === 'stone' ? METAL.light : 0xe0b47a;
+  g.roundRect(-s * 0.42, s * 0.15, s * 0.84, s * 0.17, s * 0.06).fill(gold ? GOLD.dark : diamond ? GEM.dark : WOOD.base).stroke({ width: o * 1.2, color: OL });
+  const blade = gold ? GOLD.base : diamond ? GEM.base : material === 'stone' ? METAL.base : WOOD.light;
+  const edge = gold ? GOLD.light : diamond ? GEM.light : material === 'stone' ? METAL.light : 0xe0b47a;
   g.poly([-s * 0.2, s * 0.15, -s * 0.2, -s * 0.55, 0, -s * 0.98, s * 0.2, -s * 0.55, s * 0.2, s * 0.15], true).fill(blade).stroke({ width: o * 1.4, color: OL, join: 'round' });
   g.poly([-s * 0.1, s * 0.1, -s * 0.1, -s * 0.5, 0, -s * 0.8, 0, s * 0.1], true).fill(edge);
   if (gold || diamond) g.circle(s * 0.08, -s * 0.45, s * 0.07).fill(0xffffff, 0.85); // brillo, como en el pico de oro
@@ -104,6 +106,18 @@ export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
     case 'diamond':
       drawDiamond(g, 0, 0, s * 0.9, o);
       break;
+    case 'emerald':
+      drawEmerald(g, 0, 0, s * 0.85, o);
+      break;
+    case 'stone_wall': {
+      // anillo de piedritas visto desde arriba
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        g.circle(Math.cos(a) * s * 0.62, Math.sin(a) * s * 0.62, s * 0.3).fill(PALETTE.rock).stroke({ width: Math.max(1.5, o * 0.7), color: PALETTE.rockOutline });
+      }
+      drawEmerald(g, 0, 0, s * 0.3, Math.max(1, o * 0.5));
+      break;
+    }
     case 'bear_pelt': {
       // piel blanca extendida con cuatro patas y cabeza
       g.moveTo(0, -s * 0.9).bezierCurveTo(s * 0.9, -s * 1.0, s * 0.95, -s * 0.2, s * 0.55, 0).bezierCurveTo(s * 0.95, s * 0.2, s * 0.9, s * 1.0, 0, s * 0.9).bezierCurveTo(-s * 0.9, s * 1.0, -s * 0.95, s * 0.2, -s * 0.55, 0).bezierCurveTo(-s * 0.95, -s * 0.2, -s * 0.9, -s * 1.0, 0, -s * 0.9).closePath().fill(PALETTE.polar).stroke({ width: o, color: OL, join: 'round' });
@@ -239,6 +253,9 @@ export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
     case 'diamond_pickaxe':
       drawPickaxe(g, s, 'diamond');
       break;
+    case 'emerald_pickaxe':
+      drawPickaxe(g, s, 'emerald');
+      break;
     case 'wood_sword':
       drawSword(g, s, 'wood');
       break;
@@ -250,6 +267,9 @@ export function drawItem(g: Graphics, item: ItemId, s: number, seed = 1): void {
       break;
     case 'diamond_sword':
       drawSword(g, s, 'diamond');
+      break;
+    case 'emerald_sword':
+      drawSword(g, s, 'emerald');
       break;
     case 'campfire':
       drawCampfireBase(g, s);

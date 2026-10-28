@@ -96,6 +96,12 @@ export class GameAudio {
         case 'crafted':
           if (e.playerId === localPlayerId) this.play('craft', () => this.blip([523, 659, 784], 0.08));
           break;
+        case 'wallPlaced':
+          if (e.playerId === localPlayerId) this.play('wall', () => this.thud(110, 0.3));
+          break;
+        case 'wallHit':
+          if (e.playerId === localPlayerId) this.play('hit', () => this.knock(900));
+          break;
         case 'campfirePlaced':
           if (e.playerId === localPlayerId) this.play('fire', () => this.crackle());
           break;

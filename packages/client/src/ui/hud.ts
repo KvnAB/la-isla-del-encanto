@@ -329,6 +329,7 @@ export class Hud {
 function slotTitle(item: ItemId, count: number): string {
   if (ITEM_META[item].equippable) return `${ITEM_NAMES[item]} · clic para poner o quitar`;
   if (item === 'bone') return `${ITEM_NAMES[item]} · úsalo apuntando a un puma para domarlo`;
+  if (item === 'stone_wall') return `${ITEM_NAMES[item]} · clic: anillo de piedras a tu alrededor; los animales no pasan`;
   if (item === 'canteen_full') return `${ITEM_NAMES[item]} · ${count} ${count === 1 ? 'trago' : 'tragos'}`;
   return ITEM_NAMES[item];
 }
