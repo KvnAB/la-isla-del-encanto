@@ -1,4 +1,4 @@
-/** Paleta plana (referencia: docs/design/reference/estilo-plano-*.png). */
+/** Paleta plana del juego. */
 export const PALETTE = {
   grass: 0x63a24a,
   grassGrid: 0x5a9643,

@@ -1,10 +1,19 @@
 # La Isla del Encanto
 
-Juego survival 2D top-down en una isla (nombre interno del proyecto: Draycol Survival), jugable en navegador de escritorio. Fase 1: un jugador, tabla de récords compartida entre todos los jugadores.
+Juego de supervivencia 2D en el navegador. Caes en una isla y tienes que aguantar el hambre, la sed, el frío y las noches: talas, picas, fabricas herramientas, cazas, domas pumas y bajas a la nieve del norte por el diamante. Los récords se comparten entre todos los jugadores.
 
-- Reglas del juego: [`docs/plan_juego_survival_2d.md`](docs/plan_juego_survival_2d.md)
-- Diseño técnico: [`docs/superpowers/specs/2026-10-20-draycol-survival-design.md`](docs/superpowers/specs/2026-10-20-draycol-survival-design.md)
-- Referencias visuales (estilo plano tipo starve.io y portada): `docs/design/reference/`. Todo el arte del juego se dibuja en código (vectores PixiJS) en `packages/client/src/render/sprites/`; no hay PNG de sprites. `tools/extract-sprites.py` es un resto de una iteración anterior y el juego no lo usa.
+Todo el arte se dibuja en código con vectores de PixiJS: no hay ni un sprite en PNG. La simulación es un núcleo en TypeScript puro y determinista, pensado para moverlo al servidor cuando llegue el multijugador.
+
+![Pantalla de inicio](docs/screenshots/inicio.jpg)
+
+| | |
+|---|---|
+| ![Combate](docs/screenshots/combate.jpg) | ![Nieve](docs/screenshots/nieve.jpg) |
+| ![Noche](docs/screenshots/noche.jpg) | ![Mascotas](docs/screenshots/mascotas.jpg) |
+
+**Stack:** TypeScript · PixiJS 8 · Vite · Fastify · SQLite (`node:sqlite`) · Vitest · pnpm workspaces · Docker
+
+Las reglas completas (mecánicas, objetos, criaturas y valores) están en [`docs/plan_juego_survival_2d.md`](docs/plan_juego_survival_2d.md).
 
 ## Controles
 
@@ -119,7 +128,6 @@ docker compose up -d --build
 
 Expone el puerto 3000 y guarda la base de datos en el volumen `scores-data`. Sin Docker, basta un proceso Node con `pnpm build && pnpm start` (o `node packages/server/dist/index.js`) detrás de cualquier proxy.
 
-> Estado: el `Dockerfile` se escribió siguiendo el flujo `pnpm deploy`; en la máquina de desarrollo el daemon de Docker no estaba disponible el 2026-10-20, así que la imagen aún no se ha construido. El arranque con Node (`pnpm build && pnpm start`) sí está verificado.
 
 ## Riesgos conocidos
 
